@@ -1,17 +1,30 @@
+Auto provision option
+  If user does not exist creat them with a random key
+  defaults - load from db entry
+    format = dhex40
+    flags  = display-count,send-token
+    count  = 1
+    count_ceil = 2^64-1
+    status = active
+    type = HOTP
+    location = username?
+
 sshd[41599]: v2 format has 11 fields, not 10.
 sshd[41599]: otp_ou_fromascii(): failed.
 sshd[41599]: otp_urec_open(maf): failed.
 sshd[41599]: ffdb_rec_close(): rec_open_ref_count != 0.
 sshd[41599]: otp_db_close(): failed.
 
+otp-control - otp_user_add - add flags to API so -F works on mode add
+
 OpenOTP patch: fix for weird balance reader
 
 urd opt n should include character list
 man page for option n
 
-document send-token option
-
 Enter PIN code does not issue a \n
+
+send-token doc in setup
 
 autoconf/automake
 

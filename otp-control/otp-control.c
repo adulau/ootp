@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-control.c 179 2011-05-16 02:48:42Z maf $
+ *      $Id: otp-control.c 201 2011-11-25 14:20:20Z maf $
  */
 
 #include <sys/types.h>
@@ -556,7 +556,8 @@ void help(void)
 
   fprintf(stderr, "otp-control [-?hnv] [-c count] [-C count_ceil] [-f format] [-F flag]\n");
   fprintf(stderr, "            [-H sc_hostname] [-I sc_index] [-k key] [-l location]\n");
-  fprintf(stderr, "            [-m command_mode] [-o otbdb_pathname] [-s status] [-S sc_flags] [-V service]\n");
+  fprintf(stderr, "            [-m command_mode] [-o otbdb_pathname] [-s status] [-S sc_flags]\n");
+  fprintf(stderr, "            [-V service]\n");
   fprintf(stderr, "            [-t type] [-u username] [-w window]\n");
   fprintf(stderr, "            -h        : help\n");
   fprintf(stderr, "            -n        : create database\n");
