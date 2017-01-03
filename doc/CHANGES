@@ -1,0 +1,53 @@
+# $Id:$
+
+### ootp-1.03.tar.gz
+
+add CHANGES and TODO to dist
+
+balance card enabled by default with HOTPC
+
+finish dec31.x and DHEX40 otp-sca, otp-sct
+
+add -i option to htsoft-downloader to ignore last WOK timeout
+
+reorganize BasicCard code to minimize RAM and Flash resources.  Fix
+PRDisplay (balance reader) syntax error intruduced with BalanceCardIndex
+
+### snap-12-16-2009
+
+add dhex40 format
+
+add set-flags
+
+remove activate, disable, deactivate, flags-dspcnt, flags-no-dspcnt
+from otp-control.  Add more generic set-flags, set-format, set-status,
+and set-type.
+
+add dec31.6 dec31.7 dec31.8 dec31.9 dec31.10 formats.
+
+add runtime window option to otp-openvpn, urd, and pam_otp.
+
+scr: default to embedded reader if pcscd is not running.  PCSC: defaults
+ to first PCSC reader.
+
+urd: -O not positionally dependent on -o. Can disable OTP and specify otpdb.
+
+add FreeBSD rc.d script for urd
+
+add Zeitcontrol balance reader datasheet to docs
+
+### ootp-1.02.tar.gz
+
+otpdb2sc: do not right 0 pad index to otp-control
+
+pam_otp.so: compile PIC
+
+### ootp-1.01.tar.gz
+
+release: build man and html pages at release time
+
+sccmd.c: SetAdminKey fw version check reversed
+
+urd: build default HOTP enabled
+
+### ootp-1.00.tar.gz
