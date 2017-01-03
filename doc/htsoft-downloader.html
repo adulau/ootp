@@ -102,19 +102,7 @@ NAME="AEN27"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->-h</DT
-><DD
-><P
->Help</P
-></DD
-><DT
->-i</DT
-><DD
-><P
->Ignore timeout for last WOK after sending reset.</P
-></DD
-><DT
->-f<TT
+>-f, --serial-device=<TT
 CLASS="REPLACEABLE"
 ><I
 > serial_device</I
@@ -141,7 +129,19 @@ CLASS="FILENAME"
 Prolific PL2303 USB to serial adaptor on FreeBSD.</P
 ></DD
 ><DT
->-r<TT
+>-h, --help</DT
+><DD
+><P
+>Help</P
+></DD
+><DT
+>-i, --ignore-last-wok-timeout</DT
+><DD
+><P
+>Ignore timeout for last WOK after sending reset.</P
+></DD
+><DT
+>-r, --pic-retries=<TT
 CLASS="REPLACEABLE"
 ><I
 > retries</I
@@ -152,7 +152,7 @@ CLASS="REPLACEABLE"
 >Number of times to retry a block.  Defaults to 5.</P
 ></DD
 ><DT
->-t<TT
+>-t, --pic-timeout=<TT
 CLASS="REPLACEABLE"
 ><I
 > timeout</I
@@ -163,7 +163,7 @@ CLASS="REPLACEABLE"
 >Timeout in .1 second intervals.  Defaults to 25.</P
 ></DD
 ><DT
->-v<TT
+>-v, --verbose=<TT
 CLASS="REPLACEABLE"
 ><I
 > verbose_level</I
@@ -175,13 +175,19 @@ CLASS="REPLACEABLE"
 the status of the download.  A level of 9 will include all debugging
 output.  A level of 1 will indicate the overall status of the transfer.</P
 ></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
+></DD
 ></DL
 ></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN64"
+NAME="AEN68"
 ></A
 ><H2
 >EXAMPLE</H2
@@ -190,7 +196,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN66"
+NAME="AEN70"
 ></A
 ><P
 >Transfer the HEX file spyrus1.1.hex to a PIC connected to
@@ -230,7 +236,7 @@ wDONE: reply=F0, expecting E4wPIC reset sent.</PRE
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN72"
+NAME="AEN76"
 ></A
 ><H2
 >AUTHOR</H2
@@ -247,7 +253,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN79"
+NAME="AEN83"
 ></A
 ><H2
 >SEE ALSO</H2

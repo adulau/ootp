@@ -1,4 +1,4 @@
-# $Id: Makefile 13 2009-11-26 16:37:03Z maf $
+# $Id: Makefile 133 2010-06-15 14:30:14Z maf $
 
 what:
 	@echo
@@ -22,22 +22,28 @@ INSTALL=install -c -m0755
 
 .c.o:;  $(CC) $(CFLAGS) -c $*.c -o $*.o
 
-OBJS = ../common/xerr.o ../common/str.o ../common/otplib.o ../common/ffdb.o
+BIN = otp-ov-plugin
+COBJS = ../common/xerr.o ../common/str.o ../common/otplib.o ../common/ffdb.o
+OBJS = version.o ${BIN}.o
 
-BINS = otp-ov-plugin
 
 BINDIR=/usr/local/ootp/bin
 
-all: otp-ov-plugin.c ${OBJS} ${BINS}
+all: version ${COBJS} ${OBJS} ${BIN}
+
+version:
+	rm -f version.c; ../build/version ../VERSION ${BIN} > version.c
+
+version.c:
 
 install:
 	mkdir -p ${BINDIR}
-	${INSTALL} ${BINS} ${BINDIR}
+	${INSTALL} ${BIN} ${BINDIR}
 	@echo files installed in ${BINDIR}
 
 clean:
-	/bin/rm -f ${BINS} otp-ov-plugin.o
+	/bin/rm -f ${BIN} ${OBJS} version.c
 
-otp-ov-plugin: ${OBJS} otp-ov-plugin.o
-	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o otp-ov-plugin ${OBJS} otp-ov-plugin.o $(LIBS)
+${BIN}: ${COBJS} ${OBJS}
+	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o ${BIN} ${COBJS} ${OBJS} $(LIBS)
 

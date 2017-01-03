@@ -1,7 +1,18 @@
-autoconf/automake
+urd option c should not require arg
+urd_oareng_pgm support in rc.d
+urd opt n should include character list
+man page for option n
 
-RADIUS optionally encode HOTP count in challenge message
-RADIUS dspcnt flag urd, force display count
+tokend
+  man page
+  usage
+
+urd,openvpn
+  send-token
+
+Enter PIN code does not issue a \n
+
+autoconf/automake
 
 RADIUS proxy support
 
@@ -10,17 +21,12 @@ ACS balance reader support dec31.6?
 
 break out htsoft-downloader, urd, bcload?
 
-architecture document
-  formats
-  post
-
-basiccard build notes
-
 full coverage testing for otplib and ffdb
 
 otp-token (soft token)
 
-count use 64 bit current time option
+count use 64 bit current time option, store last time delta for each user to 
+help compensate for reader drift.
 
 balance reader simulator
 
@@ -32,4 +38,17 @@ Spyrus main.c missing
   EE2LCD()
   U8             Temp[4];
   RESP_INFO     *respDump = (RESP_INFO*) Temp;
+
+-S in otp-control - use symbolic names
+
+option in otp-sca to list symbolic names of flags
+
+otp-sca
+  make sure d modifier still works
+  tail -1 in otp-control example
+  use RFC keys for examples
+
+urd - wtmp
+
+otp-control -c should do the right thing when generating otp
 

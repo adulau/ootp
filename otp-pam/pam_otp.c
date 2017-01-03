@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: pam_otp.c 56 2009-12-17 02:08:05Z maf $
+ *      $Id: pam_otp.c 168 2011-05-11 04:03:38Z maf $
  */
 
 #include <stdio.h>
@@ -79,9 +79,10 @@ struct opts {
   int expose_account;
   int display_count;
   int allow_inactive;
-  int require_db_entry;
+  int allow_unknown;
   int otp_window;
   char *otpdb_fname;
+  char *service;
 };
 
 void load_opts(struct opts *opts, int argc, const char **argv);
@@ -99,10 +100,11 @@ int pam_sm_authenticate(pam_handle_t *ph, int flags, int argc,
   struct opts opts;
   int r, ret, otpdb_flags;
   const char *user;
-  char message[64];
+  char message[64], *cs;
 
   ppam_msg = &pam_msg;
   bzero(&pam_msg, sizeof (pam_msg));
+  bzero(&opts, sizeof opts);
   pam_conv = 0L;
   pam_resp = 0L;
   ret = PAM_SERVICE_ERR;
@@ -146,15 +148,27 @@ int pam_sm_authenticate(pam_handle_t *ph, int flags, int argc,
    *
    */
   if (r == 1) {
-    if (!opts.require_db_entry)
+    if (opts.allow_unknown) {
       ret = PAM_SUCCESS;
-    else
+      xerr_info("%s: user=%s pass otp_user_exists() allow_unknown=1",
+        pam_strerror(ph, ret), user);
+    } else {
       ret = PAM_AUTH_ERR;
-    xerr_info("%s: user=%s not in OTP db", pam_strerror(ph, ret), user);
+      xerr_info("%s: user=%s via otp_user_exists() allow_unknown=0",
+        pam_strerror(ph, ret), user);
+    }
     goto cleanup;
   }
 
-  /* get otp user record */
+  /*
+   * unknown response from otp_user_exists()
+  */
+  if (r != 0) {
+    xerr_warnx("otp_user_exists() unknown response r=%d", r);
+    ret = PAM_SERVICE_ERR;
+    goto cleanup;
+  }
+
   if (otp_urec_open(otpctx, (char*)user, &ou, O_RDONLY, FFDB_OP_LOCK_EX) < 0) {
     xerr_warnx("otp_urec_open(%s): failed.", user);
     ret = PAM_SERVICE_ERR;
@@ -212,11 +226,25 @@ int pam_sm_authenticate(pam_handle_t *ph, int flags, int argc,
   pam_msg.msg_style = PAM_PROMPT_ECHO_ON;
   pam_msg.msg = (char *)&message;
 
+  /* send token to user? */
+  if (ou.flags & OTP_FLAGS_SEND_TOKEN) {
+
+    cs = "HOTP Sent";
+
+    if (otp_user_send_token(otpctx, (char*)user, opts.service) < 0)
+      xerr_warnx("otp_user_send_token(): failed.");
+
+  } else {
+
+    cs = "HOTP Challenge";
+
+  } /* OTP_FLAGS_SEND_TOKEN */
+
   /* prompt for challenge with optional count */
   if (opts.display_count || (ou.flags & OTP_FLAGS_DSPCNT))
-    sprintf(message, "HOTP Challenge (%" PRIu64 "): ", ou.count);
+    snprintf(message, sizeof(message), "%s (%" PRIu64 "): ", cs, ou.count);
   else
-    sprintf(message, "HOTP Challenge: ");
+    snprintf(message, sizeof(message), "%s: ", cs);
 
   /* use application conversation function to ask for challenge */
   if (pam_conv->conv(1, &ppam_msg, &pam_resp, pam_conv->appdata_ptr)
@@ -331,6 +359,7 @@ void load_opts(struct opts *opts, int argc, const char **argv)
   bzero(opts, sizeof *opts);
   opts->otpdb_fname = OTP_DB_FNAME;
   opts->otp_window = OTP_WINDOW_DEFAULT;
+  opts->service = "pam";
 
   /* foreach argument */
   while (argc--) {
@@ -348,9 +377,13 @@ void load_opts(struct opts *opts, int argc, const char **argv)
     } else if (!strcmp(*argv, "allow_inactive")) {
       opts->allow_inactive = 1;
     } else if (!strcmp(*argv, "require_db_entry")) {
-      opts->require_db_entry = 1;
+      opts->allow_unknown = 0;
+    } else if (!strcmp(*argv, "allown_unknown")) {
+      opts->allow_unknown = 1;
     } else if (!strncmp(*argv, "otpdb=", 6)) {
       opts->otpdb_fname=(char*)(*argv)+6;
+    } else if (!strncmp(*argv, "service=", 8)) {
+      opts->service=(char*)(*argv)+8;
     } else if (!strncmp(*argv, "window=", 7)) {
       tmpul = strtoul(optarg, &endptr, 0);
       if (*endptr)
@@ -366,10 +399,10 @@ void load_opts(struct opts *opts, int argc, const char **argv)
   }
 
   if (opts->debug) {
-    xerr_info("use_first_pass=%d, try_first_pass=%d, expose_account=%d, display_count=%d, allow_inactive=%d, require_db_entry=%d, otpdb=%s",
+    xerr_info("use_first_pass=%d, try_first_pass=%d, expose_account=%d, display_count=%d, allow_inactive=%d, allow_unknown=%d, otpdb=%s service=%s",
       opts->use_first_pass, opts->use_first_pass, opts->expose_account,
-      opts->display_count, opts->allow_inactive, opts->require_db_entry,
-      opts->otpdb_fname);
+      opts->display_count, opts->allow_inactive, opts->allow_unknown,
+      opts->otpdb_fname, opts->service);
   }
 
 } /* load_opts */

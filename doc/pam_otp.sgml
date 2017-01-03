@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: pam_otp.sgml 50 2009-12-15 01:37:19Z maf $ -->
+<!-- $Id: pam_otp.sgml 169 2011-05-11 04:10:57Z maf $ -->
 
 <refentry>
 
@@ -80,8 +80,21 @@ the count unless the user record flags field has OTP_USER_FLAGS_DSPCNT set.
 <listitem>
 <para>
 A user not in the OTP database will be denied access with the
-require_db_entry option is set.  By default users not in the OTP
-database are permitted.
+require_db_entry option is set.  This option is set by default.
+require_db_entry and allow_unknown user set the same flag and are
+mutually exclusive.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><replaceable>allow_unknown_user</replaceable></term>
+<listitem>
+<para>
+A user not in the OTP database will be allowed access with the
+allow_unknown_user option set.  This option is disabled by default.
+require_db_entry and allow_unknown user set the same flag and are
+mutually exclusive.
 </para>
 </listitem>
 </varlistentry>
@@ -91,6 +104,15 @@ database are permitted.
 <listitem>
 <para>
 <filename>alternate_otpdb</filename> is used as the OTP database.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><replaceable>service=</replaceable><filename>service_name</filename></term>
+<listitem>
+<para>
+Service name for use with send-token option.
 </para>
 </listitem>
 </varlistentry>

@@ -66,19 +66,19 @@ off the bcload example included in the development environment\&.
 hardware\&.  Small changes would be required to support the Professional
 line of cards\&.
 .SH "OPTIONS"
-.IP "-d\fI debug_level\fP" 10
+.IP "-d, --debug=\fI debug_level\fP" 10
 Set debug level\&.
-.IP "-f\fI fname\fP" 10
+.IP "-f, --image=\fI fname\fP" 10
 Name of BasicCard Image file\&.  Defaults to HOTPC\&.IMG
-.IP "-h" 10
+.IP "-h, --help" 10
 Help\&.
-.IP "-l" 10
+.IP "-l, --list-readers" 10
 List SC Readers
-.IP "-p" 10
+.IP "-p, --no-paranoid" 10
 Disable paranoid check for ZC3\&.9 hardware\&.  Enhanced Smart Cards will
 probably work, support for the professional cards require changes
 to \fBbcload\&.c\fP\&.
-.IP "-r\fI reader\fP" 10
+.IP "-r, --reader=\fI reader\fP" 10
 Set Smart Card reader\&.  Use -l to list available readers\&.  A reader
 is defined as class:reader:[option]\&.  PCSC and embedded
 are the two available classes\&.  The embedded class contains the acr30s driver
@@ -87,11 +87,13 @@ If pcscd is running the first PC/SC reader will be the default followed by
 the embedded acr30s driver\&.  Use PCSC: for the first available PC/SC
 reader\&.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
 with serial port /dev/cuaU0\&.
-.IP "-t" 10
+.IP "-t, --force-test" 10
 Force card mode to TEST after programming\&.  Defaults to the mode
 specified in the image file\&.
-.IP "-v" 10
+.IP "-v, --verbose" 10
 Display verbose status messages while programming the card\&.
+.IP "--version" 10
+Display software version\&.
 .SH "EXAMPLES"
 .PP
 Download the HOTPC\&.IMG file to the default Smart Card reader\&.  Display
@@ -134,4 +136,4 @@ Mark Fullmer maf@splintered\&.net
 \fBotp-ov-plugin\fP(1)
 \fBurd\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

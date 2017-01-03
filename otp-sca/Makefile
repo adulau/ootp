@@ -1,4 +1,4 @@
-# $Id: Makefile 13 2009-11-26 16:37:03Z maf $
+# $Id: Makefile 130 2010-06-15 14:26:10Z maf $
 
 what:
 	@echo
@@ -25,22 +25,28 @@ INSTALL=install -c -m0755
 
 .c.o:;  $(CC) $(CFLAGS) -c $*.c -o $*.o
 
-OBJS = ../common/xerr.o ../common/str.o ../common/acr30.o ../common/scr.o ../common/sccmd.o
+BIN = otp-sca
+COBJS = ../common/xerr.o ../common/str.o ../common/acr30.o ../common/scr.o ../common/sccmd.o
+OBJS = version.o ${BIN}.o
 
-BINS = otp-sca
 
 BINDIR=/usr/local/ootp/bin
 
-all: otp-sca.c ${OBJS} ${BINS}
+all: version ${COBJS} ${OBJS} ${BIN}
+
+version:
+	rm -f version.c; ../build/version ../VERSION ${BIN} > version.c
+
+version.c:
 
 install:
 	mkdir -p ${BINDIR}
-	${INSTALL} ${BINS} ${BINDIR}
+	${INSTALL} ${BIN} ${BINDIR}
 	@echo files installed in ${BINDIR}
 
 clean:
-	/bin/rm -f ${BINS} otp-sca.o
+	/bin/rm -f ${BIN} ${OBJS} version.c
 
-otp-sca: ${OBJS} otp-sca.o
-	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o otp-sca ${OBJS} otp-sca.o $(LIBS)
+${BIN}: ${OBJS} ${COBJS}
+	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o ${BIN} ${COBJS} ${OBJS} $(LIBS)
 

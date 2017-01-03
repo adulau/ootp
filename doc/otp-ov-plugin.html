@@ -48,6 +48,11 @@ CLASS="REPLACEABLE"
 ><I
 > otpdb_fname</I
 ></TT
+>] [-V<TT
+CLASS="REPLACEABLE"
+><I
+> service_name</I
+></TT
 >] [-w<TT
 CLASS="REPLACEABLE"
 ><I
@@ -58,7 +63,7 @@ CLASS="REPLACEABLE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN18"
+NAME="AEN20"
 ></A
 ><H2
 >DESCRIPTION</H2
@@ -99,7 +104,7 @@ CLASS="RETURNVALUE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN27"
+NAME="AEN29"
 ></A
 ><H2
 >OPTIONS</H2
@@ -109,13 +114,13 @@ NAME="AEN27"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->-h</DT
+>-h, --help</DT
 ><DD
 ><P
 >Help</P
 ></DD
 ><DT
->-o<TT
+>-o, --otp-db=<TT
 CLASS="REPLACEABLE"
 ><I
 > otpdb_pathname</I
@@ -126,16 +131,40 @@ CLASS="REPLACEABLE"
 >Pathname of OTP database.</P
 ></DD
 ><DT
->-v</DT
+>-u, --otp-allow-unknown-user</DT
+><DD
+><P
+>Allow users which do not exist in the OTP database to successfully
+authenticate without using a One Time Password.</P
+></DD
+><DT
+>-V, --service-name=<TT
+CLASS="REPLACEABLE"
+><I
+> service_name</I
+></TT
+></DT
+><DD
+><P
+>Set service name for send-token function.</P
+></DD
+><DT
+>-v, --verbose</DT
 ><DD
 ><P
 >Verbose</P
 ></DD
 ><DT
->-w</DT
+>-w, --otp-challenge-window=</DT
 ><DD
 ><P
 >Set the OTP challenge window.</P
+></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
 ></DD
 ></DL
 ></DIV
@@ -143,7 +172,7 @@ CLASS="REPLACEABLE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN47"
+NAME="AEN62"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -152,7 +181,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN49"
+NAME="AEN64"
 ></A
 ><P
 >Test the module with user bob.</P
@@ -181,7 +210,7 @@ CLASS="SCREEN"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN58"
+NAME="AEN73"
 ></A
 ><H2
 >AUTHOR</H2
@@ -198,7 +227,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN65"
+NAME="AEN80"
 ></A
 ><H2
 >SEE ALSO</H2

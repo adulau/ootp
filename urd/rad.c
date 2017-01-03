@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: rad.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: rad.c 157 2011-04-06 03:57:29Z maf $
  */
 
 #include <sys/types.h>
@@ -194,6 +194,7 @@ int urd_req_decode(struct urd_ctx *urdctx)
   urdctx->req.tlv_NAS_Identifier = (struct urd_tlv*)0L;
   urdctx->req.tlv_User_Password = (struct urd_tlv*)0L;
   urdctx->req.tlv_State = (struct urd_tlv*)0L;
+  bzero(&urdctx->req.user_name_base, URD_USER_NAME_LEN+1);
   bzero(&urdctx->req.user_name, URD_USER_NAME_LEN+1);
   bzero(&urdctx->req.user_pass, URD_USER_PASS_LEN+1);
   urdctx->req.state_counter = 0;
@@ -301,6 +302,19 @@ int urd_req_decode(struct urd_ctx *urdctx)
       urdctx->req.tlv_User_Name->len);
     urdctx->req.user_name[urdctx->req.tlv_User_Name->len] = 0;
 
+    /*
+     * hack to allow multiple usernames to authenticate off the same
+     * base name.  Allows a single user to sign on to device more than
+     * once when the device only supports single user sessions.
+     */
+    bcopy(urdctx->req.tlv_User_Name->val, &urdctx->req.user_name_base,
+      urdctx->req.tlv_User_Name->len);
+    urdctx->req.user_name_base[urdctx->req.tlv_User_Name->len] = 0;
+
+    for (i = 0; i < urdctx->req.tlv_User_Name->len; ++i)
+      if (urdctx->req.user_name_base[i] == '#')
+        urdctx->req.user_name_base[i] = 0;
+
   } /* urdctx->req.tlv_User_Name */
 
   /* C string */
@@ -405,13 +419,13 @@ void urd_req_dump(struct urd_ctx *urdctx)
   int buf_l, i, j, decode_type;
   char buf[1024];
 
-  buf_l = snprintf(buf, 1024,
+  buf_l = snprintf(buf, sizeof(buf),
     "pkt.code=%2.2X, pkt.id=%2.2X, pkt.len=%2.2X, pkt.auth=",
     (int)urdctx->req.dgram_header.code,
     (int)urdctx->req.dgram_header.identifier,
     (int)urdctx->req.dgram_header.length);
   for (j = 0; j < RADIUS_AUTHENTICATOR_LEN; ++j)
-    buf_l += snprintf(buf+buf_l, 1024-buf_l, "%2.2X",
+    buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, "%2.2X",
       ((int)urdctx->req.dgram_header.authenticator[j]));
 
   xerr_info(buf);
@@ -428,6 +442,10 @@ void urd_req_dump(struct urd_ctx *urdctx)
         decode_type = URD_DECODE_TYPE_CHAR;
         break;
 
+      case RADIUS_ATTRIB_USER_PASSWORD:
+        decode_type = URD_DECODE_TYPE_HIDDEN;
+        break;
+
       case RADIUS_ATTRIB_NAS_IP_ADDRESS:
       case RADIUS_ATTRIB_FRAMED_IP_ADDRESS:
       case RADIUS_ATTRIB_FRAMED_IP_NETMASK:
@@ -440,30 +458,34 @@ void urd_req_dump(struct urd_ctx *urdctx)
 
     } /* switch */
 
-    buf_l = snprintf(buf, 1024,
+    buf_l = snprintf(buf, sizeof(buf),
       "  TLV type=%d, len=%d, val=", (int)urdctx->req.tlv[i].type,
       (int)urdctx->req.tlv[i].len);
 
     switch (decode_type) {
 
       case URD_DECODE_TYPE_HEX:
-        buf_l += snprintf(buf+buf_l, 1024-buf_l, "H ");
+        buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, "H ");
         for (j = 0; j < urdctx->req.tlv[i].len; ++j)
-          buf_l += snprintf(buf+buf_l, 1024-buf_l, "%2.2X",
+          buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, "%2.2X",
             (int)urdctx->req.tlv[i].val[j]);
         break;
 
       case URD_DECODE_TYPE_CHAR:
-        buf_l += snprintf(buf+buf_l, 1024-buf_l, "C ");
+        buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, "C ");
         for (j = 0; j < urdctx->req.tlv[i].len; ++j)
-          buf_l += snprintf(buf+buf_l, 1024-buf_l, "%c",
+          buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, "%c",
             urdctx->req.tlv[i].val[j]);
         break;
 
       case URD_DECODE_TYPE_IP:
-        buf_l += snprintf(buf+buf_l, 1024-buf_l, "I %d.%d.%d.%d",
+        buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, "I %d.%d.%d.%d",
           (int)urdctx->req.tlv[i].val[0], (int)urdctx->req.tlv[i].val[1],
            (int)urdctx->req.tlv[i].val[2], (int)urdctx->req.tlv[i].val[3]);
+        break;
+
+      case URD_DECODE_TYPE_HIDDEN:
+        buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, "X <hidden>");
         break;
 
     } /* switch */
@@ -498,15 +520,15 @@ void urd_req_dump(struct urd_ctx *urdctx)
  *
  */
 int urd_rep_encode(struct urd_ctx *urdctx, uint8_t code,
-  uint64_t state_counter, int rep_encode_flags)
+  uint64_t state_counter, uint64_t otp_count, int rep_encode_flags)
 {
   struct radius_dgram_header dgram_header, *dh;
   struct urd_tlv_state tlv_state;
   struct urd_tlv_rep_msg tlv_rep_msg;
-  u_char md_val[EVP_MAX_MD_SIZE];
+  u_char md_val[EVP_MAX_MD_SIZE], *c;
+  char fmt_buf[64];
   uint md_len;
   int i, pkt_p;
-  char *c;
 
   bzero(&dgram_header, sizeof dgram_header);
   bzero(&tlv_state, sizeof tlv_state);
@@ -534,7 +556,7 @@ int urd_rep_encode(struct urd_ctx *urdctx, uint8_t code,
     tlv_state.val[0] = 'u'; tlv_state.val[1] = 'r';
     tlv_state.val[2] = 'd'; tlv_state.val[3] = ':';
 
-    c = (char*)&state_counter;
+    c = (u_char*)&state_counter;
     i = 19;
     
     while (i > 4) {
@@ -550,14 +572,27 @@ int urd_rep_encode(struct urd_ctx *urdctx, uint8_t code,
   /* add reply message? */
   if (rep_encode_flags & URD_ENCODE_FLAG_MSG) {
 
-    dgram_header.length += sizeof (tlv_rep_msg);
+    i = snprintf(fmt_buf, sizeof(fmt_buf), "%" PRIu64, otp_count);
 
-/* XXX hard coded to ABCD... */
+    /* should never happen */
+    if (i > URD_TLV_REPLY_MSG_LEN) {
+      xerr_warnx("reply msg encode failed, i=%d", i);
+      i = URD_TLV_REPLY_MSG_LEN;
+    }
+
+    /*
+     * calculate size of tlv_rep_msg.  The full URD_TLV_REPLY_MSG_LEN
+     * space ay not be used and is truncated.  type(1) + len(1) + message(i)
+     */
+    tlv_rep_msg.len = 1 + 1 + i;
+
+    /* add len to total encoded size */
+    dgram_header.length += tlv_rep_msg.len;
+
     tlv_rep_msg.type = RADIUS_ATTRIB_REPLY_MESSAGE;
-    tlv_rep_msg.len = sizeof (tlv_rep_msg);
-    for (i = 0; i < 7; ++i)
-      tlv_rep_msg.val[i] = 'A'+i;
-    tlv_rep_msg.val[7] = 0;
+
+    /* copy in otp_count in ASCII */
+    bcopy(&fmt_buf, &tlv_rep_msg.val, i);
 
   } /* URD_ENCODE_FLAG_MSG */
 
@@ -582,9 +617,8 @@ int urd_rep_encode(struct urd_ctx *urdctx, uint8_t code,
   }
 
   if (rep_encode_flags & URD_ENCODE_FLAG_MSG) {
-    bcopy(&tlv_rep_msg, (char*)&urdctx->rep.pkt_buf + pkt_p,
-      sizeof(tlv_rep_msg));
-    pkt_p += sizeof(tlv_rep_msg);
+    bcopy(&tlv_rep_msg, (char*)&urdctx->rep.pkt_buf + pkt_p, tlv_rep_msg.len);
+    pkt_p += tlv_rep_msg.len;
   }
 
   /* MD5(reply packet + secret) */
@@ -672,7 +706,7 @@ void urd_ctx_free(struct urd_ctx *urdctx)
  *
  */
 int urd_req_cache_update(struct urd_ctx *urdctx, uint8_t rep_code,
-  uint64_t state_counter, int req_cache_flags)
+  uint64_t state_counter, uint64_t otp_count, int req_cache_flags)
 {
   uint16_t req_hash, req_hash_mask, state_hash, state_hash_mask;
   struct urd_req_cache_entry *e;
@@ -710,7 +744,7 @@ int urd_req_cache_update(struct urd_ctx *urdctx, uint8_t rep_code,
     /* insert entry into hash bucket state_chain */
     LIST_INSERT_HEAD(&urdctx->state_cache_bucket[state_hash], e, state_chain);
 
-    e->flags = URD_STATE_CACHE_FLAGS_INUSE;
+    e->flags = URD_STATE_CACHE_FLAG_INUSE;
 
   } /* hash table for state */
 
@@ -729,11 +763,13 @@ int urd_req_cache_update(struct urd_ctx *urdctx, uint8_t rep_code,
 
   e->rad_code = rep_code;
 
+  e->otp_count = otp_count;
+
   e->rad_id = urdctx->req.dgram_header.identifier;
 
   e->rexmit_count = 0;
 
-  e->flags ^= URD_REQ_CACHE_FLAGS_INUSE;
+  e->flags ^= URD_REQ_CACHE_FLAG_INUSE;
 
   /* rollover */
   if (urdctx->req_cache_len == URD_REQ_CACHE_ENTRIES)
@@ -741,23 +777,23 @@ int urd_req_cache_update(struct urd_ctx *urdctx, uint8_t rep_code,
 
   /* if the current entry was previously in use, remove from hash chain */
   if (urdctx->req_cache[urdctx->req_cache_len].flags &
-    URD_REQ_CACHE_FLAGS_INUSE) {
+    URD_REQ_CACHE_FLAG_INUSE) {
 
     LIST_REMOVE(&urdctx->req_cache[urdctx->req_cache_len], req_chain);
 
     urdctx->req_cache[urdctx->req_cache_len].flags &=\
-      ~URD_REQ_CACHE_FLAGS_INUSE;
+      ~URD_REQ_CACHE_FLAG_INUSE;
 
   } /* in use? */
 
   /* if the current entry was previously in use, remove from hash chain */
   if (urdctx->req_cache[urdctx->req_cache_len].flags &
-    URD_STATE_CACHE_FLAGS_INUSE) {
+    URD_STATE_CACHE_FLAG_INUSE) {
 
     LIST_REMOVE(&urdctx->req_cache[urdctx->req_cache_len], state_chain);
 
     urdctx->req_cache[urdctx->req_cache_len].flags &=\
-      ~URD_STATE_CACHE_FLAGS_INUSE;
+      ~URD_STATE_CACHE_FLAG_INUSE;
 
   } /* in use? */
 
@@ -774,6 +810,9 @@ int urd_req_cache_update(struct urd_ctx *urdctx, uint8_t rep_code,
  * UserName and UserPassWord TLV's must be in request (req)
  * and be of length <= URD_USER_NAME_LEN/URD_USER_PASS_LEN
  *
+ * code, otp_count, and state_counter will be updated on cache hit,
+ * else they are unchanged.
+ *
  * Lookup request in cache by Authenticator field.  Additionally
  * verify identifier, user_name, user_pass and state (if present) match
  * the cache'd request.  If the entry has not expired (older than
@@ -785,7 +824,7 @@ int urd_req_cache_update(struct urd_ctx *urdctx, uint8_t rep_code,
  *
  */
 int urd_req_cache_lookup(struct urd_ctx *urdctx, uint8_t *code,
-  uint64_t *state_counter)
+  uint64_t *state_counter, uint64_t *otp_count, int *cache_flags)
 {
   time_t now;
   uint16_t hash, hash_mask;
@@ -843,6 +882,8 @@ int urd_req_cache_lookup(struct urd_ctx *urdctx, uint8_t *code,
             /* cached result code and state */
             *code = e->rad_code;
             *state_counter = e->state_counter;
+            *otp_count = e->otp_count;
+            *cache_flags = e->flags;
 
             match = 1;
             break;
@@ -884,6 +925,8 @@ int urd_req_cache_lookup(struct urd_ctx *urdctx, uint8_t *code,
  *
  * UserName and UserPassWord TLV's must be in request (req)
  * and be of length <= URD_USER_NAME_LEN/URD_USER_PASS_LEN
+ *
+ * code will be updated on cache hit, else it is left unchanged.
  *
  * Lookup request in cache by state field.  Additionally
  * verify user_name matches the initial Access-Request.

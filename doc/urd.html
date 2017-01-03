@@ -43,10 +43,10 @@ NAME="AEN10"
 ><B
 CLASS="COMMAND"
 >urd</B
->  [-?AhdDOux] [-a<TT
+>  [-?AhcdDmMOux] [-a<TT
 CLASS="REPLACEABLE"
 ><I
-> allowed_users_file</I
+> authorized_users_file</I
 ></TT
 >] [-b<TT
 CLASS="REPLACEABLE"
@@ -78,6 +78,16 @@ CLASS="REPLACEABLE"
 ><I
 > secret_file</I
 ></TT
+>] [-S<TT
+CLASS="REPLACEABLE"
+><I
+> auth_service_name</I
+></TT
+>] [-V<TT
+CLASS="REPLACEABLE"
+><I
+> service_name</I
+></TT
 >] [-w<TT
 CLASS="REPLACEABLE"
 ><I
@@ -88,7 +98,7 @@ CLASS="REPLACEABLE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN30"
+NAME="AEN34"
 ></A
 ><H2
 >DESCRIPTION</H2
@@ -105,7 +115,7 @@ CLASS="FILENAME"
 > file in Unix passwd(5)
 format, an optional <TT
 CLASS="FILENAME"
->allowed_users</TT
+>authorized_users</TT
 > file for
 authenticating with a subset of the <TT
 CLASS="FILENAME"
@@ -168,6 +178,12 @@ CLASS="FILENAME"
 >otb_db</TT
 >.</P
 ><P
+>PAM authentication is optionally supported for passwords.  PAM can
+be configured as the sole means of authentication, or the locally
+configured password file may be used as a method of selecting valid
+users to later be authenticated with PAM.  PAM can be used for the 
+reusable password, the OTP API is always used for two factor authentication.</P
+><P
 >The <TT
 CLASS="FILENAME"
 >secret</TT
@@ -182,7 +198,7 @@ with a password this feature will be disabled.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN55"
+NAME="AEN60"
 ></A
 ><H2
 >OPTIONS</H2
@@ -192,32 +208,32 @@ NAME="AEN55"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->-a<TT
+>-a, --authorized-users-db=<TT
 CLASS="REPLACEABLE"
 ><I
-> allowed_users_file</I
+> authorized_users_file</I
 ></TT
 ></DT
 ><DD
 ><P
 >Specify an alternate location for the <TT
 CLASS="FILENAME"
->allowed_users_file</TT
+>authorized_users_file</TT
 >.</P
 ><P
 >The <TT
 CLASS="FILENAME"
->allowed_users_file</TT
+>authorized_users_file</TT
 > contains one username per line.
 When configured this option requires a user to be listed
 in <TT
 CLASS="FILENAME"
->allowed_users_file</TT
+>authorized_users_file</TT
 > for authentication to proceed
 with the password and One Time Password functions.</P
 ></DD
 ><DT
->-A</DT
+>-A, --disable-authorized-users</DT
 ><DD
 ><P
 >Disable <TT
@@ -230,7 +246,7 @@ CLASS="FILENAME"
 > is not used.</P
 ></DD
 ><DT
->-b<TT
+>-b, --bind-ip-address=<TT
 CLASS="REPLACEABLE"
 ><I
 > local_ip</I
@@ -242,7 +258,7 @@ CLASS="REPLACEABLE"
 INADDR_ANY.</P
 ></DD
 ><DT
->-B<TT
+>-B, --bind-udp-port=<TT
 CLASS="REPLACEABLE"
 ><I
 > local_port</I
@@ -254,13 +270,25 @@ CLASS="REPLACEABLE"
 to UDP port 1812.</P
 ></DD
 ><DT
->-d</DT
+>-c, --display-count</DT
+><DD
+><P
+>Force count to be passed to RADIUS NAS.  Not all devices will be able to
+display this field.</P
+></DD
+><DT
+>-d, --debug=<TT
+CLASS="REPLACEABLE"
+><I
+> debug_level</I
+></TT
+></DT
 ><DD
 ><P
 >Enable verbose debugging.</P
 ></DD
 ><DT
->-D</DT
+>-D, --disable-daemon-mode</DT
 ><DD
 ><P
 >Disable daemon mode.  When specified <B
@@ -270,7 +298,20 @@ CLASS="COMMAND"
 run in the background and stdout is available for debugging information.</P
 ></DD
 ><DT
->-o<TT
+>-m, --pam-authentication-enable</DT
+><DD
+><P
+>Authenticate with PAM.  The user must be present in the local password
+and optionally authorized users files before PAM authentication.</P
+></DD
+><DT
+>-M, --pam-authentication-exclusive</DT
+><DD
+><P
+>Authenticate with PAM.  The local password file is not consulted.</P
+></DD
+><DT
+>-o, --otp-db=<TT
 CLASS="REPLACEABLE"
 ><I
 > otp_db</I
@@ -285,13 +326,13 @@ CLASS="FILENAME"
 >.</P
 ></DD
 ><DT
->-O</DT
+>-O, --otp-disable</DT
 ><DD
 ><P
 >Disable the use of One Time Passwords.</P
 ></DD
 ><DT
->-p<TT
+>-p, --password-db=<TT
 CLASS="REPLACEABLE"
 ><I
 > passwd_file</I
@@ -312,7 +353,7 @@ password is hashed with crypt(3) and compared to the hash stored in this file
 for authentication.</P
 ></DD
 ><DT
->-P<TT
+>-P, --pidfile=<TT
 CLASS="REPLACEABLE"
 ><I
 > pid_file</I
@@ -330,7 +371,7 @@ CLASS="COMMAND"
 running on the same server.</P
 ></DD
 ><DT
->-s<TT
+>-s, --server-secret=<TT
 CLASS="REPLACEABLE"
 ><I
 > secret_file</I
@@ -349,7 +390,19 @@ CLASS="FILENAME"
 the NAS and RADIUS server and must be less than 32 bytes.</P
 ></DD
 ><DT
->-u</DT
+>-S, --pam-service-name=<TT
+CLASS="REPLACEABLE"
+><I
+> auth_service_name</I
+></TT
+></DT
+><DD
+><P
+>Specify an alternate name for the PAM authentication service.  Defaults
+to urd.</P
+></DD
+><DT
+>-u, --otp-allow-unknown-user</DT
 ><DD
 ><P
 >Allow users which do not exist in the OTP database to successfully
@@ -357,18 +410,40 @@ authenticate without using a One Time Password, only a valid password
 will be required.</P
 ></DD
 ><DT
->-x</DT
+>-V, --service-name=<TT
+CLASS="REPLACEABLE"
+><I
+> service_name</I
+></TT
+></DT
+><DD
+><P
+>Set service name for send-token function.</P
+></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
+></DD
+><DT
+>-w, --otp-challenge-window=<TT
+CLASS="REPLACEABLE"
+><I
+> window</I
+></TT
+></DT
+><DD
+><P
+>Set the OTP challenge window.</P
+></DD
+><DT
+>-x, --debug-drop-udp-packets</DT
 ><DD
 ><P
 >Drop every other RADIUS request from a NAS.  This is a debugging feature
 intended to stress test the reply cache code.  The reply cache 
 implements state retention required for the use of One Time Passwords.</P
-></DD
-><DT
->-w</DT
-><DD
-><P
->Set the OTP challenge window.</P
 ></DD
 ></DL
 ></DIV
@@ -376,7 +451,7 @@ implements state retention required for the use of One Time Passwords.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN134"
+NAME="AEN167"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -385,7 +460,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN136"
+NAME="AEN169"
 ></A
 ><P
 >The following command will start the urd server, bind it to IP address 
@@ -419,7 +494,7 @@ CLASS="SCREEN"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN144"
+NAME="AEN177"
 ></A
 ><H2
 >AUTHOR</H2
@@ -436,7 +511,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN151"
+NAME="AEN184"
 ></A
 ><H2
 >SEE ALSO</H2

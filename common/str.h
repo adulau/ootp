@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: str.h 85 2009-12-28 00:05:02Z maf $
+ *      $Id: str.h 154 2011-04-06 02:21:29Z maf $
  */
 
 #include <sys/types.h>
@@ -42,7 +42,7 @@ int str_hex_dump(char *buf, u_char *b, size_t n);
 int str_hex_decode(char *in, size_t in_len, u_char *out, size_t out_len);
 void str_ftoc(char *buf, char *f, size_t n);
 int str_input(const char *prompt, char *buf, size_t buf_size, int flags);
-int str_safe(char *input, size_t len);
+int str_safe(char *input, size_t input_max_len, char *ok_set, int flags);
 int str_uint32toa(char *s, uint32_t u);
 
 char *str_lookup8(char *list[], uint8_t id, uint8_t min, uint8_t max);
@@ -59,4 +59,14 @@ int str_find8(char *list[], uint8_t *id, char *s, uint8_t min, uint8_t max);
 
 #define STR_UINT32_LEN     11  /* 2^32-1=4294967295 + NULL = 11 bytes */
 
+#define STR_SAFE_CHECK_LEN       0x0001   /* length */
+#define STR_SAFE_CHECK_ALPHA     0x0002   /* a-zA-Z */
+#define STR_SAFE_CHECK_NUM       0x0004   /* 0-9 */
+#define STR_SAFE_CHECK_FNAME     0x000E   /* ALPHA+NUM+ .-_ */
+#define STR_SAFE_CHECK_SET       0x0010   /* elements are all in char_set */
+#define STR_SAFE_FIX             0x1000   /* fix problem string */
+#define STR_SAFE_WARN            0x2000   /* enable warnings */
+
+#define STR_SAFE_FAIL_CHAR       0x1
+#define STR_SAFE_FAIL_LEN        0x2
 

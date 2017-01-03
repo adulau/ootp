@@ -56,16 +56,16 @@
 \fBotp-control\fP \(em Local user database configuration for One Time Password package\&.
 .SH "SYNOPSIS"
 .PP
-\fBotp-control\fP [-?hnv]  [-c\fI count\fP]  [-C\fI count_ceil\fP]  [-f\fI format\fP]  [-F\fI flags\fP]  [-H\fI sc_hostname\fP]  [-I\fI sc_index\fP]  [-k\fI key\fP]  [-m\fI command_mode\fP]  [-o\fI otpdb_pathname\fP]  [-s\fI status\fP]  [-S\fI sc_flags\fP]  [-t\fI type\fP]  [-u\fI username\fP]  [-w\fI window\fP] 
+\fBotp-control\fP [-?hnv]  [-c\fI count\fP]  [-C\fI count_ceiling\fP]  [-f\fI format\fP]  [-F\fI flag\fP]  [-H\fI sc_hostname\fP]  [-I\fI sc_index\fP]  [-k\fI key\fP]  [-l\fI location\fP]  [-m\fI command_mode\fP]  [-o\fI otp_db\fP]  [-s\fI status\fP]  [-S\fI sc_flags\fP]  [-t\fI type\fP]  [-u\fI username\fP]  [-V\fI service_name\fP]  [-w\fI window\fP] 
 .SH "DESCRIPTION"
 .PP
 The \fBotp-control\fP command is a front end to the
 local One Time Password database\&.  Users can be added, modified
 and removed by \fBotp-control\&.\fP
 .SH "OPTIONS"
-.IP "-c\fI count\fP" 10
+.IP "-c, --count= \fI count\fP" 10
 User count\&.  The count increases with each OTP transaction\&.
-.IP "-C\fI count_ceil\fP" 10
+.IP "-C, --count-ceil= \fI count_ceiling\fP" 10
 User count ceiling\&.  Highest count allowed for this user\&.  Configuring
 the count_ceiling allows a user key to be shared among multiple
 systems each with a unique count window, where count <= count_ceiling\&.
@@ -74,9 +74,9 @@ A count value must only be allowed for authentication once\&.
 .IP "" 10
 Example:
 .IP "" 10
-host=h1, user=bob, count_current=0, count_ceil=10000\&.
+host=h1, user=bob, count_current=0, count_ceiling=10000\&.
 .IP "" 10
-host=h2, user=bob, count_current=10001, count_ceil=20000\&.
+host=h2, user=bob, count_current=10001, count_ceiling=20000\&.
 .IP "" 10
 The number of keys a user must possess is decreased at the expense
 of security dependencies among multiple systems\&.  If system A is
@@ -86,34 +86,37 @@ must be presented to the OTP generator\&.  The additional step of entering
 the count to the OTP generator is not necessary when keys are not
 shared, as the currrent count will increase on the OTP generator and
 system database during authentication\&.
-.IP "-f" 10
+.IP "-f, --format=" 10
 OTP format\&.  One of hex40 dhex40 dec31\&.6 dec31\&.7 dec31\&.8 dec31\&.9 dec31\&.10\&.
 hex40 (40 bit hex) is the default\&.  dec31\&.6 (31 bit decimal truncated to 6
 digits) is suggested by RFC 4226 and may be required to interoperate with
 other HOTP implementations\&.  dhex40 uses the dynamic truncate function
 in RFC 4226, where hex40 always uses the top 40 bits\&.  dhex40 may be the
 default in future releases\&.
-.IP "-F" 10
-OTP flags\&.  All flags are unset by default\&.
+.IP "-F, --flag=" 10
+OTP flag\&.  All flags are unset by default\&.
 .PP
 .nf
    Flag              Description
    -----------------------------------------------------------------
    display-count  :  Display HOTP count when prompted for challenge\&.
+   send-token     :  Send token to user out of band\&.
 .fi
-.IP "-h" 10
+.IP "-h, --help" 10
 Help\&.
-.IP "-H\fI sc_hostname\fP" 10
-Set the SC hostname with the list-sc command mode\&.
-.IP "-I\fI sc_index\fP" 10
-Set the SC index with the list-sc command mode\&.
-.IP "-k\fI key\fP" 10
+.IP "-H, --sc_hostname=\fI sc_hostname\fP" 10
+Set the SC hostname for the list-sc command mode\&.
+.IP "-I, --sc_index=\fI sc_index\fP" 10
+Set the SC index for the list-sc command mode\&.
+.IP "-k, --key=\fI key\fP" 10
 160 bit shared secret key in ASCII HEX\&.  The secret key is shared between
 the OTP generation hardware/software for a user and the local OTP database\&.
 Each user typically will have a unique key unless a shared key with
 unique count space is provisioned\&.  Use - for stdin\&.  Example key:
 C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
-.IP "-m\fI command_mode\fP" 10
+.IP "-l, --location=\fI location\fP" 10
+Location to send token to when SEND_TOKEN flag is set\&.
+.IP "-m, --command_mode=\fI command_mode\fP" 10
 .PP
 .nf
             Mode             Description
@@ -126,6 +129,7 @@ C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
             list-sc            - List user record (SC friendly)
             load               - ASCII load user record(s)
             remove             - Remove user
+            send-token         - Send token to user
             set-count          - Set user count
             set-count-ceil     - Set user count ceiling
             set-flags          - Set user flags
@@ -134,11 +138,11 @@ C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
             set-type           - Set user OTP type
             test               - Test user
 .fi
-.IP "-n" 10
+.IP "-n, --create_database" 10
 Create new database if one does not exist\&.
-.IP "-o\fI otp_pathname\fP" 10
+.IP "-o, --otp-db=\fI otp_db\fP" 10
 Pathname of OTP database\&.
-.IP "-s\fI otp_pathname\fP" 10
+.IP "-s, --status=\fI status\fP" 10
 OTP Status\&.  The default status is active\&.
 .PP
 .nf
@@ -148,18 +152,23 @@ OTP Status\&.  The default status is active\&.
    inactive : OTP may not be required for successful authentication\&.
               The OTP authentication module may be configured to allow
               inactive accounts to authenticate\&.  This may be used to
-              temporarily remove the OTP authentication method for a user\&.
+              temporarily remove the OTP authentication method for a
+              user\&.
    disabled : Account is disabled\&.  OTP authentication will fail\&.
 .fi
-.IP "-S\fI sc_flags\fP" 10
-Set the SC flags with the list-sc command mode\&.  0=CHALLENGE, 1=READERKEY\&.
-.IP "-t\fI type\fP" 10
+.IP "-S, --sc-flags=\fI sc_flags\fP" 10
+Set the SC flags for the list-sc command mode\&.  0=CHALLENGE, 1=READERKEY\&.
+.IP "-t, --type=\fI type\fP" 10
 OTP Type\&.  RFC 4226 HOTP is only supported type\&.
-.IP "-u\fI username\fP" 10
+.IP "-u, --username=\fI username\fP" 10
 Username to perform database operation on\&.
-.IP "-v" 10
+.IP "-v, --verbose" 10
 Enable verbose output (debugging)\&.
-.IP "-w\fI window\fP" 10
+.IP "-V, --service-name=\fI service_name\fP" 10
+Set service name for send-token function\&.
+.IP "--version" 10
+Display software version\&.
+.IP "-w, --challenge-window=\fI window\fP" 10
 Set the maximum window (count above the system count) where an OTP
 will successfully authenticate\&.  For user bob with with OTP generator
 count_current=30, and system OTP database for bob count_current 15, the
@@ -182,7 +191,7 @@ user stored in a separate ASCII : delimited file in base_dir/d\&.
 \fBdump\fP : dump user database in ASCII\&.  User records are separated by a newline\&.
 Fields are : separated\&.  All fields except the username are HEX encoded\&.
 .PP
-#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+#version:user:key:status:format:type:flags:count_cur:count_ceiling:last
 01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000
 .PP
 \fBgenerate\fP : generate OTP for user\&.  The -w flag may be used to generate multiple
@@ -263,7 +272,7 @@ Use the load command to import records in this format\&.
   \fBotp-control -m dump\fP
 .PP
 .nf
-#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+#version:user:key:status:format:type:flags:count_cur:count_ceiling:last
 01:bob:C381739834A63A67B0B9F7F7D36C8C567F6BFB3D:01:01:01:00:0000000000000001:FFFFFFFFFFFFFFFF:000000004AA02F9E
 .fi
 .PP
@@ -290,4 +299,4 @@ Mark Fullmer maf@splintered\&.net
 \fBurd\fP(1)
 \fBbcload\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

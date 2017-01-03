@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: pw.h 13 2009-11-26 16:37:03Z maf $
+ *      $Id: pw.h 155 2011-04-06 02:25:43Z maf $
  */
 
 
@@ -40,6 +40,10 @@
 #define PASS_DB_ENTRY_INACTIVE 0
 #define PASS_DB_ENTRY_ACTIVE 1
 
+#define PASS_DB_TYPE_LOCAL     1
+#define PASS_DB_TYPE_EX_LOCAL  2 /* ignore authorized_users */
+#define PASS_DB_TYPE_PAM       3
+#define PASS_DB_TYPE_EX_PAM    4 /* ignore authorized_users */
 
 #define PASS_DB_AUTH_SUCCESS 0
 #define PASS_DB_AUTH_FAIL    1
@@ -54,8 +58,9 @@ struct pass_db_ctx {
   struct stat pw_sb;
   struct stat au_sb;
   int state;
-  char *pw_fname;
-  char *au_fname;
+  int type;
+  char *loc;       /* password filename or PAM service name */
+  char *au_fname;  /* authorized users filename */
   uint num_entries;
   struct pass_db_entry *pw_entries;
   SLIST_HEAD(pass_db_head, pass_db_entry) bucket[1<<PASS_DB_HASH_BUCKET_BITS];
@@ -71,7 +76,7 @@ struct pass_db_entry {
   char u_hash[PASS_DB_USER_HASH_LEN+1];
 };
 
-struct pass_db_ctx *pass_db_ctx_new(char *pw_fname, char *au_fname);
+struct pass_db_ctx *pass_db_ctx_new(char *loc, char *au_fname, int type);
 void pass_db_ctx_free(struct pass_db_ctx *pdbctx);
 int pass_db_auth(struct pass_db_ctx *pdbctx, char *user_name, char *user_pass);
 int pass_db_load(struct pass_db_ctx *pdbctx);

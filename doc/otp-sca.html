@@ -129,7 +129,7 @@ NAME="AEN39"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->-a<TT
+>-a, --sc-admin-key=<TT
 CLASS="REPLACEABLE"
 ><I
 > admin_keyfile</I
@@ -145,7 +145,7 @@ key, "3030303030303030303030303030303030303030" (HEX), should be changed to
 restrict access to the above commands.</P
 ></DD
 ><DT
->-c<TT
+>-c, --sc-count=<TT
 CLASS="REPLACEABLE"
 ><I
 > count</I
@@ -153,10 +153,12 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Configure the count parameter optionally used by the hotp-gen command.</P
+>Configure the count parameter optionally used by the hotp-gen command.
+A count value of 0 indicates the HOTP value is to be calculated with the
+current stored count.</P
 ></DD
 ><DT
->-d<TT
+>-d, --debug=<TT
 CLASS="REPLACEABLE"
 ><I
 > debug_level</I
@@ -167,13 +169,13 @@ CLASS="REPLACEABLE"
 >Set debug level.</P
 ></DD
 ><DT
->-h</DT
+>-h, --help</DT
 ><DD
 ><P
 >Help.</P
 ></DD
 ><DT
->-i<TT
+>-i, --sc-index=<TT
 CLASS="REPLACEABLE"
 ><I
 > index</I
@@ -188,13 +190,13 @@ capacity on the Smart Card may further restrict the index range.  The
 ZC3.9 BasicCard with firmware revision 3 supports up to 85 records.</P
 ></DD
 ><DT
->-l</DT
+>-l, --list-readers</DT
 ><DD
 ><P
 >List SC Readers</P
 ></DD
 ><DT
->-m<TT
+>-m, --sc-command=<TT
 CLASS="REPLACEABLE"
 ><I
 > command_mode</I
@@ -237,7 +239,7 @@ CLASS="SCREEN"
    r include reader key in request.&#13;</PRE
 ></DD
 ><DT
->-M<TT
+>-M, --sc-command-modifier=<TT
 CLASS="REPLACEABLE"
 ><I
 > modifiers</I
@@ -249,11 +251,17 @@ CLASS="REPLACEABLE"
 command will generate output in otpdb format.  Count (c) and Host (h)
 used with hotp-gen allow passing the Count and Host parameters 
 respectively.  The Smart Card may not be configured to support
-all variations of a command.
-variations </P
+all variations of a command.</P
 ></DD
 ><DT
->-r<TT
+>-p, --no-pin</DT
+><DD
+><P
+>Do not prompt for PIN.  The Smart Card does not require a PIN when admin
+mode is enabled.</P
+></DD
+><DT
+>-r, --reader=<TT
 CLASS="REPLACEABLE"
 ><I
 > reader</I
@@ -277,7 +285,7 @@ reader.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
 with serial port /dev/cuaU0.</P
 ></DD
 ><DT
->-R<TT
+>-R, --sc-reader-key=<TT
 CLASS="REPLACEABLE"
 ><I
 > reader_keyfile</I
@@ -297,7 +305,7 @@ key is "00000" or 3030303030.</P
 PAR II reader this is set in the PAR II EEProm.</P
 ></DD
 ><DT
->-u<TT
+>-u, --sc-username=<TT
 CLASS="REPLACEABLE"
 ><I
 > username</I
@@ -309,7 +317,7 @@ CLASS="REPLACEABLE"
 d modifier.</P
 ></DD
 ><DT
->-v<TT
+>-v, --sc-version=<TT
 CLASS="REPLACEABLE"
 ><I
 > card_api_version</I
@@ -322,13 +330,19 @@ and Smart Card changed between version 2 and 3.  See command_mode notes
 above.  The default version is 3.  Configuring version 2 will allow
 maintenance of Smart Card with version 2 firmware.</P
 ></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
+></DD
 ></DL
 ></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN105"
+NAME="AEN113"
 ></A
 ><H2
 >SMART CARD COMMANDS</H2
@@ -339,8 +353,8 @@ CLASS="COMMAND"
 >
 : enable administrative mode.  The commands admin-disable, admin-key-set,
 balancecard-set, host-get, and sc-clear require admin mode to be enabled.
-pin-set and commands requiring a PIN will not require a valid PIN while
-the SC is in admin mode.  A new key can be generated with
+pin-set and commands accepting a PIN will not require the PIN to be valid
+while the SC is in admin mode.  A new key can be generated with
 <B
 CLASS="COMMAND"
 >openssl rand 160 | openssl sha1</B
@@ -434,7 +448,12 @@ CLASS="SCREEN"
 
 F1: enable reader authentication by the SC for the GetHOTP* commands.
 
-F2..F11: reserved
+F2: enable base10 display
+
+F3..F7: reserved
+
+F8-11: FMT3-FMT0. 0000=HEX40   0001=HEX40   0010=DEC31.6  0011=DEC31.7
+                  0100=DEC31.8 0101=DEC31.9 0110=DEC31.10 0011=DHEX40 
 
 Example host record with index=0, count=7, hostname=dev1.eng,
                          key=E4AACE5EC7291C405ED28949BB6DACA05768319D
@@ -573,7 +592,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN147"
+NAME="AEN155"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -582,7 +601,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN149"
+NAME="AEN157"
 ></A
 ><P
 >Change the administratative key from the default.  Disable admin mode
@@ -636,7 +655,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN160"
+NAME="AEN168"
 ></A
 ><P
 >Use <B
@@ -697,7 +716,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN172"
+NAME="AEN180"
 ></A
 ><P
 >Dump card contents to stdout.  Note fields are encoded in HEX including
@@ -725,7 +744,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN177"
+NAME="AEN185"
 ></A
 ><P
 >Reset user PIN for card with secret.key as the admin key.</P
@@ -770,7 +789,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN186"
+NAME="AEN194"
 ></A
 ><P
 >Generate HOTP for dev1.  Use hostname-get to find the index for dev1.  Use
@@ -811,7 +830,7 @@ HOTP: 52DCD05FE5 -- dev1</SAMP
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN193"
+NAME="AEN201"
 ></A
 ><H2
 >AUTHOR</H2
@@ -828,7 +847,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN200"
+NAME="AEN208"
 ></A
 ><H2
 >SEE ALSO</H2

@@ -56,7 +56,7 @@
 \fBotp-ov-plugin\fP \(em OpenVPN plug-in authentication module for OTP database\&.
 .SH "SYNOPSIS"
 .PP
-\fBotp-ov-plugin\fP [-?hv]  [-o\fI otpdb_fname\fP]  [-w\fI otp_window\fP] 
+\fBotp-ov-plugin\fP [-?hv]  [-o\fI otpdb_fname\fP]  [-V\fI service_name\fP]  [-w\fI otp_window\fP] 
 .SH "DESCRIPTION"
 .PP
 The \fBotp-ov-plugin\fP command is plug-in authentication
@@ -68,14 +68,21 @@ A successful authentication will set a return code of
 \fB1\fR, and program failure
 \fB-1\fR\&.
 .SH "OPTIONS"
-.IP "-h" 10
+.IP "-h, --help" 10
 Help
-.IP "-o\fI otpdb_pathname\fP" 10
+.IP "-o, --otp-db=\fI otpdb_pathname\fP" 10
 Pathname of OTP database\&.
-.IP "-v" 10
+.IP "-u, --otp-allow-unknown-user" 10
+Allow users which do not exist in the OTP database to successfully
+authenticate without using a One Time Password\&.
+.IP "-V, --service-name=\fI service_name\fP" 10
+Set service name for send-token function\&.
+.IP "-v, --verbose" 10
 Verbose
-.IP "-w" 10
+.IP "-w, --otp-challenge-window=" 10
 Set the OTP challenge window\&.
+.IP "--version" 10
+Display software version\&.
 .SH "EXAMPLES"
 .PP
 Test the module with user bob\&.
@@ -103,4 +110,4 @@ Mark Fullmer maf@splintered\&.net
 \fBbcload\fP(1)
 \fBOpenVPN\fP(8)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

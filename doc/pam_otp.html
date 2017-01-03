@@ -128,8 +128,23 @@ CLASS="REPLACEABLE"
 ><DD
 ><P
 >A user not in the OTP database will be denied access with the
-require_db_entry option is set.  By default users not in the OTP
-database are permitted.</P
+require_db_entry option is set.  This option is set by default.
+require_db_entry and allow_unknown user set the same flag and are
+mutually exclusive.</P
+></DD
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
+>allow_unknown_user</I
+></TT
+></DT
+><DD
+><P
+>A user not in the OTP database will be allowed access with the
+allow_unknown_user option set.  This option is disabled by default.
+require_db_entry and allow_unknown user set the same flag and are
+mutually exclusive.</P
 ></DD
 ><DT
 ><TT
@@ -152,6 +167,20 @@ CLASS="FILENAME"
 ><TT
 CLASS="REPLACEABLE"
 ><I
+>service=</I
+></TT
+><TT
+CLASS="FILENAME"
+>service_name</TT
+></DT
+><DD
+><P
+>Service name for use with send-token option.</P
+></DD
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
 >window=window</I
 ></TT
 ></DT
@@ -165,7 +194,7 @@ CLASS="REPLACEABLE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN58"
+NAME="AEN69"
 ></A
 ><H2
 >AUTHOR</H2
@@ -182,7 +211,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN65"
+NAME="AEN76"
 ></A
 ><H2
 >SEE ALSO</H2

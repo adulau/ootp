@@ -56,14 +56,14 @@
 \fBurd\fP \(em Micro footprint RADIUS daemon with One Time Password support\&.
 .SH "SYNOPSIS"
 .PP
-\fBurd\fP [-?AhdDOux]  [-a\fI allowed_users_file\fP]  [-b\fI local_ip\fP]  [-B\fI local_port\fP]  [-o\fI otp_db\fP]  [-p\fI passwd_file\fP]  [-P\fI pid_file\fP]  [-s\fI secret_file\fP]  [-w\fI otp_window\fP] 
+\fBurd\fP [-?AhcdDmMOux]  [-a\fI authorized_users_file\fP]  [-b\fI local_ip\fP]  [-B\fI local_port\fP]  [-o\fI otp_db\fP]  [-p\fI passwd_file\fP]  [-P\fI pid_file\fP]  [-s\fI secret_file\fP]  [-S\fI auth_service_name\fP]  [-V\fI service_name\fP]  [-w\fI otp_window\fP] 
 .SH "DESCRIPTION"
 .PP
 The \fBurd\fP daemon implements a minimal subset
 of the RADIUS protocol for user authentication with optional
 One Time Passwords\&.  Accounting is not supported\&.  Configuration
 files include a \fBpasswd\fP file in Unix passwd(5)
-format, an optional \fBallowed_users\fP file for
+format, an optional \fBauthorized_users\fP file for
 authenticating with a subset of the \fBpasswd\fP file, a
 \fBsecret\fP file for the shared RADIUS secret, and
 \fBotp_db\fP for One Time Password support\&.
@@ -83,6 +83,12 @@ before any Read Modify Write operations are performed\&.
 .PP
 An alternate OTP database can be specified as \fBotb_db\fP\&.
 .PP
+PAM authentication is optionally supported for passwords\&.  PAM can
+be configured as the sole means of authentication, or the locally
+configured password file may be used as a method of selecting valid
+users to later be authenticated with PAM\&.  PAM can be used for the 
+reusable password, the OTP API is always used for two factor authentication\&.
+.PP
 The \fBsecret\fP file contains the key shared
 by the RADIUS NAS and RADIUS server\&.  It must be less than 32 bytes\&.
 .PP
@@ -91,56 +97,71 @@ to authenticate successfully will toggle debugging and dump the internal
 state and request cache respectively\&.  If these users are not configured
 with a password this feature will be disabled\&.
 .SH "OPTIONS"
-.IP "-a\fI allowed_users_file\fP" 10
-Specify an alternate location for the \fBallowed_users_file\fP\&.
+.IP "-a, --authorized-users-db=\fI authorized_users_file\fP" 10
+Specify an alternate location for the \fBauthorized_users_file\fP\&.
 .IP "" 10
-The \fBallowed_users_file\fP contains one username per line\&.
+The \fBauthorized_users_file\fP contains one username per line\&.
 When configured this option requires a user to be listed
-in \fBallowed_users_file\fP for authentication to proceed
+in \fBauthorized_users_file\fP for authentication to proceed
 with the password and One Time Password functions\&.
-.IP "-A" 10
+.IP "-A, --disable-authorized-users" 10
 Disable \fBauthorized_users\fP feature\&.  This option must
 be set if the \fBauthorized_users_file\fP is not used\&.
-.IP "-b\fI local_ip\fP" 10
+.IP "-b, --bind-ip-address=\fI local_ip\fP" 10
 Specify an IP address to bind(2) to\&.  The default behavior will bind to
 INADDR_ANY\&.
-.IP "-B\fI local_port\fP" 10
+.IP "-B, --bind-udp-port=\fI local_port\fP" 10
 Specify the local UDP port to bind(2) to\&.  The default behavior will bind
 to UDP port 1812\&.
-.IP "-d" 10
+.IP "-c, --display-count" 10
+Force count to be passed to RADIUS NAS\&.  Not all devices will be able to
+display this field\&.
+.IP "-d, --debug=\fI debug_level\fP" 10
 Enable verbose debugging\&.
-.IP "-D" 10
+.IP "-D, --disable-daemon-mode" 10
 Disable daemon mode\&.  When specified \fBurd\fP will not 
 run in the background and stdout is available for debugging information\&.
-.IP "-o\fI otp_db\fP" 10
+.IP "-m, --pam-authentication-enable" 10
+Authenticate with PAM\&.  The user must be present in the local password
+and optionally authorized users files before PAM authentication\&.
+.IP "-M, --pam-authentication-exclusive" 10
+Authenticate with PAM\&.  The local password file is not consulted\&.
+.IP "-o, --otp-db=\fI otp_db\fP" 10
 Specify an alternate location for the One Time Password database
 \fBotp_db\fP\&.
-.IP "-O" 10
+.IP "-O, --otp-disable" 10
 Disable the use of One Time Passwords\&.
-.IP "-p\fI passwd_file\fP" 10
+.IP "-p, --password-db=\fI passwd_file\fP" 10
 Specify an alternate location for the \fBpasswd\fP file\&.  The \fBpasswd\fP file is in Unix passwd(5) format\&.
 Fields beyond the username and password hash are ignored\&.  The users
 password is hashed with crypt(3) and compared to the hash stored in this file
 for authentication\&.
-.IP "-P\fI pid_file\fP" 10
+.IP "-P, --pidfile=\fI pid_file\fP" 10
 Specify an alternate location for a file containing the process ID
 of the RADIUS server\&.  If a listen IP address or non standard UDP listen
 port is configured the PID filename will contain the IP address and
 port to differentiate it from other instances of \fBurd\fP running on the same server\&.
-.IP "-s\fI secret_file\fP" 10
+.IP "-s, --server-secret=\fI secret_file\fP" 10
 Specify an alternate location for the \fBsecret_file\fP\&.
 The \fBsecret_file\fP contains the shared secret between
 the NAS and RADIUS server and must be less than 32 bytes\&.
-.IP "-u" 10
+.IP "-S, --pam-service-name=\fI auth_service_name\fP" 10
+Specify an alternate name for the PAM authentication service\&.  Defaults
+to urd\&.
+.IP "-u, --otp-allow-unknown-user" 10
 Allow users which do not exist in the OTP database to successfully
 authenticate without using a One Time Password, only a valid password
 will be required\&.
-.IP "-x" 10
+.IP "-V, --service-name=\fI service_name\fP" 10
+Set service name for send-token function\&.
+.IP "--version" 10
+Display software version\&.
+.IP "-w, --otp-challenge-window=\fI window\fP" 10
+Set the OTP challenge window\&.
+.IP "-x, --debug-drop-udp-packets" 10
 Drop every other RADIUS request from a NAS\&.  This is a debugging feature
 intended to stress test the reply cache code\&.  The reply cache 
 implements state retention required for the use of One Time Passwords\&.
-.IP "-w" 10
-Set the OTP challenge window\&.
 .SH "EXAMPLES"
 .PP
 The following command will start the urd server, bind it to IP address 
@@ -168,4 +189,4 @@ Mark Fullmer maf@splintered\&.net
 \fBbcload\fP(1)
 \fBotp-ov-plugin\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: str.c 87 2009-12-28 00:05:53Z maf $
+ *      $Id: str.c 164 2011-05-11 03:57:41Z maf $
  */
 
 #include <termios.h>
@@ -279,6 +279,9 @@ int str_input(const char *prompt, char *buf, size_t buf_size, int flags)
 
     t.c_lflag &= ~ECHO;
 
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &t) < 0)
+      return -1;
+
   }
 
   printf("%s", prompt); fflush(stdout);
@@ -326,6 +329,9 @@ str_input_out:
 
     t.c_lflag |= ECHO;
 
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &t) < 0)
+      return -1;
+
   }
 
   return ret;
@@ -335,58 +341,106 @@ str_input_out:
 /*
  * function: str_safe
  *
- * Ensure length of string is not > len
- * note n is the length of the string
- * where n+1 bytes are required to store
- * it with trailing null.
- *
- * Ensure string is limited to [a-zA-Z0-9.]
- *
- * First invalid character is set to 0.
- *
- * returns "safe" string
+ * see STR_SAFE_*
  *
  */
-int str_safe(char *input, size_t len)
+int str_safe(char *input, size_t input_len_max, char *ok_set, int flags)
 {
-  size_t n;
-  int ret;
+  size_t n, input_len, ok_len, s;
+  int ret, null_flag, ok_flag;
 
   ret = 0; /* success */
 
-  n = strlen(input);
+  null_flag = 0;
+  for (input_len = 0; input_len <= input_len_max; ++input_len) {
 
-  /* bounds verification */
-  if (n > len) {
-    input[len] = 0;
-    ret = -1;
+    if (input[input_len] == 0) {
+
+      null_flag = 1;
+      break;
+
+    }
+
   }
 
-  for (n = 0; n < len; ++n) {
+  if (flags & STR_SAFE_CHECK_LEN) {
 
-    /* a-z */
-    if ((input[n] >= 'a') && (input[n] <= 'z'))
-      continue;
+    if (!null_flag) {
 
-    /* A-Z */
-    if ((input[n] >= 'A') && (input[n] <= 'Z'))
-      continue;
+      if (flags & STR_SAFE_WARN)
+        xerr_warnx("%s: size overrun", __func__);
 
-    /* 0-9 */
-    if ((input[n] >= '0') && (input[n] <= '9'))
-      continue;
+      if (flags & STR_SAFE_FIX) {
 
-    /* . */
-    if (input[n] == '.')
-      continue;
+        input[input_len_max] = 0;
+        input_len = input_len_max;
 
-    /* unsafe */
+      }
 
-    input[n] = 0;
-    ret = -1;
-    break;
+      ret |= STR_SAFE_FAIL_LEN;
 
-  } /* for each byte in input */
+    }
+
+  } /* STR_SAFE_CHECK_LEN */
+
+  if (flags & (STR_SAFE_CHECK_ALPHA|STR_SAFE_CHECK_NUM|STR_SAFE_CHECK_SET)) {
+
+    for (n = 0; n < input_len; ++n) {
+
+      if (flags & STR_SAFE_CHECK_ALPHA) {
+
+        /* a-z */
+        if ((input[n] >= 'a') && (input[n] <= 'z'))
+          continue;
+
+        /* A-Z */
+        if ((input[n] >= 'A') && (input[n] <= 'Z'))
+          continue;
+
+      } /* STR_SAFE_CHECK_ALPHA */
+
+      if (flags & STR_SAFE_CHECK_NUM) {
+
+        /* 0-9 */
+        if ((input[n] >= '0') && (input[n] <= '9'))
+          continue;
+
+      } /* STR_SAFE_CHECK_NUM */
+
+      if (flags & STR_SAFE_CHECK_SET) {
+
+        ok_len = strlen(ok_set);
+
+        ok_flag = 0; /* bad */
+        for (s = 0; s < ok_len; ++s) {
+
+          if (input[n] == ok_set[s]) {
+
+            ok_flag = 1; /* good */
+
+            break;
+
+          }
+
+        } /* test char in ok_set */
+
+        if (ok_flag)
+          continue;
+
+      } /* STR_SAFE_CHECK_SET */
+
+      ret |= STR_SAFE_FAIL_CHAR;
+
+      /* unsafe */
+      if (flags & STR_SAFE_WARN)
+        xerr_warnx("%s: illegal char @ index=%d", __func__, n);
+
+      if (flags & STR_SAFE_FIX)
+        input[input_len] = '_';
+
+    } /* for each byte in input */
+
+  } /* STR_SAFE_CHECK_FNAME */
 
   return ret;
 
@@ -501,7 +555,6 @@ int str_setflag8(char *list[], uint8_t *flags, char *s, uint8_t min,
   uint8_t max)
 {
   int i;
-  *flags = 0;
 
   for (i = min; i < max; ++i) {
     if (!strcasecmp(s, list[i]))

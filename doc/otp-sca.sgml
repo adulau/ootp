@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: otp-sca.sgml 62 2009-12-18 17:26:31Z maf $ -->
+<!-- $Id: otp-sca.sgml 126 2010-06-15 14:23:02Z maf $ -->
 
 <refentry>
 
@@ -55,7 +55,7 @@ with the appropriate administratative key.
 <variablelist>
 
 <varlistentry>
-<term>-a<replaceable> admin_keyfile</replaceable></term>
+<term>-a, --sc-admin-key=<replaceable> admin_keyfile</replaceable></term>
 <listitem>
 <para>
 Smart Card administratative key.  The admin-enable command and
@@ -69,16 +69,18 @@ restrict access to the above commands.
 </varlistentry>
 
 <varlistentry>
-<term>-c<replaceable> count</replaceable></term>
+<term>-c, --sc-count=<replaceable> count</replaceable></term>
 <listitem>
 <para>
 Configure the count parameter optionally used by the hotp-gen command.
+A count value of 0 indicates the HOTP value is to be calculated with the
+current stored count.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>-d<replaceable> debug_level</replaceable></term>
+<term>-d, --debug=<replaceable> debug_level</replaceable></term>
 <listitem>
 <para>
 Set debug level.
@@ -87,7 +89,7 @@ Set debug level.
 </varlistentry>
 
 <varlistentry>
-<term>-h</term>
+<term>-h, --help</term>
 <listitem>
 <para>
 Help.
@@ -96,7 +98,7 @@ Help.
 </varlistentry>
 
 <varlistentry>
-<term>-i<replaceable> index</replaceable></term>
+<term>-i, --sc-index=<replaceable> index</replaceable></term>
 <listitem>
 <para>
 Set the 8 bit index.  The Smart Card contains numerically indexed records
@@ -108,7 +110,7 @@ ZC3.9 BasicCard with firmware revision 3 supports up to 85 records.
 </listitem>
 
 <varlistentry>
-<term>-l</term>
+<term>-l, --list-readers</term>
 <listitem>
 <para>
 List SC Readers
@@ -117,7 +119,7 @@ List SC Readers
 </varlistentry>
 
 <varlistentry>
-<term>-m<replaceable> command_mode</replaceable></term>
+<term>-m, --sc-command=<replaceable> command_mode</replaceable></term>
 <listitem>
 <para>
 </para>
@@ -158,7 +160,7 @@ List SC Readers
 </varlistentry>
 
 <varlistentry>
-<term>-M<replaceable> modifiers</replaceable></term>
+<term>-M, --sc-command-modifier=<replaceable> modifiers</replaceable></term>
 <listitem>
 <para>
 Configure command_mode modifiers.  Modifier d applied to the host-get
@@ -166,13 +168,22 @@ command will generate output in otpdb format.  Count (c) and Host (h)
 used with hotp-gen allow passing the Count and Host parameters 
 respectively.  The Smart Card may not be configured to support
 all variations of a command.
-variations 
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>-r<replaceable> reader</replaceable></term>
+<term>-p, --no-pin</term>
+<listitem>
+<para>
+Do not prompt for PIN.  The Smart Card does not require a PIN when admin
+mode is enabled.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-r, --reader=<replaceable> reader</replaceable></term>
 <listitem>
 <para>
 Set Smart Card reader.  Use -l to list available readers.  A reader
@@ -188,7 +199,7 @@ with serial port /dev/cuaU0.
 </varlistentry>
 
 <varlistentry>
-<term>-R<replaceable> reader_keyfile</replaceable></term>
+<term>-R, --sc-reader-key=<replaceable> reader_keyfile</replaceable></term>
 <listitem>
 <para>
 Smart Card Reader key.  The reader-key-set command can be used
@@ -208,7 +219,7 @@ PAR II reader this is set in the PAR II EEProm.
 </varlistentry>
 
 <varlistentry>
-<term>-u<replaceable> username</replaceable></term>
+<term>-u, --sc-username=<replaceable> username</replaceable></term>
 <listitem>
 <para>
 Set username.  The username is used with the host-get command and
@@ -218,7 +229,7 @@ d modifier.
 </varlistentry>
 
 <varlistentry>
-<term>-v<replaceable> card_api_version</replaceable></term>
+<term>-v, --sc-version=<replaceable> card_api_version</replaceable></term>
 <listitem>
 <para>
 Set the Smart Card API version.  The binary API between the terminal
@@ -229,6 +240,14 @@ maintenance of Smart Card with version 2 firmware.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>--version</term>
+<listitem>
+<para>
+Display software version.
+</para>
+</listitem>
+</varlistentry>
 
 </variablelist>
 </refsect1>
@@ -240,8 +259,8 @@ maintenance of Smart Card with version 2 firmware.
 <command>admin-enable</command>
 : enable administrative mode.  The commands admin-disable, admin-key-set,
 balancecard-set, host-get, and sc-clear require admin mode to be enabled.
-pin-set and commands requiring a PIN will not require a valid PIN while
-the SC is in admin mode.  A new key can be generated with
+pin-set and commands accepting a PIN will not require the PIN to be valid
+while the SC is in admin mode.  A new key can be generated with
 <command>openssl rand 160 | openssl sha1</command>.  The hotp-gen
 command will automatically disable admin mode.
 </para>
@@ -318,7 +337,12 @@ F0: challenge (count) input is required by the user.
 
 F1: enable reader authentication by the SC for the GetHOTP* commands.
 
-F2..F11: reserved
+F2: enable base10 display
+
+F3..F7: reserved
+
+F8-11: FMT3-FMT0. 0000=HEX40   0001=HEX40   0010=DEC31.6  0011=DEC31.7
+                  0100=DEC31.8 0101=DEC31.9 0110=DEC31.10 0011=DHEX40 
 
 Example host record with index=0, count=7, hostname=dev1.eng,
                          key=E4AACE5EC7291C405ED28949BB6DACA05768319D

@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-# $Id: otpdb2sc 40 2009-12-01 16:28:53Z maf $
+# $Id: otpdb2sc 138 2010-06-15 15:34:14Z maf $
 
 OTPCONTROL="otp-control"
 DDIR="/priv/HOTP"
@@ -17,7 +17,7 @@ fi
 if [ "X$3" = "X" ]; then
   FLAGS=""
 else
-  FLAGS="-F$3"
+  FLAGS="-S$3"
 fi
 
 if [ ! -e $OTPDB ]; then
@@ -26,7 +26,7 @@ fi
 
 touch $CARDF
 
-idx=`wc -l $CARDF | awk '{print $1}`
+idx=`wc -l $CARDF | awk '{print $1}'`
 idx2=$idx
 if [ $idx -lt 10 ]; then
   idx2="0$idx"

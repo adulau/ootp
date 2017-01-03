@@ -1,4 +1,4 @@
-# $Id: Makefile 13 2009-11-26 16:37:03Z maf $
+# $Id: Makefile 153 2011-04-01 02:38:36Z maf $
 
 INSTALL=install -c -m0644
 
@@ -16,7 +16,7 @@ MISCDIR=/usr/local/ootp/doc
 	docbook-to-man $*.sgml > $@
 
 .sgml.html:
-	openjade -V nochunks -c /usr/local/share/sgml/docbook/dsssl/modular/catalog -c /usr/local/share/sgml/docbook/catalog -c /usr/local/share/sgml/jade/catalog -d /usr/local/share/sgml/docbook/dsssl/modular/html/docbook.dsl -t sgml $*.sgml > $*.html
+	openjade -V nochunks -c /usr/local/share/sgml/docbook/dsssl/modular/catalog -c /usr/local/share/sgml/docbook/3.1/dtd/catalog -c /usr/local/share/sgml/jade/catalog -d /usr/local/share/sgml/docbook/dsssl/modular/html/docbook.dsl -t sgml $*.sgml > $*.html
 
 MAN1S = htsoft-downloader.1 bcload.1 otp-control.1 otp-ov-plugin.1\
 	pam_otp.1 urd.1 otp-sca.1 otp-sct.1

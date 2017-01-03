@@ -24,7 +24,7 @@
 ' OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ' SUCH DAMAGE.
 '
-'      $Id: HOTPC.BAS 92 2009-12-28 02:45:54Z maf $
+'      $Id: HOTPC.BAS 148 2011-03-31 00:46:42Z maf $
 '
 #include "sha-1.def"
 #include "preader.def"
@@ -56,6 +56,7 @@ Const HOTPNum = 50
 '                         to global, reorg balance reader code
 '                         naming consistency, default 50 systems
 '                 Rev 8 - release Rev7
+'                 Rev 9 - CheckPIN for GetHOTP*, myReaderKey
 
 ' 20 byte scratch area addressable as 5 32bit vars
 public str20 as String*20
@@ -83,7 +84,7 @@ public u32b3 as Byte at u32+3
 public HOTPfmt as Byte
 
 ' Code version
-Const HOTPCodeVersion = 8
+Const HOTPCodeVersion = 9
 
 ' Capabilities (conditionally compiled in functions)
 eeprom Capabilities as Long = CAPSETHOST + CAPGETHOST + CAPGETHOSTNAME + _
@@ -153,7 +154,7 @@ eeprom eestr20 as String*20
 eeprom PIN as String*5 = DefaultPIN
 
 ' Reader Key.  Weak authentication for reader
-eeprom readerKey as String*5 = "00000"
+eeprom ReaderKey as String*5 = "00000"
 
 ' The balance card can only use one of the host definitions.
 eeprom BalanceCardIndex = 255 ' Disabled
@@ -163,17 +164,17 @@ eeprom AdminMode as Byte = 1
 
 ' Keep track of PIN failures
 eeprom PINFailCount as Byte = 0
-eeprom readerKeyFailCount as Byte = 0
+eeprom ReaderKeyFailCount as Byte = 0
 Const MaxPINFail = 10
 Const MaxReaderKeyFail = 2
 
 declare Sub Truncate(Idx as Byte)
 
 declare Sub HOTPCommon(ReadOnly Idx as Byte, ReadOnly Count as Long, _
-  ReadOnly myPIN as String*5, ReadOnly readerKey as String*5)
+  ReadOnly myPIN as String*5, ReadOnly myReaderKey as String*5)
 
 declare Function CheckReaderKey(ReadOnly Idx as Byte, _
-  ReadOnly myKey as String*5) as Byte
+  ReadOnly myReaderKey as String*5) as Byte
 
 declare Function CheckPIN(ReadOnly myPIN as String*5) as Byte
 
@@ -184,7 +185,7 @@ declare Function CheckIndex(Idx as Byte) as Byte
 
 ' Common HOTP generation code
 Sub HOTPCommon(ReadOnly Idx as Byte, ReadOnly Count32 as Long, _
-  ReadOnly myPIN as String*5, ReadOnly readerKey as String*5)
+  ReadOnly myPIN as String*5, ReadOnly myReaderKey as String*5)
 
   ' disable admin mode on first use.
   if (AdminMode = 1) then
@@ -196,9 +197,15 @@ Sub HOTPCommon(ReadOnly Idx as Byte, ReadOnly Count32 as Long, _
     SW1SW2 = swAccessDenied
     Exit
   end if
+
+  ' check PIN
+  if CheckPIN(myPIN) <> 0 then
+    SW1SW2 = swAccessDenied
+    Exit
+  end if
  
   ' Check reader access
-  if CheckReaderKey(Idx, readerKey) <> 0 then
+  if CheckReaderKey(Idx, myReaderKey) <> 0 then
     SW1SW2 = swAccessDenied
     Exit
   end if
@@ -300,7 +307,6 @@ Function CheckPIN(ReadOnly myPIN as String*5) as Byte
 
   if AdminMode = 1 then
     CheckPIN = 0 ' success
-    PINFailCount = 0 ' reset
   else
     if PINFailCount >= MaxPINFail then
       CheckPIN = 2 ' fail
@@ -318,18 +324,20 @@ Function CheckPIN(ReadOnly myPIN as String*5) as Byte
 End Function ' CheckPIN
 
 Function CheckReaderKey(ReadOnly Idx as Byte, _
-  ReadOnly myKey as String*5) as Byte
+  ReadOnly myReaderKey as String*5) as Byte
 
   if (Asc(HOTPHost(Idx)(2)) AND &H80) then
-    if myKey <> readerKey then
-      readerKeyFailCount = readerKeyFailCount + 1
-      if (readerKeyFailCount >= MAXReaderKeyFail) then
-        PINFailCount = MaxPINFail ' Lock card
-      end if
-      CheckReaderKey = 1 ' Fail
+    if (ReaderKeyFailCount >= MAXReaderKeyFail) then
+      PINFailCount = MaxPINFail ' Lock card
+      CheckReaderKey = 1 ' fail
     else
-      readerKeyFailCount = 0
-      CheckReaderKey = 0 ' Success
+      if myReaderKey <> ReaderKey then
+        CheckReaderKey = 1 ' Fail
+        ReaderKeyFailCount = ReaderKeyFailCount + 1
+      else
+        CheckReaderKey = 0 ' Success
+        ReaderKeyFailCount = 0 ' reset on good key
+      end if
     end if
   else
     CheckReaderKey = 0 'Success
@@ -464,6 +472,11 @@ Command &H80 &H48 SetAdminMode(Mode as Byte, K as String*20)
     SW1SW2 = swAccessDenied
   else
     AdminMode = Mode
+  end if
+
+  if AdminMode = 1 then
+    ReaderKeyFailCount = 0 ' reset
+    PINFailCount = 0 ' reset
   end if
 
 End Command ' SetAdminMode
@@ -628,7 +641,7 @@ End Command ' GetHOTPHost
 Command &H80 &H5C GetHOTPHostCount32(Idx as Byte, myPIN as String*5,_
   Count32 as Long, HOTP as String*5, HostName as String*12)
 
-  Call HOTPCommon(Idx, Count32, myPIN, readerKey)
+  Call HOTPCommon(Idx, Count32, myPIN, HOTP)
   HOTP = HOTPTruncated
   HostName = HOTPHost(Idx)
 
@@ -656,7 +669,7 @@ Command &H80 &H5E ClearAll()
 
   PINFailCount = 0
 
-  readerKeyFailCount = 0
+  ReaderKeyFailCount = 0
 
   AdminMode = 1
 
@@ -667,18 +680,18 @@ Command &H80 &H5E ClearAll()
 End Command ' ClearAll
 #endif 'ENABLECCLEARALL
 
-#ifdef ENABLESETREADERKEY
-Command &H80 &H60 SetReaderKey(myKey as String*5)
+#ifdef ENABLESETReaderKey
+Command &H80 &H60 SetReaderKey(myReaderKey as String*5)
 
   if CheckAdmin() <> 0 then
     SW1SW2 = swAccessDenied
     Exit
+  else
+    ReaderKey = myReaderKey
   end if
 
-  readerKey = myKey
-
 End Command ' SetReaderKey
-#endif 'ENABLECSETREADERKEY
+#endif 'ENABLECSETReaderKey
 
 Command &H80 &H90 GetCapabilities(C as Long)
 

@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: otp-ov-plugin.sgml 50 2009-12-15 01:37:19Z maf $ -->
+<!-- $Id: otp-ov-plugin.sgml 177 2011-05-16 02:37:28Z maf $ -->
 
 <refentry>
 
@@ -25,6 +25,7 @@ OpenVPN plug-in authentication module for OTP database.
 <command>otp-ov-plugin</command>
 <arg>-?hv</arg>
 <arg>-o<replaceable> otpdb_fname</replaceable></arg>
+<arg>-V<replaceable> service_name</replaceable></arg>
 <arg>-w<replaceable> otp_window</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -49,7 +50,7 @@ A successful authentication will set a return code of
 <variablelist>
 
 <varlistentry>
-<term>-h</term>
+<term>-h, --help</term>
 <listitem>
 <para>
 Help
@@ -58,7 +59,7 @@ Help
 </varlistentry>
 
 <varlistentry>
-<term>-o<replaceable> otpdb_pathname</replaceable></term>
+<term>-o, --otp-db=<replaceable> otpdb_pathname</replaceable></term>
 <listitem>
 <para>
 Pathname of OTP database.
@@ -67,7 +68,26 @@ Pathname of OTP database.
 </varlistentry>
 
 <varlistentry>
-<term>-v</term>
+<term>-u, --otp-allow-unknown-user</term>
+<listitem>
+<para>
+Allow users which do not exist in the OTP database to successfully
+authenticate without using a One Time Password.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-V, --service-name=<replaceable> service_name</replaceable></term>
+<listitem>
+<para>
+Set service name for send-token function.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-v, --verbose</term>
 <listitem>
 <para>
 Verbose
@@ -76,7 +96,7 @@ Verbose
 </varlistentry>
 
 <varlistentry>
-<term>-w</term>
+<term>-w, --otp-challenge-window=</term>
 <listitem>
 <para>
 Set the OTP challenge window.
@@ -84,6 +104,14 @@ Set the OTP challenge window.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>--version</term>
+<listitem>
+<para>
+Display software version.
+</para>
+</listitem>
+</varlistentry>
 
 </variablelist>
 </refsect1>

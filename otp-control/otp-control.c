@@ -24,14 +24,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-control.c 55 2009-12-17 01:59:35Z maf $
+ *      $Id: otp-control.c 179 2011-05-16 02:48:42Z maf $
  */
 
 #include <sys/types.h>
 #include <sys/errno.h>
+#include <fcntl.h>
+#include <getopt.h>
 #include <inttypes.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include "otplib.h"
 #include "otpsc.h"
@@ -49,11 +50,13 @@
 #define MODE_SET_COUNT_CEIL     11
 #define MODE_TEST               12
 #define MODE_CREATE             13
+#define MODE_SEND_TOKEN         14
 #define MODE_LIST_SC            18
 #define MODE_SET_STATUS         19
 #define MODE_SET_TYPE           20
 #define MODE_SET_FORMAT         21
 #define MODE_SET_FLAGS          22
+#define MODE_SET_LOCATION       23
 
 #define KEY_HEX160_LEN          40
 
@@ -65,9 +68,11 @@ void help(void);
 
 int main (int argc, char **argv)
 {
+  extern char *ootp_version;
   struct otp_ctx *otpctx;
   struct otp_user ou;
   int i, j, r, mode, window, db_flags, open_mode, open_op, verbose;
+  int opt_version, u_count_set;
   char *otpdb_fname;
   uint64_t u_count, u_count_ceil, count_offset, tmp64u;
   uint8_t u_version, u_status, u_format, u_type, u_flags, sc_index;
@@ -75,17 +80,42 @@ int main (int argc, char **argv)
   unsigned char u_key160[20];
   char key_hex160[KEY_HEX160_LEN+1];
   char crsp_tmp[11];
-  char *u_username, *u_key_ascii, *sc_hostname;
-  char *endptr, *i_status, *i_format, *i_type, *i_flags;
+  char *u_username, *u_loc, *u_key_ascii, *sc_hostname;
+  char *endptr, *i_status, *i_format, *i_type, *i_flags, *service;
+
+  struct option longopts[] = {
+    { "count",            1, (void*)0L,   'c'},
+    { "count-ceil",       1, (void*)0L,   'C'},
+    { "format",           1, (void*)0L,   'f'},
+    { "flags",            1, (void*)0L,   'F'},
+    { "sc-hostname",      1, (void*)0L,   'H'},
+    { "sc-index",         1, (void*)0L,   'I'},
+    { "key",              1, (void*)0L,   'k'},
+    { "location",         1, (void*)0L,   'l'},
+    { "command-mode",     1, (void*)0L,   'm'},
+    { "otp-db",           1, (void*)0L,   'o'},
+    { "status",           1, (void*)0L,   's'},
+    { "sc-flags",         1, (void*)0L,   'S'},
+    { "type",             1, (void*)0L,   't'},
+    { "username",         1, (void*)0L,   'u'},
+    { "challenge-window", 1, (void*)0L,   'w'},
+    { "help",             0, (void*)0L,   'h'},
+    { "create-database",  0, (void*)0L,   'n'},
+    { "verbose",          0, (void*)0L,   'v'},
+    { "service-name",     0, (void*)0L,   'V'},
+    { "version",          0, &opt_version, 1},
+    { 0, 0, 0, 0},
+  };
 
   otpdb_fname = OTP_DB_FNAME;
   sc_index = 0;
   mode = 0;
   window = 1;
   verbose = 0;
+  u_count_set = 0;
   db_flags = 0;
   /* user defaults */
-  u_count = 0;
+  u_count = 1;
   u_count_ceil = 0xFFFFFFFFFFFFFFFFLL;
   u_version = OTP_VERSION;
   u_format = OTP_FORMAT_HEX40;
@@ -94,15 +124,19 @@ int main (int argc, char **argv)
   u_flags = 0;
   u_username = (char*)0L;
   u_key_ascii = (char*)0L;
+  u_loc = (char*)0L;
   endptr = (char*)0L;
   sc_hostname = (char*)0L;
+  service = "otp-control";
   bzero(sc_flags, SC_HOSTNAME_LEN);
   i_status = i_type = i_format = i_flags = (char*)0L;
+  opt_version = 0;
 
   /* init xerr */
   xerr_setid(argv[0]);
 
-  while ((i = getopt(argc, argv, "c:C:hf:F:H:I:?k:m:no:s:S:t:u:w:v")) != -1) {
+  while ((i = getopt_long(argc, argv, "c:C:hf:F:H:I:?k:l:m:no:s:S:t:u:w:vV:",
+    longopts, (int*)0L)) != -1) {
 
     switch (i) {
 
@@ -110,6 +144,7 @@ int main (int argc, char **argv)
         u_count = strtoull(optarg, &endptr, 0);
         if (*endptr)
           xerr_errx(1, "strtoull(%s): failed at %c.", optarg, *endptr);
+        u_count_set = 1;
         break;
 
       case 'C':
@@ -146,6 +181,12 @@ int main (int argc, char **argv)
         u_key_ascii = optarg;
         break;
 
+      case 'l':
+        u_loc = optarg;
+        if (strlen(u_loc) > OTP_USER_LOC_LEN)
+          xerr_errx(1, "u_loc > OTP_USER_LOC_LEN");
+        break;
+
       case 'm':
         if (mode)
           xerr_errx(1, "mode previously set.");
@@ -166,6 +207,8 @@ int main (int argc, char **argv)
           mode = MODE_LOAD;
         } else if (!strcasecmp(optarg, "remove")) {
           mode = MODE_REMOVE;
+        } else if (!strcasecmp(optarg, "send-token")) {
+          mode = MODE_SEND_TOKEN;
         } else if (!strcasecmp(optarg, "set-count")) {
           mode = MODE_SET_COUNT;
         } else if (!strcasecmp(optarg, "set-count-ceil")) {
@@ -174,6 +217,8 @@ int main (int argc, char **argv)
           mode = MODE_SET_FLAGS;
         } else if (!strcasecmp(optarg, "set-format")) {
           mode = MODE_SET_FORMAT;
+        } else if (!strcasecmp(optarg, "set-location")) {
+          mode = MODE_SET_LOCATION;
         } else if (!strcasecmp(optarg, "set-status")) {
           mode = MODE_SET_STATUS;
         } else if (!strcasecmp(optarg, "set-type")) {
@@ -221,6 +266,10 @@ int main (int argc, char **argv)
         verbose = 1;
         break;
 
+      case 'V':
+        service = optarg;
+        break;
+
       case 'h':
       case '?':
         help();
@@ -229,6 +278,17 @@ int main (int argc, char **argv)
       case 'w':
         window = atoi(optarg);
         break;
+
+      case 0:
+        if (opt_version) {
+          printf("%s\n", ootp_version);
+          exit(0);
+        }
+        break;
+
+      default:
+        xerr_errx(1, "getopt_long(): fatal.");
+        break; /* not reached */
 
     } /* switch */
 
@@ -271,6 +331,9 @@ int main (int argc, char **argv)
 
   if ((mode == MODE_SET_STATUS) && (!i_status))
     xerr_errx(1, "Status value not specified.");
+
+  if ((mode == MODE_SET_LOCATION) && (!u_loc))
+    xerr_errx(1, "Location value not specified.");
 
   /* type */
   if (i_type)
@@ -334,7 +397,7 @@ int main (int argc, char **argv)
 
   if (mode == MODE_ADD) {
     printf("Adding user %s.\n", u_username);
-    if (otp_user_add(otpctx, u_username, u_key160, OTP_HOTP_KEY_SIZE,
+    if (otp_user_add(otpctx, u_username, u_loc, u_key160, OTP_HOTP_KEY_SIZE,
       u_count, u_count_ceil, u_status, u_type, u_format, u_version))
       xerr_errx(1, "otp_user_add(): failed.");
     goto mode_done;
@@ -343,9 +406,15 @@ int main (int argc, char **argv)
   if (mode == MODE_REMOVE) {
     printf("Removing user %s.\n", u_username);
     if (otp_user_rm(otpctx, u_username) < 0)
-      xerr_errx(1, "ot_user_rm(): failed.");
+      xerr_errx(1, "otp_user_rm(): failed.");
     goto mode_done;
   } /* MODE_REMOVE */
+
+  if (mode == MODE_SEND_TOKEN) {
+    if (otp_user_send_token(otpctx, u_username, service) < 0)
+      xerr_errx(1, "otp_user_send_token(): failed.");
+    goto mode_done;
+  } /* MODE_SEND_TOKEN */
 
   /*
    * modes requiring open and get of user record:
@@ -355,6 +424,7 @@ int main (int argc, char **argv)
       (mode == MODE_LIST_SC) ||
       (mode == MODE_SET_COUNT) ||
       (mode == MODE_SET_COUNT_CEIL) ||
+      (mode == MODE_SET_LOCATION) ||
       (mode == MODE_SET_FLAGS) ||
       (mode == MODE_SET_FORMAT) ||
       (mode == MODE_SET_STATUS) ||
@@ -408,6 +478,9 @@ int main (int argc, char **argv)
 
     for (count_offset = 0; count_offset < window; ++count_offset) {
 
+      if (u_count_set == 1)
+        ou.count = u_count;
+
       if (otp_urec_crsp(otpctx, &ou, count_offset, crsp_tmp, 11) < 0)
         xerr_errx(1, "otp_urec_crsp(): failed.");
 
@@ -422,6 +495,7 @@ int main (int argc, char **argv)
   if ((mode == MODE_SET_COUNT) ||
       (mode == MODE_SET_COUNT_CEIL) ||
       (mode == MODE_SET_FLAGS) ||
+      (mode == MODE_SET_LOCATION) ||
       (mode == MODE_SET_FORMAT) ||
       (mode == MODE_SET_STATUS) ||
       (mode == MODE_SET_TYPE)) {
@@ -438,6 +512,10 @@ int main (int argc, char **argv)
       ou.status = u_status;
     else if (mode == MODE_SET_TYPE)
       ou.type = u_type;
+    else if (mode == MODE_SET_LOCATION) {
+      strncpy(ou.loc, u_loc, sizeof(ou.loc));
+      ou.loc[sizeof(ou.loc)-1] = 0;
+    }
 
     if (otp_urec_put(otpctx, &ou) < 0)
       xerr_errx(1, "otp_urec_put(): failed.");
@@ -473,15 +551,17 @@ mode_done:
 
 void help(void)
 {
+  extern char *ootp_version;
   int i;
 
-  fprintf(stderr, "otp-control [-?hnv] [-c count] [-C count_ceil] [-f format] [-F flags]\n");
-  fprintf(stderr, "            [-H sc_hostname] [-I sc_index] [-k key] [-m command_mode]\n");
-  fprintf(stderr, "            [-o otbdb_pathname] [-s status] [-S sc_flags] [ -t type]\n");
-  fprintf(stderr, "            [-u username] [-w window]\n");
-  fprintf(stderr, "            -h : help\n");
-  fprintf(stderr, "            -n : create database\n");
-  fprintf(stderr, "            -v : enable verbose output\n\n");
+  fprintf(stderr, "otp-control [-?hnv] [-c count] [-C count_ceil] [-f format] [-F flag]\n");
+  fprintf(stderr, "            [-H sc_hostname] [-I sc_index] [-k key] [-l location]\n");
+  fprintf(stderr, "            [-m command_mode] [-o otbdb_pathname] [-s status] [-S sc_flags] [-V service]\n");
+  fprintf(stderr, "            [-t type] [-u username] [-w window]\n");
+  fprintf(stderr, "            -h        : help\n");
+  fprintf(stderr, "            -n        : create database\n");
+  fprintf(stderr, "            -v        : enable verbose output\n");
+  fprintf(stderr, "            --version : build version\n\n");
   fprintf(stderr, "            sc_flags    : 0=CHALLENGE 1=READERKEY\n");
 
   fprintf(stderr, "            flags       : ");
@@ -515,6 +595,7 @@ void help(void)
   fprintf(stderr, "            list-sc            - List user record (SC friendly)\n");
   fprintf(stderr, "            load               - ASCII load user record(s)\n");
   fprintf(stderr, "            remove             - Remove user\n");
+  fprintf(stderr, "            send-token         - Send token to user\n");
   fprintf(stderr, "            set-count          - Set user count\n");
   fprintf(stderr, "            set-count-ceil     - Set user count ceiling\n");
   fprintf(stderr, "            set-flags          - Set user flags\n");
@@ -522,6 +603,7 @@ void help(void)
   fprintf(stderr, "            set-status         - Set user status\n");
   fprintf(stderr, "            set-type           - Set user OTP type\n");
   fprintf(stderr, "            test               - Test user\n");
+  printf("%s\n", ootp_version);
 }
 
 int get_random(char *dev, unsigned char *entropy, int bits)
@@ -548,3 +630,4 @@ int get_random(char *dev, unsigned char *entropy, int bits)
   return 0;
 
 } /* get_random */
+

@@ -75,10 +75,18 @@ the display_count option is set\&.  The default behavior will not display
 the count unless the user record flags field has OTP_USER_FLAGS_DSPCNT set\&.
 .IP "\fIrequire_db_entry\fP" 10
 A user not in the OTP database will be denied access with the
-require_db_entry option is set\&.  By default users not in the OTP
-database are permitted\&.
+require_db_entry option is set\&.  This option is set by default\&.
+require_db_entry and allow_unknown user set the same flag and are
+mutually exclusive\&.
+.IP "\fIallow_unknown_user\fP" 10
+A user not in the OTP database will be allowed access with the
+allow_unknown_user option set\&.  This option is disabled by default\&.
+require_db_entry and allow_unknown user set the same flag and are
+mutually exclusive\&.
 .IP "\fIotpdb=\fP\fBalternate_otpdb\fP" 10
 \fBalternate_otpdb\fP is used as the OTP database\&.
+.IP "\fIservice=\fP\fBservice_name\fP" 10
+Service name for use with send-token option\&.
 .IP "\fIwindow=window\fP" 10
 Set OTP challenge window\&.
 .SH "AUTHOR"
@@ -95,4 +103,4 @@ Mark Fullmer maf@splintered\&.net
 \fBbcload\fP(1)
 \fBpam\fP(8)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

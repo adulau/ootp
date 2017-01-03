@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otplib.c 84 2009-12-27 17:29:51Z maf $
+ *      $Id: otplib.c 174 2011-05-16 02:09:26Z maf $
  */
 
 #include <openssl/ssl.h>
@@ -34,9 +34,13 @@
 
 #include <sys/errno.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
 #include <fcntl.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,11 +53,15 @@
 #include "otpsc.h"
 
 char *otp_status_l[] = {"error", "active", "inactive", "disabled"};
+
 char *otp_format_l[] = {"error", "hex40", "dhex40", "dec31.6", "dec31.7",
                         "dec31.8", "dec31.9", "dec31.10"};
+
 char *otp_type_l[] = {"error", "HOTP"};
 
-char *otp_flags_l[] = {"display-count"};
+char *otp_flags_l[] = {"display-count", "send-token"};
+
+char *sc_flags_l[] = {"challenge","readerkey"};
 
 /*
  * One Time Password library with HOTP implementation.
@@ -86,6 +94,7 @@ char *otp_flags_l[] = {"display-count"};
  * otp_user_exists()     user exists in OTP db?
  * otp_user_rm()         remove user from OTP db
  * otp_user_auth()       authenticate user from OTP db
+ * otp_user_send_token() send token to user via some OOB method
  *
  ****
  *
@@ -180,6 +189,17 @@ int otp_ou_toascii(struct otp_ctx *otpctx, struct otp_user *ou)
   str_hex_dump(c, (void*)&ou->last, 8);
   c += 16;
 
+  if ((n = strlen(ou->loc)) > OTP_USER_LOC_LEN) {
+    xerr_warnx("otp_ou_toascii(): location length invalid.");
+    return -1;
+  }
+
+  *c++ = ':';
+  if (n) {
+    strcpy(c, ou->loc);
+    c += n;
+  }
+
   *c++ = 0;
 
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -211,7 +231,7 @@ int otp_ou_toascii(struct otp_ctx *otpctx, struct otp_user *ou)
  */
 int otp_ou_fromascii(struct otp_ctx *otpctx, struct otp_user *ou)
 {
-  int field, ret, n, i;
+  int field, ret, n, i, n_fields, l_field;
   char *c;
 
   if (otp_db_valid(otpctx, "otp_ou_fromascii") < 0)
@@ -237,7 +257,7 @@ int otp_ou_fromascii(struct otp_ctx *otpctx, struct otp_user *ou)
       *c = 0;
       ++c;
       ++field;
-      if (field > (OTP_USER_N_FIELDS-1)) /* too many fields */
+      if (field > (OTP_USER_N_FIELDS_MAX-1)) /* too many fields */
         break;
     } else if (*c == 0) {
       break;
@@ -246,11 +266,17 @@ int otp_ou_fromascii(struct otp_ctx *otpctx, struct otp_user *ou)
     }
   }
 
-  if (field != (OTP_USER_N_FIELDS-1)) {
+  /* last field does not have a : */
+  if ((field > OTP_USER_N_FIELDS_MAX-1) || 
+     (field < OTP_USER_N_FIELDS_MIN-1)) {
     if (otpctx->verbose)
-      xerr_warnx("expecting %d fields, got %d.", OTP_USER_N_FIELDS, field+1);
+      xerr_warnx("expecting min=%d max=%d fields, got %d.",
+        OTP_USER_N_FIELDS_MIN, OTP_USER_N_FIELDS_MAX, field+1);
     return -1;
   }
+
+  /* look ahead */
+  l_field = field;
 
 #define CHK_STRLEN(N,L)\
   n = strlen(c);\
@@ -274,8 +300,11 @@ int otp_ou_fromascii(struct otp_ctx *otpctx, struct otp_user *ou)
       xerr_warnx("%s: str_hex_decode(%s): failed.", __func__, N);\
     goto otp_ou_fromascii_out;\
   }\
+
+  /* may be changed after reading version field */
+  n_fields = OTP_USER_N_FIELDS;
     
-  for (field = 0, c = ou->ascii_encoded; field < OTP_USER_N_FIELDS; ++field) {
+  for (field = 0, c = ou->ascii_encoded; field < n_fields; ++field) {
    
     if (field == 0) { /* version */
       CHK_STRLEN("version", 2)
@@ -287,8 +316,20 @@ int otp_ou_fromascii(struct otp_ctx *otpctx, struct otp_user *ou)
             OTP_VERSION_MAX);
         return -1;
       }
+      if (ou->version == 1)
+        n_fields = OTP_USER_N_FIELDS_V1;
+      if ((ou->version == 1) && (l_field != OTP_USER_N_FIELDS_V1-1)) {
+        xerr_warnx("v1 format has %d fields, not %d.",
+          OTP_USER_N_FIELDS_V1, l_field+1);
+        return -1;
+      }
+      if ((ou->version == 2) && (l_field != OTP_USER_N_FIELDS_V2-1)) {
+        xerr_warnx("v2 format has %d fields, not %d.",
+          OTP_USER_N_FIELDS_V2, l_field+1);
+        return -1;
+      }
     } else if (field == 1) { /* username */
-      CHK_STRRANGE("username", 1, 32)
+      CHK_STRRANGE("username", 1, OTP_USER_NAME_LEN)
       strcpy(ou->username, c);
     } else if (field == 2) { /* key */
       CHK_STRRANGE("key", 1, 40);
@@ -314,7 +355,10 @@ int otp_ou_fromascii(struct otp_ctx *otpctx, struct otp_user *ou)
     } else if (field == 9) { /* last */
       CHK_STRLEN("last", 16);
       HEX_DECODE("last", last, 16)
-    }
+    } else if (field == 10) { /* location */
+      CHK_STRRANGE("loc", 0, OTP_USER_LOC_LEN)
+      strcpy(ou->loc, c);
+     }
 
     /* skip to next field */
     for (; *c; ++c);
@@ -332,6 +376,9 @@ int otp_ou_fromascii(struct otp_ctx *otpctx, struct otp_user *ou)
 
   ou->db_key.key = &ou->username;
   ou->db_key.size = strlen(ou->username);
+
+  /* up convert */
+  ou->version = OTP_VERSION;
 
   ret = OTP_SUCCESS;
 
@@ -730,6 +777,7 @@ struct otp_ctx *otp_db_open(char *dbname, int flags)
 
   bzero(otpctx, sizeof *otpctx);
   otpctx->verbose = verbose;
+  otpctx->send_token_pathname = OTP_SEND_TOKEN_PATHNAME;
 
   if (!(otpctx->ffdbctx = ffdb_db_open(dbname, OTP_USER_NAME_LEN, 
     OTP_USER_ASCII_LEN, ffdb_flags, S_IRUSR|S_IWUSR, S_IRWXU))) {
@@ -922,6 +970,7 @@ int otp_db_load(struct otp_ctx *otpctx, char *u_username)
     return -1;
 
   ret = -1; /* fail */
+  bzero(&ou, sizeof(ou));
 
   while (!feof(stdin)) {
 
@@ -1021,6 +1070,7 @@ otp_db_load_out:
  * arguments:
  *  otpctx       - otp db context returned by otp_db_open()
  *  u_username   - username
+ *  u_loc        - location
  *  u_key_val    - key value
  *  u_key_size   - length of key in bytes
  *  u_count      - initial count
@@ -1036,9 +1086,9 @@ otp_db_load_out:
  *
  */
 int otp_user_add(struct otp_ctx *otpctx, char *u_username,
-  uint8_t *u_key_val, uint16_t u_key_size, uint64_t u_count,
-  uint64_t u_count_ceil, uint8_t u_status, uint8_t u_type,
-  uint8_t u_format, uint8_t u_version)
+  char *u_loc, uint8_t *u_key_val, uint16_t u_key_size,
+  uint64_t u_count, uint64_t u_count_ceil, uint8_t u_status,
+  uint8_t u_type, uint8_t u_format, uint8_t u_version)
 {
   struct otp_user ou;
   int ret, r;
@@ -1066,11 +1116,19 @@ int otp_user_add(struct otp_ctx *otpctx, char *u_username,
     goto otp_user_add_out;
   }
 
+  if (strlen(u_loc) > OTP_USER_LOC_LEN) {
+    if (otpctx->verbose)
+      xerr_warnx("strlen(u_loc) > OTP_USER_LOC_LEN.");
+    goto otp_user_add_out;
+  }
+
   /*
    * copy in user fields to ou
    */
 
-  strcpy(ou.username, u_username);
+  /* lengths checked above */
+  strncpy(ou.username, u_username, OTP_USER_NAME_LEN);
+  strncpy(ou.loc, u_loc, OTP_USER_LOC_LEN);
   bcopy(u_key_val, &ou.key, u_key_size);
   ou.key_size = u_key_size;
   ou.count = u_count;
@@ -1162,12 +1220,14 @@ int otp_user_exists(struct otp_ctx *otpctx, char *u_username)
   if (otp_db_valid(otpctx, "otp_user_exists") < 0)
     return -1;
 
-  /* paranoia */
-  str_safe(u_username, OTP_USER_NAME_LEN);
-
   ret = OTP_ERROR; /* fail */
   db_key.key = u_username;
   db_key.size = strlen(u_username);
+
+  /* paranoia */
+  str_safe(u_username, OTP_USER_NAME_LEN, ".", STR_SAFE_CHECK_LEN|
+    STR_SAFE_CHECK_ALPHA|STR_SAFE_CHECK_SET|STR_SAFE_CHECK_NUM|
+    STR_SAFE_FIX|STR_SAFE_WARN);
 
   /*
    * sanity checks
@@ -1213,13 +1273,14 @@ int otp_user_rm(struct otp_ctx *otpctx, char *u_username)
   if (otp_db_valid(otpctx, "otp_user_rm") < 0)
     return -1;
 
-  /* paranoia */
-  str_safe(u_username, OTP_USER_NAME_LEN);
-
   ret = -1; /* fail */
-
   db_key.key = u_username;
   db_key.size = strlen(u_username);
+
+  /* paranoia */
+  str_safe(u_username, OTP_USER_NAME_LEN, ".", STR_SAFE_CHECK_LEN|
+    STR_SAFE_CHECK_ALPHA|STR_SAFE_CHECK_SET|STR_SAFE_CHECK_NUM|
+    STR_SAFE_FIX|STR_SAFE_WARN);
 
   /*
    * sanity checks
@@ -1275,8 +1336,12 @@ int otp_user_auth(struct otp_ctx *otpctx, char *u_username,
     (OTP_HOTP_HEX40_LEN<<1) : OTP_HOTP_DEC31_LEN;
 
   /* paranoia */
-  str_safe(u_username, OTP_USER_NAME_LEN);
-  str_safe(u_crsp, crsp_max<<1);
+  str_safe(u_username, OTP_USER_NAME_LEN, ".", STR_SAFE_CHECK_LEN|
+    STR_SAFE_CHECK_ALPHA|STR_SAFE_CHECK_SET|
+    STR_SAFE_CHECK_NUM|STR_SAFE_FIX|STR_SAFE_WARN);
+
+  str_safe(u_crsp, crsp_max<<1, (char*)0L, STR_SAFE_CHECK_LEN|
+    STR_SAFE_CHECK_ALPHA|STR_SAFE_CHECK_NUM|STR_SAFE_FIX|STR_SAFE_WARN);
 
   /* open user record */
   if (otp_urec_open(otpctx, u_username, &ou, O_RDWR, FFDB_OP_LOCK_EX) < 0) {
@@ -1357,6 +1422,111 @@ otp_user_auth_out:
 } /* otp_user_auth */
 
 /*
+ * otp_user_send_token
+ *
+ * returns: <0 failure
+ */
+int otp_user_send_token(struct otp_ctx *otpctx, char *u_username,
+  char *service)
+{
+  struct sockaddr_un tx_path;
+  char crsp_tmp[32], tx_buf[1024];
+  struct otp_user ou;
+  int ret, r, tx_sock, tx_buf_len;
+
+  if (otp_db_valid(otpctx, "otp_user_send") < 0)
+    return -1;
+
+  ret = -1; /* fail */
+  tx_sock = -1;
+  bzero(&ou, sizeof ou);
+
+  /* paranoia */
+  str_safe(u_username, OTP_USER_NAME_LEN, ".", STR_SAFE_CHECK_LEN|
+    STR_SAFE_CHECK_ALPHA|STR_SAFE_CHECK_SET| STR_SAFE_CHECK_NUM|
+    STR_SAFE_FIX|STR_SAFE_WARN);
+
+  /* open user record */
+  if (otp_urec_open(otpctx, u_username, &ou, O_RDWR, FFDB_OP_LOCK_EX) < 0) {
+    if (otpctx->verbose)
+      xerr_warnx("otp_urec_open(%s): failed.", u_username);
+    goto otp_user_send_token_out;
+  }
+
+  /* get user record */
+  if (otp_urec_get(otpctx, &ou) < 0) {
+    if (otpctx->verbose)
+      xerr_warnx("otp_urec_get(%s): failed.", u_username);
+    goto otp_user_send_token_out;
+  }
+
+  if (otp_urec_sanity(otpctx, &ou) < 0) {
+    if (otpctx->verbose)
+      xerr_warnx("otp_urec_sanity(): failed.");
+    goto otp_user_send_token_out;
+  }
+
+  /* generate next token */
+  if (otp_urec_crsp(otpctx, &ou, 0, crsp_tmp, sizeof(crsp_tmp)) < 0) {
+    if (otpctx->verbose)
+      xerr_warnx("otp_urec_crsp(): failed.");
+    goto otp_user_send_token_out;
+  }
+
+  /* format tx buffer */
+  if ((tx_buf_len = snprintf(tx_buf, sizeof(tx_buf), "%s\n%s\n%s\n%s\n",
+    service, ou.username, ou.loc, crsp_tmp)) >= sizeof(tx_buf)) {
+    if (otpctx->verbose)
+      xerr_warnx("snprintf(tx_buf): overflow");
+    goto otp_user_send_token_out;
+  }
+
+  /* setup to transmit UDP datagram */
+  if ((tx_sock = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
+    if (otpctx->verbose)
+      xerr_warn("socket(AF_UNIX, SOCK_DGRAM)");
+    goto otp_user_send_token_out;
+  }
+
+  bzero(&tx_path, sizeof (tx_path));
+  tx_path.sun_family = AF_UNIX;
+  if (strlen(otpctx->send_token_pathname) >= sizeof (tx_path.sun_path)) {
+    xerr_warnx("send_token_pathname too long.");
+    goto otp_user_send_token_out;
+  }
+  strncpy(tx_path.sun_path, otpctx->send_token_pathname,
+    sizeof(tx_path.sun_path));
+ 
+  /* send token */
+  if (sendto(tx_sock, tx_buf, tx_buf_len+1, 0, (struct sockaddr*)&tx_path,
+    sizeof(tx_path)) < 0) {
+    if (otpctx->verbose)
+      xerr_warn("sendto(%s)", otpctx->send_token_pathname);
+    goto otp_user_send_token_out;
+  }
+
+  /* success */
+  ret = 0;
+
+otp_user_send_token_out:
+
+  if (tx_sock != -1)
+    close(tx_sock);
+
+  /* close record */
+  if (ou.db_key.fd && (ou.db_key.fd != -1)) {
+    if ((r = otp_urec_close(otpctx, &ou)) < 0) {
+      if (otpctx->verbose)
+        xerr_warnx("otp_urec_close(): failed.");
+      ret = r;
+    }
+  }
+
+  return ret;
+
+} /* otp_user_send_token */
+
+/*
  * function: otp_urec_open()
  *
  * open an otp user record in otp database.  A user record must
@@ -1405,12 +1575,14 @@ int otp_urec_open(struct otp_ctx *otpctx, char *u_username,
   if (otp_db_valid(otpctx, "otp_urec_open") < 0)
     return -1;
 
-  /* paranoia */
-  str_safe(u_username, OTP_USER_NAME_LEN);
-
   ret = -1; /* fail */
   bzero(ou, sizeof *ou);
   ou->db_key.fd = -1; /* invalid */
+
+  /* paranoia */
+  str_safe(u_username, OTP_USER_NAME_LEN, ".", STR_SAFE_CHECK_LEN|
+    STR_SAFE_CHECK_ALPHA|STR_SAFE_CHECK_SET|STR_SAFE_CHECK_NUM|
+    STR_SAFE_FIX|STR_SAFE_WARN);
 
   ou->db_key.key = u_username;
   ou->db_key.size = strlen(u_username);
@@ -1716,6 +1888,8 @@ void otp_urec_disp(struct otp_ctx *otpctx, struct otp_user *ou)
   str_hex_dump(tmp, ou->key, 20);
 
   printf("Username.......%s\n", ou->username);
+  if (ou->loc[0])
+    printf("Location.......%s\n", ou->loc);
   printf("Key............%s\n", tmp);
   printf("Count..........%" PRIu64 " (0x%" PRIx64 ")\n", ou->count, ou->count);
   printf("Count Ceiling..%" PRIu64 " (0x%" PRIx64 ")\n", ou->count_ceil,
@@ -1771,6 +1945,51 @@ uint8_t sc_index, char *sc_hostname, uint8_t *sc_flags)
   /* set flag bits */
   for (l = 0; l < SC_HOSTNAME_LEN; ++l)
     tmp_sc_hostname[l] |= sc_flags[l];
+
+  /* format is encoded in flag bits */
+  if ((ou->format == OTP_FORMAT_DEC31_6) ||
+      (ou->format == OTP_FORMAT_DEC31_7) ||
+      (ou->format == OTP_FORMAT_DEC31_8) ||
+      (ou->format == OTP_FORMAT_DEC31_9) ||
+      (ou->format == OTP_FORMAT_DEC31_10))
+    tmp_sc_hostname[HOSTNAME_POS_FMT] |= HOSTNAME_FLAG_MASK;
+
+  if (ou->format == OTP_FORMAT_HEX40) {
+    tmp_sc_hostname[HOSTNAME_POS_FMT3] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT2] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT1] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT0] &= ~HOSTNAME_FLAG_MASK;
+  } else if (ou->format == OTP_FORMAT_DHEX40) {
+    tmp_sc_hostname[HOSTNAME_POS_FMT3] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT2] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT1] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT0] |= HOSTNAME_FLAG_MASK;
+  } else if (ou->format == OTP_FORMAT_DEC31_6) {
+    tmp_sc_hostname[HOSTNAME_POS_FMT3] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT2] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT1] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT0] &= ~HOSTNAME_FLAG_MASK;
+  } else if (ou->format == OTP_FORMAT_DEC31_7) {
+    tmp_sc_hostname[HOSTNAME_POS_FMT3] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT2] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT1] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT0] |= HOSTNAME_FLAG_MASK;
+  } else if (ou->format == OTP_FORMAT_DEC31_8) {
+    tmp_sc_hostname[HOSTNAME_POS_FMT3] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT2] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT1] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT0] &= ~HOSTNAME_FLAG_MASK;
+  } else if (ou->format == OTP_FORMAT_DEC31_9) {
+    tmp_sc_hostname[HOSTNAME_POS_FMT3] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT2] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT1] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT0] |= HOSTNAME_FLAG_MASK;
+  } else if (ou->format == OTP_FORMAT_DEC31_10) {
+    tmp_sc_hostname[HOSTNAME_POS_FMT3] &= ~HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT2] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT1] |= HOSTNAME_FLAG_MASK;
+    tmp_sc_hostname[HOSTNAME_POS_FMT0] &= ~HOSTNAME_FLAG_MASK;
+  }
 
   tmpc32 = ou->count;
 

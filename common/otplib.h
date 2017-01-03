@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otplib.h 61 2009-12-17 03:57:22Z maf $
+ *      $Id: otplib.h 174 2011-05-16 02:09:26Z maf $
  */
 
 #include <sys/types.h>
@@ -69,7 +69,7 @@
 
 
 #define OTP_DB_FNAME        "/etc/otpdb" /* location of user database */
-#define OTP_VERSION         1            /* version of library */
+#define OTP_VERSION         2            /* version of library */
 
 #define OTP_FORMAT_HEX40    1            /* 40 bits in hex */
 #define OTP_FORMAT_DHEX40   2            /* 40 bits in hex w. RFC 4226 DT */
@@ -87,7 +87,7 @@
 #define OTP_WINDOW_MAX      255          /* max challenge window */
 
 #define OTP_VERSION_MIN 1          /* min version for this code */
-#define OTP_VERSION_MAX 1          /* max version for this code */
+#define OTP_VERSION_MAX 2          /* max version for this code */
 
 #define OTP_HOTP_KEY_SIZE 20       /* HMAC SHA160 key length */
 #define OTP_HOTP_HEX40_LEN 5       /* HOTP challenge hex 40 bits */
@@ -105,14 +105,22 @@
 #define OTP_STATUS_MAX      3       /* highest valid status enum */
 
 
-#define OTP_USER_N_FIELDS 10       /* n fields in ASCII encoding */
-#define OTP_USER_ASCII_LEN 139     /* max ASCII encoded length (w/o null) */
+#define OTP_USER_N_FIELDS 11       /* n fields in ASCII encoding */
+#define OTP_USER_N_FIELDS_V1 10    /* n fields in ASCII encoding for v1 */
+#define OTP_USER_N_FIELDS_V2 11    /* n fields in ASCII encoding for v2 */
+#define OTP_USER_ASCII_LEN 180     /* max ASCII encoded length (w/o null) */
+#define OTP_USER_N_FIELDS_MAX 11   /* max # fields (all versions */
+#define OTP_USER_N_FIELDS_MIN 10   /* min # fields (all versions */
 
 #define OTP_FLAGS_DSPCNT           0x1 /* force display count */
-#define OTP_FLAGS_BITS             1   /* bits used */
+#define OTP_FLAGS_SEND_TOKEN       0x2 /* execute send token script for user */
+#define OTP_FLAGS_BITS             2   /* bits used */
+
+#define OTP_SEND_TOKEN_PATHNAME    "/var/run/otp-tokend"
 
 #define OTP_USER_NAME_LEN 32       /* max length of username (w/o null)*/
 #define OTP_USER_KEY_LEN 64        /* key length */
+#define OTP_USER_LOC_LEN 40        /* locatation identifier */
 
 #define OTP_DB_VERBOSE      0x01      /* verbose error messages */
 #define OTP_DB_CREATE       0x02      /* create database? */
@@ -135,6 +143,7 @@ struct otp_user {
   uint16_t key_size;             /* bytes used in key */
   unsigned char key[OTP_USER_KEY_LEN]; /* shared key (may not all be used */
   char username[OTP_USER_NAME_LEN+1];  /* name, null terminated */
+  char loc[OTP_USER_LOC_LEN+1];        /* location to send token */
   char ascii_encoded[OTP_USER_ASCII_LEN+1];  /* null terminated */
 
 /*
@@ -142,17 +151,20 @@ struct otp_user {
  *  version:name:key:status:format:type:count_cur:count_ceil:last
  *                  n encoding decoded size  encoded size
  *                  --------------------------------------
- *  version         1 ASCII HEX 8 bits       2  bytes + 1
- *  username        2 ASCII 32 bytes         1..32 bytes + 1
- *  key             3 ASCII HEX 20 bytes     40 bytes + 1
- *  status          4 ASCII HEX 8 bits       2  bytes + 1
- *  format          5 ASCII HEX 8 bits       2  bytes + 1
- *  type            6 ASCII HEX 8 bits       2  bytes + 1
- *  flags           7 ASCII HEX 8 bits       2  bytes + 1
- *  count_cur       8 ASCII HEX 64 bits      16 bytes + 1
- *  count_ceil      9 ASCII HEX 64 bits      16 bytes + 1
- *  last           10 ASCII HEX 64 bits      16 bytes + 1 null
- *    total bytes = 2+32+40+2+2+2+2_16+16+16+10 = 140
+ *  version         1 ASCII HEX 8 bits       2  bytes
+ *  username        2 ASCII 32 bytes         1..32 bytes
+ *  key             3 ASCII HEX 20 bytes     40 bytes
+ *  status          4 ASCII HEX 8 bits       2  bytes
+ *  format          5 ASCII HEX 8 bits       2  bytes
+ *  type            6 ASCII HEX 8 bits       2  bytes
+ *  flags           7 ASCII HEX 8 bits       2  bytes
+ *  count_cur       8 ASCII HEX 64 bits      16 bytes
+ *  count_ceil      9 ASCII HEX 64 bits      16 bytes
+ *  last           10 ASCII HEX 64 bits      16 bytes
+ *  location       11 ASCII 40 bytes         1..40 bytes
+ *  delimiters     -  1 * (n-1)              10 bytes
+ *  null           -                         1  byte
+ *    total bytes = 2+32+40+2+2+2+2+16+16+16+40+10+1 = 181
  */
 
 };
@@ -160,6 +172,7 @@ struct otp_user {
 
 struct otp_ctx {
   struct ffdb_ctx *ffdbctx;
+  char *send_token_pathname;
   int valid;
   int verbose;
 };
@@ -180,13 +193,15 @@ int otp_db_dump(struct otp_ctx *otpctx, char *u_username);
 int otp_db_load(struct otp_ctx *otpctx, char *u_username);
 
 int otp_user_add(struct otp_ctx *otpctx, char *u_username,
-  uint8_t *u_key_val, uint16_t u_key_size, uint64_t u_count,
-  uint64_t u_count_ceil, uint8_t u_status, uint8_t u_type,
-  uint8_t u_format, uint8_t u_version);
+  char *u_loc, uint8_t *u_key_val, uint16_t u_key_size,
+  uint64_t u_count, uint64_t u_count_ceil, uint8_t u_status,
+  uint8_t u_type, uint8_t u_format, uint8_t u_version);
 int otp_user_exists(struct otp_ctx *otpctx, char *u_username);
 int otp_user_rm(struct otp_ctx *otpctx, char *u_username);
 int otp_user_auth(struct otp_ctx *otpctx, char *u_username,
   char *u_crsp, int u_window);
+int otp_user_send_token(struct otp_ctx *otpctx, char *u_username,
+  char *service);
 
 int otp_urec_open(struct otp_ctx *otpctx, char *u_username,
    struct otp_user *ou, int open_flags, int op_flags);

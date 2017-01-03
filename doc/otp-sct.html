@@ -97,7 +97,7 @@ NAME="AEN28"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->-c<TT
+>-c, --sc-count=<TT
 CLASS="REPLACEABLE"
 ><I
 > count</I
@@ -105,10 +105,12 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Configure the optional count parameter to sync a Smart Card to a challenge.</P
+>Configure the optional count parameter to sync a Smart Card to a challenge.
+A count value of 0 indicates the HOTP value is to be calculated with the
+current stored count.</P
 ></DD
 ><DT
->-d<TT
+>-d, --debug=<TT
 CLASS="REPLACEABLE"
 ><I
 > debug_level</I
@@ -119,13 +121,13 @@ CLASS="REPLACEABLE"
 >Set debug level.</P
 ></DD
 ><DT
->-h</DT
+>-h, --help</DT
 ><DD
 ><P
 >Help.</P
 ></DD
 ><DT
->-i<TT
+>-i, --sc-index=<TT
 CLASS="REPLACEABLE"
 ><I
 > index</I
@@ -138,25 +140,25 @@ for each host system.  Use the -l option to list hostnames associated with
 the index.  The default index is 0.</P
 ></DD
 ><DT
->-l</DT
+>-l, --list-readers</DT
 ><DD
 ><P
 >List SC Readers</P
 ></DD
 ><DT
->-L</DT
+>-L, --sc-list-hostnames</DT
 ><DD
 ><P
 >List host systems configured on the Smart Card.  The index is used with the -i option.</P
 ></DD
 ><DT
->-o</DT
+>-p, --sc-reset-pin</DT
 ><DD
 ><P
 >Set new PIN.</P
 ></DD
 ><DT
->-r<TT
+>-r, --reader=<TT
 CLASS="REPLACEABLE"
 ><I
 > reader</I
@@ -180,7 +182,7 @@ reader.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
 with serial port /dev/cuaU0.</P
 ></DD
 ><DT
->-v<TT
+>-v, --sc-version=<TT
 CLASS="REPLACEABLE"
 ><I
 > card_api_version</I
@@ -194,18 +196,24 @@ above.  The default version is 3.  Configuring version 2 will allow
 maintenance of Smart Card with version 2 firmware.</P
 ></DD
 ><DT
->-V</DT
+>-V, --sc-list-version</DT
 ><DD
 ><P
 >List the Smart Card firmware version.</P
 ></DD
 ><DT
->-1</DT
+>-1, --sc-get-hostp-v1</DT
 ><DD
 ><P
 >Use the version 1 GetHOTP command instead of the default GetHOTPHostCount32.
 The latter is not available on firmware revision 1.  GetHOTP may be conditionally
 compiled out of newer firmware.</P
+></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
 ></DD
 ></DL
 ></DIV
@@ -213,7 +221,7 @@ compiled out of newer firmware.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN82"
+NAME="AEN86"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -222,7 +230,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN84"
+NAME="AEN88"
 ></A
 ><P
 >Generate a HOTP for the first system on the first PCSC reader found.</P
@@ -246,7 +254,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN89"
+NAME="AEN93"
 ></A
 ><P
 >List systems configured on Smart Card in default reader.  Generate HOTP
@@ -290,7 +298,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN98"
+NAME="AEN102"
 ></A
 ><H2
 >AUTHOR</H2
@@ -307,7 +315,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN105"
+NAME="AEN109"
 ></A
 ><H2
 >SEE ALSO</H2

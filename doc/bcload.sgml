@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: bcload.sgml 62 2009-12-18 17:26:31Z maf $ -->
+<!-- $Id: bcload.sgml 126 2010-06-15 14:23:02Z maf $ -->
 
 <refentry>
 <refmeta>
@@ -45,7 +45,7 @@ line of cards.
 <variablelist>
 
 <varlistentry>
-<term>-d<replaceable> debug_level</replaceable></term>
+<term>-d, --debug=<replaceable> debug_level</replaceable></term>
 <listitem>
 <para>
 Set debug level.
@@ -54,7 +54,7 @@ Set debug level.
 </varlistentry>
 
 <varlistentry>
-<term>-f<replaceable> fname</replaceable></term>
+<term>-f, --image=<replaceable> fname</replaceable></term>
 <listitem>
 <para>
 Name of BasicCard Image file.  Defaults to HOTPC.IMG
@@ -63,7 +63,7 @@ Name of BasicCard Image file.  Defaults to HOTPC.IMG
 </varlistentry>
 
 <varlistentry>
-<term>-h</term>
+<term>-h, --help</term>
 <listitem>
 <para>
 Help.
@@ -72,7 +72,7 @@ Help.
 </varlistentry>
 
 <varlistentry>
-<term>-l</term>
+<term>-l, --list-readers</term>
 <listitem>
 <para>
 List SC Readers
@@ -81,7 +81,7 @@ List SC Readers
 </varlistentry>
 
 <varlistentry>
-<term>-p</term>
+<term>-p, --no-paranoid</term>
 <listitem>
 <para>
 Disable paranoid check for ZC3.9 hardware.  Enhanced Smart Cards will
@@ -92,7 +92,7 @@ to <filename>bcload.c</filename>.
 </varlistentry>
 
 <varlistentry>
-<term>-r<replaceable> reader</replaceable></term>
+<term>-r, --reader=<replaceable> reader</replaceable></term>
 <listitem>
 <para>
 Set Smart Card reader.  Use -l to list available readers.  A reader
@@ -108,7 +108,7 @@ with serial port /dev/cuaU0.
 </varlistentry>
 
 <varlistentry>
-<term>-t</term>
+<term>-t, --force-test</term>
 <listitem>
 <para>
 Force card mode to TEST after programming.  Defaults to the mode
@@ -118,7 +118,7 @@ specified in the image file.
 </varlistentry>
 
 <varlistentry>
-<term>-v</term>
+<term>-v, --verbose</term>
 <listitem>
 <para>
 Display verbose status messages while programming the card.
@@ -126,6 +126,14 @@ Display verbose status messages while programming the card.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>--version</term>
+<listitem>
+<para>
+Display software version.
+</para>
+</listitem>
+</varlistentry>
 
 </variablelist>
 </refsect1>

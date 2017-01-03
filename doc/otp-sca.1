@@ -66,28 +66,30 @@ of {hostname,count,shared_key} are downloaded to the Smart Card using
 Smart Card such as HOTP generation and PIN maintenance can be executed
 with the appropriate administratative key\&.
 .SH "OPTIONS"
-.IP "-a\fI admin_keyfile\fP" 10
+.IP "-a, --sc-admin-key=\fI admin_keyfile\fP" 10
 Smart Card administratative key\&.  The admin-enable command and
 administratative key are used to toggle the Smart Card into admin mode\&.
 Once in admin mode commands admin-disable, adminkey-set, balancecard-set,
 host-get, host-set, pin-set, and sc-clear can be executed\&.  The default admin
 key, "3030303030303030303030303030303030303030" (HEX), should be changed to
 restrict access to the above commands\&.
-.IP "-c\fI count\fP" 10
+.IP "-c, --sc-count=\fI count\fP" 10
 Configure the count parameter optionally used by the hotp-gen command\&.
-.IP "-d\fI debug_level\fP" 10
+A count value of 0 indicates the HOTP value is to be calculated with the
+current stored count\&.
+.IP "-d, --debug=\fI debug_level\fP" 10
 Set debug level\&.
-.IP "-h" 10
+.IP "-h, --help" 10
 Help\&.
-.IP "-i\fI index\fP" 10
+.IP "-i, --sc-index=\fI index\fP" 10
 Set the 8 bit index\&.  The Smart Card contains numerically indexed records
 for each host of the form {hostname,count,shared_key}\&.  The firmware
 will support indexes in the range 0\&.\&.254\&.  255 is reserved\&.  Memory
 capacity on the Smart Card may further restrict the index range\&.  The
 ZC3\&.9 BasicCard with firmware revision 3 supports up to 85 records\&.
-.IP "-l" 10
+.IP "-l, --list-readers" 10
 List SC Readers
-.IP "-m\fI command_mode\fP" 10
+.IP "-m, --sc-command=\fI command_mode\fP" 10
 .PP
 .nf
          Command Mode       Description                Notes    Modifiers
@@ -121,14 +123,16 @@ List SC Readers
    d output in otpdb load friendly format\&.
    r include reader key in request\&.
 .fi
-.IP "-M\fI modifiers\fP" 10
+.IP "-M, --sc-command-modifier=\fI modifiers\fP" 10
 Configure command_mode modifiers\&.  Modifier d applied to the host-get
 command will generate output in otpdb format\&.  Count (c) and Host (h)
 used with hotp-gen allow passing the Count and Host parameters 
 respectively\&.  The Smart Card may not be configured to support
 all variations of a command\&.
-variations 
-.IP "-r\fI reader\fP" 10
+.IP "-p, --no-pin" 10
+Do not prompt for PIN\&.  The Smart Card does not require a PIN when admin
+mode is enabled\&.
+.IP "-r, --reader=\fI reader\fP" 10
 Set Smart Card reader\&.  Use -l to list available readers\&.  A reader
 is defined as class:reader:[option]\&.  PCSC and embedded
 are the two available classes\&.  The embedded class contains the acr30s driver
@@ -137,7 +141,7 @@ If pcscd is running the first PC/SC reader will be the default followed by
 the embedded acr30s driver\&.  Use PCSC: for the first available PC/SC
 reader\&.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
 with serial port /dev/cuaU0\&.
-.IP "-R\fI reader_keyfile\fP" 10
+.IP "-R, --sc-reader-key=\fI reader_keyfile\fP" 10
 Smart Card Reader key\&.  The reader-key-set command can be used
 to set this key in the Smart Card\&.  To emulate the behavior of
 a reader using the key the r modifier may be used with this option
@@ -148,20 +152,22 @@ key is "00000" or 3030303030\&.
 .IP "" 10
 This key must match the key set in the reader\&.  With the Spyrus
 PAR II reader this is set in the PAR II EEProm\&.
-.IP "-u\fI username\fP" 10
+.IP "-u, --sc-username=\fI username\fP" 10
 Set username\&.  The username is used with the host-get command and
 d modifier\&.
-.IP "-v\fI card_api_version\fP" 10
+.IP "-v, --sc-version=\fI card_api_version\fP" 10
 Set the Smart Card API version\&.  The binary API between the terminal
 and Smart Card changed between version 2 and 3\&.  See command_mode notes
 above\&.  The default version is 3\&.  Configuring version 2 will allow
 maintenance of Smart Card with version 2 firmware\&.
+.IP "--version" 10
+Display software version\&.
 .SH "SMART CARD COMMANDS"
 .PP
 \fBadmin-enable\fP : enable administrative mode\&.  The commands admin-disable, admin-key-set,
 balancecard-set, host-get, and sc-clear require admin mode to be enabled\&.
-pin-set and commands requiring a PIN will not require a valid PIN while
-the SC is in admin mode\&.  A new key can be generated with
+pin-set and commands accepting a PIN will not require the PIN to be valid
+while the SC is in admin mode\&.  A new key can be generated with
 \fBopenssl rand 160 | openssl sha1\fP\&.  The hotp-gen
 command will automatically disable admin mode\&.
 .PP
@@ -229,7 +235,12 @@ F0: challenge (count) input is required by the user\&.
 
 F1: enable reader authentication by the SC for the GetHOTP* commands\&.
 
-F2\&.\&.F11: reserved
+F2: enable base10 display
+
+F3\&.\&.F7: reserved
+
+F8-11: FMT3-FMT0\&. 0000=HEX40   0001=HEX40   0010=DEC31\&.6  0011=DEC31\&.7
+                  0100=DEC31\&.8 0101=DEC31\&.9 0110=DEC31\&.10 0011=DHEX40 
 
 Example host record with index=0, count=7, hostname=dev1\&.eng,
                          key=E4AACE5EC7291C405ED28949BB6DACA05768319D
@@ -417,4 +428,4 @@ Mark Fullmer maf@splintered\&.net
 \fBbcload\fP(1)
 \fBurd\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

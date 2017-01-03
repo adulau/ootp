@@ -51,7 +51,7 @@ CLASS="REPLACEABLE"
 >] [-C<TT
 CLASS="REPLACEABLE"
 ><I
-> count_ceil</I
+> count_ceiling</I
 ></TT
 >] [-f<TT
 CLASS="REPLACEABLE"
@@ -61,7 +61,7 @@ CLASS="REPLACEABLE"
 >] [-F<TT
 CLASS="REPLACEABLE"
 ><I
-> flags</I
+> flag</I
 ></TT
 >] [-H<TT
 CLASS="REPLACEABLE"
@@ -78,6 +78,11 @@ CLASS="REPLACEABLE"
 ><I
 > key</I
 ></TT
+>] [-l<TT
+CLASS="REPLACEABLE"
+><I
+> location</I
+></TT
 >] [-m<TT
 CLASS="REPLACEABLE"
 ><I
@@ -86,7 +91,7 @@ CLASS="REPLACEABLE"
 >] [-o<TT
 CLASS="REPLACEABLE"
 ><I
-> otpdb_pathname</I
+> otp_db</I
 ></TT
 >] [-s<TT
 CLASS="REPLACEABLE"
@@ -108,6 +113,11 @@ CLASS="REPLACEABLE"
 ><I
 > username</I
 ></TT
+>] [-V<TT
+CLASS="REPLACEABLE"
+><I
+> service_name</I
+></TT
 >] [-w<TT
 CLASS="REPLACEABLE"
 ><I
@@ -118,7 +128,7 @@ CLASS="REPLACEABLE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN42"
+NAME="AEN46"
 ></A
 ><H2
 >DESCRIPTION</H2
@@ -136,7 +146,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN47"
+NAME="AEN51"
 ></A
 ><H2
 >OPTIONS</H2
@@ -146,7 +156,7 @@ NAME="AEN47"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->-c<TT
+>-c, --count= <TT
 CLASS="REPLACEABLE"
 ><I
 > count</I
@@ -157,10 +167,10 @@ CLASS="REPLACEABLE"
 >User count.  The count increases with each OTP transaction.</P
 ></DD
 ><DT
->-C<TT
+>-C, --count-ceil= <TT
 CLASS="REPLACEABLE"
 ><I
-> count_ceil</I
+> count_ceiling</I
 ></TT
 ></DT
 ><DD
@@ -173,9 +183,9 @@ systems each with a unique count window, where count &#60;= count_ceiling.</P
 ><P
 >Example:</P
 ><P
->host=h1, user=bob, count_current=0, count_ceil=10000.</P
+>host=h1, user=bob, count_current=0, count_ceiling=10000.</P
 ><P
->host=h2, user=bob, count_current=10001, count_ceil=20000.</P
+>host=h2, user=bob, count_current=10001, count_ceiling=20000.</P
 ><P
 >The number of keys a user must possess is decreased at the expense
 of security dependencies among multiple systems.  If system A is
@@ -187,7 +197,7 @@ shared, as the currrent count will increase on the OTP generator and
 system database during authentication.</P
 ></DD
 ><DT
->-f</DT
+>-f, --format=</DT
 ><DD
 ><P
 >OTP format.  One of hex40 dhex40 dec31.6 dec31.7 dec31.8 dec31.9 dec31.10.
@@ -198,25 +208,26 @@ in RFC 4226, where hex40 always uses the top 40 bits.  dhex40 may be the
 default in future releases.</P
 ></DD
 ><DT
->-F</DT
+>-F, --flag=</DT
 ><DD
 ><P
->OTP flags.  All flags are unset by default.
+>OTP flag.  All flags are unset by default.
 <PRE
 CLASS="SCREEN"
 >   Flag              Description
    -----------------------------------------------------------------
-   display-count  :  Display HOTP count when prompted for challenge.</PRE
+   display-count  :  Display HOTP count when prompted for challenge.
+   send-token     :  Send token to user out of band.</PRE
 ></P
 ></DD
 ><DT
->-h</DT
+>-h, --help</DT
 ><DD
 ><P
 >Help.</P
 ></DD
 ><DT
->-H<TT
+>-H, --sc_hostname=<TT
 CLASS="REPLACEABLE"
 ><I
 > sc_hostname</I
@@ -224,10 +235,10 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set the SC hostname with the list-sc command mode.</P
+>Set the SC hostname for the list-sc command mode.</P
 ></DD
 ><DT
->-I<TT
+>-I, --sc_index=<TT
 CLASS="REPLACEABLE"
 ><I
 > sc_index</I
@@ -235,10 +246,10 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set the SC index with the list-sc command mode.</P
+>Set the SC index for the list-sc command mode.</P
 ></DD
 ><DT
->-k<TT
+>-k, --key=<TT
 CLASS="REPLACEABLE"
 ><I
 > key</I
@@ -253,7 +264,18 @@ unique count space is provisioned.  Use - for stdin.  Example key:
 C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745</P
 ></DD
 ><DT
->-m<TT
+>-l, --location=<TT
+CLASS="REPLACEABLE"
+><I
+> location</I
+></TT
+></DT
+><DD
+><P
+>Location to send token to when SEND_TOKEN flag is set.</P
+></DD
+><DT
+>-m, --command_mode=<TT
 CLASS="REPLACEABLE"
 ><I
 > command_mode</I
@@ -274,6 +296,7 @@ CLASS="SCREEN"
             list-sc            - List user record (SC friendly)
             load               - ASCII load user record(s)
             remove             - Remove user
+            send-token         - Send token to user
             set-count          - Set user count
             set-count-ceil     - Set user count ceiling
             set-flags          - Set user flags
@@ -283,16 +306,16 @@ CLASS="SCREEN"
             test               - Test user</PRE
 ></DD
 ><DT
->-n</DT
+>-n, --create_database</DT
 ><DD
 ><P
 >Create new database if one does not exist.</P
 ></DD
 ><DT
->-o<TT
+>-o, --otp-db=<TT
 CLASS="REPLACEABLE"
 ><I
-> otp_pathname</I
+> otp_db</I
 ></TT
 ></DT
 ><DD
@@ -300,10 +323,10 @@ CLASS="REPLACEABLE"
 >Pathname of OTP database.</P
 ></DD
 ><DT
->-s<TT
+>-s, --status=<TT
 CLASS="REPLACEABLE"
 ><I
-> otp_pathname</I
+> status</I
 ></TT
 ></DT
 ><DD
@@ -317,12 +340,13 @@ CLASS="SCREEN"
    inactive : OTP may not be required for successful authentication.
               The OTP authentication module may be configured to allow
               inactive accounts to authenticate.  This may be used to
-              temporarily remove the OTP authentication method for a user.
+              temporarily remove the OTP authentication method for a
+              user.
    disabled : Account is disabled.  OTP authentication will fail.</PRE
 ></P
 ></DD
 ><DT
->-S<TT
+>-S, --sc-flags=<TT
 CLASS="REPLACEABLE"
 ><I
 > sc_flags</I
@@ -330,10 +354,10 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set the SC flags with the list-sc command mode.  0=CHALLENGE, 1=READERKEY.</P
+>Set the SC flags for the list-sc command mode.  0=CHALLENGE, 1=READERKEY.</P
 ></DD
 ><DT
->-t<TT
+>-t, --type=<TT
 CLASS="REPLACEABLE"
 ><I
 > type</I
@@ -344,7 +368,7 @@ CLASS="REPLACEABLE"
 >OTP Type.  RFC 4226 HOTP is only supported type.</P
 ></DD
 ><DT
->-u<TT
+>-u, --username=<TT
 CLASS="REPLACEABLE"
 ><I
 > username</I
@@ -355,13 +379,30 @@ CLASS="REPLACEABLE"
 >Username to perform database operation on.</P
 ></DD
 ><DT
->-v</DT
+>-v, --verbose</DT
 ><DD
 ><P
 >Enable verbose output (debugging).</P
 ></DD
 ><DT
->-w<TT
+>-V, --service-name=<TT
+CLASS="REPLACEABLE"
+><I
+> service_name</I
+></TT
+></DT
+><DD
+><P
+>Set service name for send-token function.</P
+></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
+></DD
+><DT
+>-w, --challenge-window=<TT
 CLASS="REPLACEABLE"
 ><I
 > window</I
@@ -385,7 +426,7 @@ of tokens generated.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN139"
+NAME="AEN157"
 ></A
 ><H2
 >OTP-CONTROL COMMANDS</H2
@@ -413,7 +454,7 @@ CLASS="COMMAND"
 : dump user database in ASCII.  User records are separated by a newline.
 Fields are : separated.  All fields except the username are HEX encoded.</P
 ><P
->#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+>#version:user:key:status:format:type:flags:count_cur:count_ceiling:last
 01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000</P
 ><P
 ><B
@@ -495,7 +536,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN172"
+NAME="AEN190"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -504,7 +545,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN174"
+NAME="AEN192"
 ></A
 ><P
 >Create a new OTP database /etc/otpdb.  Add user bob with random key.</P
@@ -525,7 +566,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN179"
+NAME="AEN197"
 ></A
 ><P
 >Display user bob OTP database entry.</P
@@ -553,7 +594,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN184"
+NAME="AEN202"
 ></A
 ><P
 >Generate OTP for user bob.</P
@@ -573,7 +614,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN189"
+NAME="AEN207"
 ></A
 ><P
 >Test OTP for user bob.</P
@@ -595,7 +636,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN194"
+NAME="AEN212"
 ></A
 ><P
 >Dump OTP database to stdout.  Fields other than username are hex encoded.
@@ -607,7 +648,7 @@ CLASS="COMMAND"
 ></P
 ><PRE
 CLASS="SCREEN"
->#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+>#version:user:key:status:format:type:flags:count_cur:count_ceiling:last
 01:bob:C381739834A63A67B0B9F7F7D36C8C567F6BFB3D:01:01:01:00:0000000000000001:FFFFFFFFFFFFFFFF:000000004AA02F9E</PRE
 ><P
 ></P
@@ -617,7 +658,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN199"
+NAME="AEN217"
 ></A
 ><P
 >Dump OTP user to stdout in format friendly to <B
@@ -645,7 +686,7 @@ CLASS="COMPUTEROUTPUT"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN206"
+NAME="AEN224"
 ></A
 ><H2
 >AUTHOR</H2
@@ -662,7 +703,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN213"
+NAME="AEN231"
 ></A
 ><H2
 >SEE ALSO</H2

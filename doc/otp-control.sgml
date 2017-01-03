@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: otp-control.sgml 80 2009-12-26 23:25:04Z maf $ -->
+<!-- $Id: otp-control.sgml 169 2011-05-11 04:10:57Z maf $ -->
 
 <refentry>
 
@@ -25,18 +25,20 @@ Local user database configuration for One Time Password package.
 <command>otp-control</command>
 <arg>-?hnv</arg>
 <arg>-c<replaceable> count</replaceable></arg>
-<arg>-C<replaceable> count_ceil</replaceable></arg>
+<arg>-C<replaceable> count_ceiling</replaceable></arg>
 <arg>-f<replaceable> format</replaceable></arg>
-<arg>-F<replaceable> flags</replaceable></arg>
+<arg>-F<replaceable> flag</replaceable></arg>
 <arg>-H<replaceable> sc_hostname</replaceable></arg>
 <arg>-I<replaceable> sc_index</replaceable></arg>
 <arg>-k<replaceable> key</replaceable></arg>
+<arg>-l<replaceable> location</replaceable></arg>
 <arg>-m<replaceable> command_mode</replaceable></arg>
-<arg>-o<replaceable> otpdb_pathname</replaceable></arg>
+<arg>-o<replaceable> otp_db</replaceable></arg>
 <arg>-s<replaceable> status</replaceable></arg>
 <arg>-S<replaceable> sc_flags</replaceable></arg>
 <arg>-t<replaceable> type</replaceable></arg>
 <arg>-u<replaceable> username</replaceable></arg>
+<arg>-V<replaceable> service_name</replaceable></arg>
 <arg>-w<replaceable> window</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -56,7 +58,7 @@ and removed by <command>otp-control.</command>
 <variablelist>
 
 <varlistentry>
-<term>-c<replaceable> count</replaceable></term>
+<term>-c, --count= <replaceable> count</replaceable></term>
 <listitem>
 <para>
 User count.  The count increases with each OTP transaction.
@@ -65,7 +67,7 @@ User count.  The count increases with each OTP transaction.
 </varlistentry>
 
 <varlistentry>
-<term>-C<replaceable> count_ceil</replaceable></term>
+<term>-C, --count-ceil= <replaceable> count_ceiling</replaceable></term>
 <listitem>
 <para>
 User count ceiling.  Highest count allowed for this user.  Configuring
@@ -76,9 +78,9 @@ A count value must only be allowed for authentication once.
 </para><para>
 Example:
 </para><para>
-host=h1, user=bob, count_current=0, count_ceil=10000.
+host=h1, user=bob, count_current=0, count_ceiling=10000.
 </para><para>
-host=h2, user=bob, count_current=10001, count_ceil=20000.
+host=h2, user=bob, count_current=10001, count_ceiling=20000.
 </para><para>
 The number of keys a user must possess is decreased at the expense
 of security dependencies among multiple systems.  If system A is
@@ -93,7 +95,7 @@ system database during authentication.
 </varlistentry>
 
 <varlistentry>
-<term>-f</term>
+<term>-f, --format=</term>
 <listitem>
 <para>
 OTP format.  One of hex40 dhex40 dec31.6 dec31.7 dec31.8 dec31.9 dec31.10.
@@ -107,14 +109,15 @@ default in future releases.
 </varlistentry>
 
 <varlistentry>
-<term>-F</term>
+<term>-F, --flag=</term>
 <listitem>
 <para>
-OTP flags.  All flags are unset by default.
+OTP flag.  All flags are unset by default.
 <screen>
    Flag              Description
    -----------------------------------------------------------------
    display-count  :  Display HOTP count when prompted for challenge.
+   send-token     :  Send token to user out of band.
 </screen>
 </para>
 </listitem>
@@ -122,7 +125,7 @@ OTP flags.  All flags are unset by default.
 
 
 <varlistentry>
-<term>-h</term>
+<term>-h, --help</term>
 <listitem>
 <para>
 Help.
@@ -132,25 +135,25 @@ Help.
 
 
 <varlistentry>
-<term>-H<replaceable> sc_hostname</replaceable></term>
+<term>-H, --sc_hostname=<replaceable> sc_hostname</replaceable></term>
 <listitem>
 <para>
-Set the SC hostname with the list-sc command mode.
+Set the SC hostname for the list-sc command mode.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>-I<replaceable> sc_index</replaceable></term>
+<term>-I, --sc_index=<replaceable> sc_index</replaceable></term>
 <listitem>
 <para>
-Set the SC index with the list-sc command mode.
+Set the SC index for the list-sc command mode.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>-k<replaceable> key</replaceable></term>
+<term>-k, --key=<replaceable> key</replaceable></term>
 <listitem>
 <para>
 160 bit shared secret key in ASCII HEX.  The secret key is shared between
@@ -163,7 +166,16 @@ C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
 </varlistentry>
 
 <varlistentry>
-<term>-m<replaceable> command_mode</replaceable></term>
+<term>-l, --location=<replaceable> location</replaceable></term>
+<listitem>
+<para>
+Location to send token to when SEND_TOKEN flag is set.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-m, --command_mode=<replaceable> command_mode</replaceable></term>
 <listitem>
 <para>
 </para>
@@ -178,6 +190,7 @@ C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
             list-sc            - List user record (SC friendly)
             load               - ASCII load user record(s)
             remove             - Remove user
+            send-token         - Send token to user
             set-count          - Set user count
             set-count-ceil     - Set user count ceiling
             set-flags          - Set user flags
@@ -190,7 +203,7 @@ C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
 </varlistentry>
 
 <varlistentry>
-<term>-n</term>
+<term>-n, --create_database</term>
 <listitem>
 <para>
 Create new database if one does not exist.
@@ -199,7 +212,7 @@ Create new database if one does not exist.
 </varlistentry>
 
 <varlistentry>
-<term>-o<replaceable> otp_pathname</replaceable></term>
+<term>-o, --otp-db=<replaceable> otp_db</replaceable></term>
 <listitem>
 <para>
 Pathname of OTP database.
@@ -208,7 +221,7 @@ Pathname of OTP database.
 </varlistentry>
 
 <varlistentry>
-<term>-s<replaceable> otp_pathname</replaceable></term>
+<term>-s, --status=<replaceable> status</replaceable></term>
 <listitem>
 <para>
 OTP Status.  The default status is active.
@@ -219,7 +232,8 @@ OTP Status.  The default status is active.
    inactive : OTP may not be required for successful authentication.
               The OTP authentication module may be configured to allow
               inactive accounts to authenticate.  This may be used to
-              temporarily remove the OTP authentication method for a user.
+              temporarily remove the OTP authentication method for a
+              user.
    disabled : Account is disabled.  OTP authentication will fail.
 </screen>
 </para>
@@ -228,16 +242,16 @@ OTP Status.  The default status is active.
 
 
 <varlistentry>
-<term>-S<replaceable> sc_flags</replaceable></term>
+<term>-S, --sc-flags=<replaceable> sc_flags</replaceable></term>
 <listitem>
 <para>
-Set the SC flags with the list-sc command mode.  0=CHALLENGE, 1=READERKEY.
+Set the SC flags for the list-sc command mode.  0=CHALLENGE, 1=READERKEY.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>-t<replaceable> type</replaceable></term>
+<term>-t, --type=<replaceable> type</replaceable></term>
 <listitem>
 <para>
 OTP Type.  RFC 4226 HOTP is only supported type.
@@ -246,7 +260,7 @@ OTP Type.  RFC 4226 HOTP is only supported type.
 </varlistentry>
 
 <varlistentry>
-<term>-u<replaceable> username</replaceable></term>
+<term>-u, --username=<replaceable> username</replaceable></term>
 <listitem>
 <para>
 Username to perform database operation on.
@@ -255,7 +269,7 @@ Username to perform database operation on.
 </varlistentry>
 
 <varlistentry>
-<term>-v</term>
+<term>-v, --verbose</term>
 <listitem>
 <para>
 Enable verbose output (debugging).
@@ -264,7 +278,25 @@ Enable verbose output (debugging).
 </varlistentry>
 
 <varlistentry>
-<term>-w<replaceable> window</replaceable></term>
+<term>-V, --service-name=<replaceable> service_name</replaceable></term>
+<listitem>
+<para>
+Set service name for send-token function.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>--version</term>
+<listitem>
+<para>
+Display software version.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-w, --challenge-window=<replaceable> window</replaceable></term>
 <listitem>
 <para>
 Set the maximum window (count above the system count) where an OTP
@@ -305,7 +337,7 @@ user stored in a separate ASCII : delimited file in base_dir/d.
 : dump user database in ASCII.  User records are separated by a newline.
 Fields are : separated.  All fields except the username are HEX encoded.
 </para><para>
-#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+#version:user:key:status:format:type:flags:count_cur:count_ceiling:last
 01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000
 </para>
 
@@ -446,7 +478,7 @@ Use the load command to import records in this format.
   <command>otp-control -m dump</command>
 </para>
 <screen>
-#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+#version:user:key:status:format:type:flags:count_cur:count_ceiling:last
 01:bob:C381739834A63A67B0B9F7F7D36C8C567F6BFB3D:01:01:01:00:0000000000000001:FFFFFFFFFFFFFFFF:000000004AA02F9E
 </screen>
 </informalexample>

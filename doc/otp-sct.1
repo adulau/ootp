@@ -62,23 +62,25 @@
 The \fBotp-sct\fP command is a user interface to generating
 One Time Passwords with a Smart Card loaded with OTP software\&.
 .SH "OPTIONS"
-.IP "-c\fI count\fP" 10
+.IP "-c, --sc-count=\fI count\fP" 10
 Configure the optional count parameter to sync a Smart Card to a challenge\&.
-.IP "-d\fI debug_level\fP" 10
+A count value of 0 indicates the HOTP value is to be calculated with the
+current stored count\&.
+.IP "-d, --debug=\fI debug_level\fP" 10
 Set debug level\&.
-.IP "-h" 10
+.IP "-h, --help" 10
 Help\&.
-.IP "-i\fI index\fP" 10
+.IP "-i, --sc-index=\fI index\fP" 10
 Set the 8 bit index\&.  The Smart Card contains numerically indexed records
 for each host system\&.  Use the -l option to list hostnames associated with
 the index\&.  The default index is 0\&.
-.IP "-l" 10
+.IP "-l, --list-readers" 10
 List SC Readers
-.IP "-L" 10
+.IP "-L, --sc-list-hostnames" 10
 List host systems configured on the Smart Card\&.  The index is used with the -i option\&.
-.IP "-o" 10
+.IP "-p, --sc-reset-pin" 10
 Set new PIN\&.
-.IP "-r\fI reader\fP" 10
+.IP "-r, --reader=\fI reader\fP" 10
 Set Smart Card reader\&.  Use -l to list available readers\&.  A reader
 is defined as class:reader:[option]\&.  PCSC and embedded
 are the two available classes\&.  The embedded class contains the acr30s driver
@@ -87,17 +89,19 @@ If pcscd is running the first PC/SC reader will be the default followed by
 the embedded acr30s driver\&.  Use PCSC: for the first available PC/SC
 reader\&.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
 with serial port /dev/cuaU0\&.
-.IP "-v\fI card_api_version\fP" 10
+.IP "-v, --sc-version=\fI card_api_version\fP" 10
 Set the Smart Card API version\&.  The binary API between the terminal
 and Smart Card changed between version 2 and 3\&.  See command mode notes
 above\&.  The default version is 3\&.  Configuring version 2 will allow
 maintenance of Smart Card with version 2 firmware\&.
-.IP "-V" 10
+.IP "-V, --sc-list-version" 10
 List the Smart Card firmware version\&.
-.IP "-1" 10
+.IP "-1, --sc-get-hostp-v1" 10
 Use the version 1 GetHOTP command instead of the default GetHOTPHostCount32\&.
 The latter is not available on firmware revision 1\&.  GetHOTP may be conditionally
 compiled out of newer firmware\&.
+.IP "--version" 10
+Display software version\&.
 .SH "EXAMPLES"
 .PP
 Generate a HOTP for the first system on the first PCSC reader found\&.
@@ -138,4 +142,4 @@ Mark Fullmer maf@splintered\&.net
 \fBbcload\fP(1)
 \fBurd\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

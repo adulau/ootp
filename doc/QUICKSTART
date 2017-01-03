@@ -1,5 +1,5 @@
 #
-# $Id: QUICKSTART 76 2009-12-26 21:04:01Z maf $
+# $Id: QUICKSTART 114 2010-02-25 18:23:44Z maf $
 #
 
 OpenOTP is an implementation of the HOTP protocol using a ZeitControl
@@ -326,7 +326,7 @@ semanage fcontext -a -t textrel_shlib_t /lib/security/pam_otp.so
 
 # create the OTP database with one inactive user (joe)
 otp-control -n -u joe -m add
-otp-control -u joe -m set-status inactive
+otp-control -u joe -m set-status -s inactive
 otp-control -u joe -m list
 
 >Username.......joe
@@ -408,7 +408,7 @@ Last login: Wed Sep  2 00:22:03 2009 from 10.1.0.26
 
 #### Downloading firmware to the Spyrus reader
 
-The Spyrus PAR II will be programmed with the spyrus1.3.hex application
+The Spyrus PAR II will be programmed with the spyrus1.4.hex application
 included in the OTP distribution.  This will be done once per new reader,
 or when new application software is required.  An proprietary RS232 serial
 programming cable available from Spyrus is needed.
@@ -425,10 +425,10 @@ arrow until the "DownloadApp" menu item is present.
 Start the htsoft-downloader utility using serial port at /dev/cuaU0 :
 
 # FreeBSD USB Serial Adapter
-htsoft-downloader -v1 -i -f /dev/cuaU0 < $OOTP/firmware/spyrus1.3.hex
+htsoft-downloader -v1 -i -f /dev/cuaU0 < $OOTP/firmware/spyrus1.4.hex
 
 # Linux USB Serial Adapter
-htsoft-downloader -v1 -i -f /dev/ttyS0 < $OOTP/firmware/spyrus1.3.hex
+htsoft-downloader -v1 -i -f /dev/ttyS0 < $OOTP/firmware/spyrus1.4.hex
 
 Press Enter on the spyrus reader to start the download application:
 

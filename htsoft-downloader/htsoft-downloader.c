@@ -24,12 +24,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: htsoft-downloader.c 75 2009-12-26 20:59:23Z maf $
+ *      $Id: htsoft-downloader.c 128 2010-06-15 14:25:09Z maf $
  */
 
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -89,6 +90,7 @@ int n2b(char *h, u_char *b);
 
 int main(int argc, char **argv)
 {
+  extern char *ootp_version;
   struct termios pic_term;
   char lbuf[1024];
   char *c;
@@ -97,8 +99,20 @@ int main(int argc, char **argv)
   uint8_t ld_buf[256], ld_buf_len;
   uint16_t h_load_offset, tmp_load_offset, buf_load_offset;
   int i, r, pic_fd, lineno, lbuf_len, got_eof, pic_tmout, verbose;
-  int max_retries, ignore_last_wok_timeout;
+  int max_retries, ignore_last_wok_timeout, opt_version;
   char *pic_dev;
+
+  struct option longopts[] = {
+    { "serial-device",              1, (void*)0L, 'f'},
+    { "help",                       0, (void*)0L, 'h'},
+    { "help",                       0, (void*)0L, '?'},
+    { "ignore-last-wok-timeout",    0, (void*)0L, 'i'},
+    { "retries",                    1, (void*)0L, 'r'},
+    { "pic-timeout",                1, (void*)0L, 't'},
+    { "verbose",                    0, (void*)0L, 'v'},
+    { "version",                    0, &opt_version, 1},
+    { 0, 0, 0, 0},
+  };
 
   xerr_setid(argv[0]);
   lineno = 0;
@@ -111,8 +125,10 @@ int main(int argc, char **argv)
   h_load_offset = 0;
   buf_load_offset = 0;
   ignore_last_wok_timeout = 0;
+  opt_version = 0;
 
-  while ((i = getopt(argc, argv, "f:h?ir:t:v:")) != -1) {
+  while ((i = getopt_long(argc, argv, "f:h?ir:t:v:", longopts,
+    (int*)0L)) != -1) {
 
     switch (i) {
 
@@ -142,14 +158,19 @@ int main(int argc, char **argv)
         verbose = atoi(optarg);
         break;
 
+      case 0:
+        if (opt_version) {
+          printf("%s\n", ootp_version);
+          exit(0);
+        }
+
       default:
-        help();
-        exit(1);
-        break; /* notreached */
+        xerr_errx(1, "getopt_long(): fatal.");
+        break; /* not reached */
 
     } /* switch */
 
-  } /* getopt */
+  } /* while getopt_long() */
 
   /* open and setup serial communications port */
   if ((pic_fd = open(pic_dev, O_RDWR)) < 0)

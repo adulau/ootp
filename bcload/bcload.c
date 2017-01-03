@@ -26,7 +26,7 @@
  *
  * Ported from ZeitControl bcload.bas and download.bas sample source
  *
- *      $Id: bcload.c 90 2009-12-28 02:44:52Z maf $
+ *      $Id: bcload.c 127 2010-06-15 14:24:34Z maf $
  */
 
 #include <sys/cdefs.h>
@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
+#include <getopt.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,6 +99,7 @@ void bcimg_read_eeprom_section(struct bcimg *bcimg, uint16_t *img_EEAddr,
 
 int main(int argc, char **argv)
 {
+  extern char *ootp_version;
   struct scr_ctx *scrctx;
   struct bcimg bcimg;
   uint32_t chunk_start, bytes_left, chunk_working;
@@ -109,13 +111,28 @@ int main(int argc, char **argv)
   uint8_t img_state, *img_pgmdata, img_EELoadLen, sname[4];
   uint8_t sc_EEStart[2], sc_EELen[2], sc_EEAddr[2];
   uint8_t sc_state, sc_version[256], sc_version_len, sc_CRC[2];
-  int i, r;
+  int i, r, opt_version;
   int list_readers, verbose, paranoid, force_test;
   char *reader, *endptr, *c, *img_fname;
+
+  struct option longopts[] = {
+    { "debug",           1, (void*)0L, 'd'},
+    { "image",           1, (void*)0L, 'f'},
+    { "help",            0, (void*)0L, 'h'},
+    { "help",            0, (void*)0L, '?'},
+    { "list-readers",    0, (void*)0L, 'l'},
+    { "no-paranoid",     0, (void*)0L, 'p'},
+    { "reader",          1, (void*)0L, 'r'},
+    { "force-test",      0, (void*)0L, 't'},
+    { "verbose",         0, (void*)0L, 'v'},
+    { "version",         0, &opt_version, 1},
+    { 0, 0, 0, 0},
+  };
 
   /* init xerr */
   xerr_setid(argv[0]);
 
+  opt_version = 0;
   force_test = 0;
   paranoid = 1;
   debug = 0;
@@ -126,7 +143,8 @@ int main(int argc, char **argv)
   img_fname = "HOTPC.IMG";
   bzero(&bcimg, sizeof bcimg);
 
-  while ((i = getopt(argc, argv, "d:f:hlpr:tv?")) != -1) {
+  while ((i = getopt_long(argc, argv, "d:f:hlpr:tv?", longopts,
+    (int*)0L)) != -1) {
 
     switch (i) {
 
@@ -144,7 +162,7 @@ int main(int argc, char **argv)
       case '?':
         help();
         exit(0);
-        break; /* notreached */
+        break; /* not reached */
 
       case 'l':
         list_readers = 1;
@@ -165,6 +183,17 @@ int main(int argc, char **argv)
       case 'v':
         verbose = 1;
         break;
+
+      case 0:
+        if (opt_version) {
+          printf("%s\n", ootp_version);
+          exit(0);
+        }
+        break;
+
+      default:
+        xerr_errx(1, "getopt_long(): fatal.");
+        break; /* not reached */
 
     } /* switch */
 
@@ -510,7 +539,7 @@ main_out:
 
 void help(void)
 {
-  fprintf(stderr, "bcload [hlptv?] [-d debug_level] [-f fname] [-r reader]\n");
+  fprintf(stderr, "bcload [hlptv?] [-d debug_level] [-f image] [-r reader]\n");
   fprintf(stderr, "        -h : help\n");
   fprintf(stderr, "        -l : list SC readers\n");
   fprintf(stderr, "        -t : force to TEST state\n");

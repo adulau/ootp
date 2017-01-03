@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: htsoft-downloader.sgml 74 2009-12-26 20:40:57Z maf $ -->
+<!-- $Id: htsoft-downloader.sgml 126 2010-06-15 14:23:02Z maf $ -->
 
 <refentry>
 
@@ -50,25 +50,7 @@ on standard output and downloaded to a PIC on the
 <variablelist>
 
 <varlistentry>
-<term>-h</term>
-<listitem>
-<para>
-Help
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term>-i</term>
-<listitem>
-<para>
-Ignore timeout for last WOK after sending reset.
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term>-f<replaceable> serial_device</replaceable></term>
+<term>-f, --serial-device=<replaceable> serial_device</replaceable></term>
 <listitem>
 <para>
 Serial device filename.  Examples:
@@ -87,7 +69,25 @@ Prolific PL2303 USB to serial adaptor on FreeBSD.
 </varlistentry>
 
 <varlistentry>
-<term>-r<replaceable> retries</replaceable></term>
+<term>-h, --help</term>
+<listitem>
+<para>
+Help
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-i, --ignore-last-wok-timeout</term>
+<listitem>
+<para>
+Ignore timeout for last WOK after sending reset.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-r, --pic-retries=<replaceable> retries</replaceable></term>
 <listitem>
 <para>
 Number of times to retry a block.  Defaults to 5.
@@ -96,7 +96,7 @@ Number of times to retry a block.  Defaults to 5.
 </varlistentry>
 
 <varlistentry>
-<term>-t<replaceable> timeout</replaceable></term>
+<term>-t, --pic-timeout=<replaceable> timeout</replaceable></term>
 <listitem>
 <para>
 Timeout in .1 second intervals.  Defaults to 25.
@@ -105,12 +105,21 @@ Timeout in .1 second intervals.  Defaults to 25.
 </varlistentry>
 
 <varlistentry>
-<term>-v<replaceable> verbose_level</replaceable></term>
+<term>-v, --verbose=<replaceable> verbose_level</replaceable></term>
 <listitem>
 <para>
 Increasing the verbosity level will produce debug messages indicating
 the status of the download.  A level of 9 will include all debugging
 output.  A level of 1 will indicate the overall status of the transfer.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>--version</term>
+<listitem>
+<para>
+Display software version.
 </para>
 </listitem>
 </varlistentry>

@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: rad.h 13 2009-11-26 16:37:03Z maf $
+ *      $Id: rad.h 157 2011-04-06 03:57:29Z maf $
  */
 
 #include <openssl/evp.h>
@@ -42,8 +42,9 @@
 #define URD_PACKET_LEN_MIN 20        /* minimum datagram length */
 
 #define URD_TLV_STATE_LEN  20        /* length of state tlv data */
-/* XXX */
-#define URD_TLV_REPLY_MSG_LEN 8      /* length of state reply message data */
+
+/* can encode a PRIu64 which is up to 20 digits in ASCII */
+#define URD_TLV_REPLY_MSG_LEN 20     /* length of state reply message data */
 
 /*
  * The cache length should be a minimum (max queries/second * cache seconds)
@@ -64,8 +65,8 @@
 #define URD_REQ_CACHE_HIT 1          /* cache hit */
 #define URD_REQ_CACHE_MISS 0         /* cache miss */
 
-#define URD_REQ_CACHE_FLAGS_INUSE 0x1    /* cache entry is in use */
-#define URD_STATE_CACHE_FLAGS_INUSE 0x2  /* cache entry is in use */
+#define URD_REQ_CACHE_FLAG_INUSE 0x1    /* cache entry is in use */
+#define URD_STATE_CACHE_FLAG_INUSE 0x2  /* cache entry is in use */
 
 /* Hash buckets is dependent on the hash function.. */
 #define URD_REQ_HASH_BUCKET_BITS 16    /* number of hash buckets */
@@ -76,6 +77,7 @@
 #define URD_STATE_CACHE_MISS 0         /* cache miss */
 
 #define URD_CACHE_FLAG_STATE 0x1       /* prep lookup by state too */
+#define URD_CACHE_FLAG_MSG   0x2       /* hint to encode message */
 
 #define URD_ENCODE_FLAG_STATE   0x1    /* encode state in reply */
 #define URD_ENCODE_FLAG_MSG     0x2    /* encode message in reply */
@@ -139,6 +141,7 @@
 #define URD_DECODE_TYPE_HEX    0
 #define URD_DECODE_TYPE_CHAR   1
 #define URD_DECODE_TYPE_IP     2
+#define URD_DECODE_TYPE_HIDDEN 3
 
 struct radius_dgram_header {
   uint8_t   code;
@@ -170,6 +173,7 @@ struct urd_req_cache_entry {
   char      user_name[URD_USER_NAME_LEN+1];     /* key */
   char      user_pass[URD_USER_PASS_LEN+1];     /* key */
   uint64_t  state_counter;                      /* state_hash/key */
+  uint64_t  otp_count;                          /* OTP count */
   time_t    create_time;                        /* cache maintenance */
   uint8_t   rad_code;                           /* data to be cached */
   uint8_t   rad_id;                             /* req_hash/key */
@@ -187,7 +191,7 @@ struct urd_req_cache_entry {
  *     rce_index = 0;
  *
  * when storing an entry (rce_index always points to the next free entry)
- * if (entry.flags & URD_REQ_CACHE_FLAGS_INUSE) then
+ * if (entry.flags & URD_REQ_CACHE_FLAG_INUSE) then
  *   remove entry from req_chain before using.
  *
  * counter initialized to 1, counter=0 is a stateless cache entry, ie
@@ -203,16 +207,17 @@ struct urd_req_cache_entry {
  */
 
 struct urd_req {
-  EVP_MD_CTX          mdctx;                            /* MD5 context */
-  uint8_t             pkt_buf[URD_MAX_DGRAM_LEN];       /* raw datagram */
-  struct              radius_dgram_header dgram_header; /* datagram header */
-  struct              sockaddr_in rem_addr;             /* remote host */
-  int                 pkt_len;                          /* packet length */
-  int                 tlv_count;                        /* number TLV's */
-  struct urd_tlv      tlv[URD_MAX_TLV];                 /* decoded TLV's */
-  char                user_name[URD_USER_NAME_LEN+1];   /* C string */
-  char                user_pass[URD_USER_PASS_LEN+1];   /* C string (clear) */
-  uint64_t            state_counter;                    /* decoded state TLV */
+  EVP_MD_CTX       mdctx;                            /* MD5 context */
+  uint8_t          pkt_buf[URD_MAX_DGRAM_LEN];       /* raw datagram */
+  struct           radius_dgram_header dgram_header; /* datagram header */
+  struct           sockaddr_in rem_addr;             /* remote host */
+  int              pkt_len;                          /* packet length */
+  int              tlv_count;                        /* number TLV's */
+  struct urd_tlv   tlv[URD_MAX_TLV];                 /* decoded TLV's */
+  char             user_name[URD_USER_NAME_LEN+1];   /* C string */
+  char             user_pass[URD_USER_PASS_LEN+1];   /* C string (clear) */
+  char             user_name_base[URD_USER_NAME_LEN+1]; /* C string (clear) */
+  uint64_t         state_counter;                    /* decoded state TLV */
   /* shortcuts */
   struct urd_tlv   *tlv_User_Name;
   struct urd_tlv   *tlv_NAS_IP_Address;
@@ -246,13 +251,13 @@ struct urd_ctx {
 int urd_req_decode(struct urd_ctx *urdctx);
 void urd_req_dump(struct urd_ctx *urdctx);
 int urd_rep_encode(struct urd_ctx *urdctx, uint8_t code, 
- uint64_t state_counter, int rep_encode_flags);
+ uint64_t state_counter, uint64_t otp_count, int rep_encode_flags);
 struct urd_ctx *urd_ctx_new(char *rsecret);
 void urd_ctx_free(struct urd_ctx *urdctx);
 int urd_req_cache_update(struct urd_ctx *urdctx, uint8_t code,
-  uint64_t state_counter, int req_cache_flags);
+  uint64_t state_counter, uint64_t otp_count, int req_cache_flags);
 int urd_req_cache_lookup(struct urd_ctx *urdctx, uint8_t *code,
-  uint64_t *state_counter);
+  uint64_t *state_counter, uint64_t *otp_count, int *cache_flags);
 int urd_state_cache_lookup(struct urd_ctx *urdctx, uint8_t *code);
 void urd_state_cache_stats(struct urd_ctx *urdctx);
 void urd_req_cache_stats(struct urd_ctx *urdctx);

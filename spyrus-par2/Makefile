@@ -1,9 +1,9 @@
-# $Id: Makefile 13 2009-11-26 16:37:03Z maf $
+# $Id: Makefile 101 2009-12-28 03:04:32Z maf $
 
 INSTALLI=install -c -m0644
 INSTALL=install -c -m0755
 
-IMGS = spyrus1.3.hex oar.ee oar.str
+IMGS = spyrus1.4.hex oar.ee oar.str
 BINS = str2ee
 DOCS = eeprom-map.txt oar.str
 

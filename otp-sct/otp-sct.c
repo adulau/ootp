@@ -24,13 +24,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-sct.c 88 2009-12-28 00:12:01Z maf $
+ *      $Id: otp-sct.c 131 2010-06-15 14:26:23Z maf $
  */
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/errno.h>
+#include <getopt.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,8 +78,9 @@ void help(void);
 
 int main(int argc, char **argv)
 {
+  extern char *ootp_version;
   struct scr_ctx *scrctx;
-  int i, j, k, r, sc_idx_set, sc_idx_tmp, j_start, j_end;
+  int i, j, k, r, sc_idx_set, sc_idx_tmp, j_start, j_end, opt_version;
   int reset_pin, list_readers, list_version, get_hotp_version, list_hostnames;
   uint32_t tmp_count, tmp32u;
   uint64_t tmp64u;
@@ -90,9 +92,27 @@ int main(int argc, char **argv)
   u_char sc_fv;
   char *reader, *endptr, *err_msg;
 
+  struct option longopts[] = {
+    { "sc-get-hotp-v1",             0, (void*)0L, '1'},
+    { "sc-count",                   1, (void*)0L, 'c'},
+    { "debug",                      1, (void*)0L, 'd'},
+    { "help",                       0, (void*)0L, 'h'},
+    { "help",                       0, (void*)0L, '?'},
+    { "sc-index",                   1, (void*)0L, 'i'},
+    { "list-readers",               0, (void*)0L, 'l'},
+    { "sc-list-hostnames",          0, (void*)0L, 'L'},
+    { "sc-reset-pin",               0, (void*)0L, 'p'},
+    { "reader",                     1, (void*)0L, 'r'},
+    { "sc-version",                 1, (void*)0L, 'v'},
+    { "sc-list-version",            0, (void*)0L, 'V'},
+    { "version",                    0, &opt_version, 1},
+    { 0, 0, 0, 0},
+  };
+
   /* init xerr */
   xerr_setid(argv[0]);
 
+  opt_version = 0;
   sc_fv = 5;
   debug = 0;
   sc_idx_set = 0;
@@ -116,7 +136,8 @@ int main(int argc, char **argv)
   bcopy(SC_PIN_DEFAULT, sc_pin, SC_PIN_LEN);
   bcopy(SC_PIN_DEFAULT, sc_newpin, SC_PIN_LEN);
 
-  while ((i = getopt(argc, argv, "1c:d:hi:lLpr:v:V?")) != -1) {
+  while ((i = getopt_long(argc, argv, "1c:d:hi:lLpr:v:V?", longopts,
+    (int*)0L)) != -1) {
 
     switch (i) {
 
@@ -189,9 +210,18 @@ int main(int argc, char **argv)
         list_version = 1;
         break;
 
+     case 0:
+        if (opt_version) {
+          printf("%s\n", ootp_version);
+          exit(0);
+        }
+
+     default:
+        xerr_errx(1, "getopt_long(): fatal.");
+
     } /* switch */
 
-  } /* while getopt() */
+  } /* while getopt_long() */
 
   /* get pin */
   if (!list_readers && !list_version) {

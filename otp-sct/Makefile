@@ -1,4 +1,4 @@
-# $Id: Makefile 13 2009-11-26 16:37:03Z maf $
+# $Id: Makefile 131 2010-06-15 14:26:23Z maf $
 
 what:
 	@echo
@@ -25,22 +25,27 @@ INSTALL=install -c -m0755
 
 .c.o:;  $(CC) $(CFLAGS) -c $*.c -o $*.o
 
+BIN = otp-sct
 OBJS = ../common/xerr.o ../common/str.o ../common/acr30.o ../common/scr.o ../common/sccmd.o
-
-BINS = otp-sct
+COBJS = version.o ${BIN}.o
 
 BINDIR=/usr/local/ootp/bin
 
-all: otp-sct.c ${OBJS} ${BINS}
+all: version ${OBJS} ${BIN}
+
+version:
+	rm -f version.c; ../build/version ../VERSION ${BIN} > version.c
+
+version.c:
 
 install:
 	mkdir -p ${BINDIR}
-	${INSTALL} ${BINS} ${BINDIR}
+	${INSTALL} ${BIN} ${BINDIR}
 	@echo files installed in ${BINDIR}
 
 clean:
-	/bin/rm -f ${BINS} otp-sct.o
+	/bin/rm -f ${BIN} otp-sct.o version.c
 
-otp-sct: ${OBJS} otp-sct.o
-	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o otp-sct ${OBJS} otp-sct.o $(LIBS)
+${BIN}: ${COBJS} ${OBJS}
+	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o ${BIN} ${OBJS} ${COBJS} $(LIBS)
 

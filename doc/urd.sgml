@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: urd.sgml 50 2009-12-15 01:37:19Z maf $ -->
+<!-- $Id: urd.sgml 178 2011-05-16 02:39:04Z maf $ -->
 
 <refentry>
 
@@ -23,14 +23,16 @@ Micro footprint RADIUS daemon with One Time Password support.
 <refsynopsisdiv>
 <cmdsynopsis>
 <command>urd</command>
-<arg>-?AhdDOux</arg>
-<arg>-a<replaceable> allowed_users_file</replaceable></arg>
+<arg>-?AhcdDmMOux</arg>
+<arg>-a<replaceable> authorized_users_file</replaceable></arg>
 <arg>-b<replaceable> local_ip</replaceable></arg>
 <arg>-B<replaceable> local_port</replaceable></arg>
 <arg>-o<replaceable> otp_db</replaceable></arg>
 <arg>-p<replaceable> passwd_file</replaceable></arg>
 <arg>-P<replaceable> pid_file</replaceable></arg>
 <arg>-s<replaceable> secret_file</replaceable></arg>
+<arg>-S<replaceable> auth_service_name</replaceable></arg>
+<arg>-V<replaceable> service_name</replaceable></arg>
 <arg>-w<replaceable> otp_window</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -43,7 +45,7 @@ The <command>urd</command> daemon implements a minimal subset
 of the RADIUS protocol for user authentication with optional
 One Time Passwords.  Accounting is not supported.  Configuration
 files include a <filename>passwd</filename> file in Unix passwd(5)
-format, an optional <filename>allowed_users</filename> file for
+format, an optional <filename>authorized_users</filename> file for
 authenticating with a subset of the <filename>passwd</filename> file, a
 <filename>secret</filename> file for the shared RADIUS secret, and
 <filename>otp_db</filename> for One Time Password support.
@@ -70,6 +72,13 @@ before any Read Modify Write operations are performed.
 An alternate OTP database can be specified as <filename>otb_db</filename>.
 </para>
 <para>
+PAM authentication is optionally supported for passwords.  PAM can
+be configured as the sole means of authentication, or the locally
+configured password file may be used as a method of selecting valid
+users to later be authenticated with PAM.  PAM can be used for the 
+reusable password, the OTP API is always used for two factor authentication.
+</para>
+<para>
 The <filename>secret</filename> file contains the key shared
 by the RADIUS NAS and RADIUS server.  It must be less than 32 bytes.
 </para>
@@ -86,22 +95,22 @@ with a password this feature will be disabled.
 <variablelist>
 
 <varlistentry>
-<term>-a<replaceable> allowed_users_file</replaceable></term>
+<term>-a, --authorized-users-db=<replaceable> authorized_users_file</replaceable></term>
 <listitem>
 <para>
-Specify an alternate location for the <filename>allowed_users_file</filename>.
+Specify an alternate location for the <filename>authorized_users_file</filename>.
 </para>
 <para>
-The <filename>allowed_users_file</filename> contains one username per line.
+The <filename>authorized_users_file</filename> contains one username per line.
 When configured this option requires a user to be listed
-in <filename>allowed_users_file</filename> for authentication to proceed
+in <filename>authorized_users_file</filename> for authentication to proceed
 with the password and One Time Password functions.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>-A</term>
+<term>-A, --disable-authorized-users</term>
 <listitem>
 <para>
 Disable <filename>authorized_users</filename> feature.  This option must
@@ -111,7 +120,7 @@ be set if the <filename>authorized_users_file</filename> is not used.
 </varlistentry>
 
 <varlistentry>
-<term>-b<replaceable> local_ip</replaceable></term>
+<term>-b, --bind-ip-address=<replaceable> local_ip</replaceable></term>
 <listitem>
 <para>
 Specify an IP address to bind(2) to.  The default behavior will bind to
@@ -121,7 +130,7 @@ INADDR_ANY.
 </varlistentry>
 
 <varlistentry>
-<term>-B<replaceable> local_port</replaceable></term>
+<term>-B, --bind-udp-port=<replaceable> local_port</replaceable></term>
 <listitem>
 <para>
 Specify the local UDP port to bind(2) to.  The default behavior will bind
@@ -131,7 +140,17 @@ to UDP port 1812.
 </varlistentry>
 
 <varlistentry>
-<term>-d</term>
+<term>-c, --display-count</term>
+<listitem>
+<para>
+Force count to be passed to RADIUS NAS.  Not all devices will be able to
+display this field.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-d, --debug=<replaceable> debug_level</replaceable></term>
 <listitem>
 <para>
 Enable verbose debugging.
@@ -140,7 +159,7 @@ Enable verbose debugging.
 </varlistentry>
 
 <varlistentry>
-<term>-D</term>
+<term>-D, --disable-daemon-mode</term>
 <listitem>
 <para>
 Disable daemon mode.  When specified <command>urd</command> will not 
@@ -150,7 +169,26 @@ run in the background and stdout is available for debugging information.
 </varlistentry>
 
 <varlistentry>
-<term>-o<replaceable> otp_db</replaceable></term>
+<term>-m, --pam-authentication-enable</term>
+<listitem>
+<para>
+Authenticate with PAM.  The user must be present in the local password
+and optionally authorized users files before PAM authentication.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-M, --pam-authentication-exclusive</term>
+<listitem>
+<para>
+Authenticate with PAM.  The local password file is not consulted.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-o, --otp-db=<replaceable> otp_db</replaceable></term>
 <listitem>
 <para>
 Specify an alternate location for the One Time Password database
@@ -160,7 +198,7 @@ Specify an alternate location for the One Time Password database
 </varlistentry>
 
 <varlistentry>
-<term>-O</term>
+<term>-O, --otp-disable</term>
 <listitem>
 <para>
 Disable the use of One Time Passwords.
@@ -169,7 +207,7 @@ Disable the use of One Time Passwords.
 </varlistentry>
 
 <varlistentry>
-<term>-p<replaceable> passwd_file</replaceable></term>
+<term>-p, --password-db=<replaceable> passwd_file</replaceable></term>
 <listitem>
 <para>
 Specify an alternate location for the <filename>passwd</filename>
@@ -182,7 +220,7 @@ for authentication.
 </varlistentry>
 
 <varlistentry>
-<term>-P<replaceable> pid_file</replaceable></term>
+<term>-P, --pidfile=<replaceable> pid_file</replaceable></term>
 <listitem>
 <para>
 Specify an alternate location for a file containing the process ID
@@ -195,7 +233,7 @@ running on the same server.
 </varlistentry>
 
 <varlistentry>
-<term>-s<replaceable> secret_file</replaceable></term>
+<term>-s, --server-secret=<replaceable> secret_file</replaceable></term>
 <listitem>
 <para>
 Specify an alternate location for the <filename>secret_file</filename>.
@@ -206,7 +244,17 @@ the NAS and RADIUS server and must be less than 32 bytes.
 </varlistentry>
 
 <varlistentry>
-<term>-u</term>
+<term>-S, --pam-service-name=<replaceable> auth_service_name</replaceable></term>
+<listitem>
+<para>
+Specify an alternate name for the PAM authentication service.  Defaults
+to urd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-u, --otp-allow-unknown-user</term>
 <listitem>
 <para>
 Allow users which do not exist in the OTP database to successfully
@@ -217,21 +265,39 @@ will be required.
 </varlistentry>
 
 <varlistentry>
-<term>-x</term>
+<term>-V, --service-name=<replaceable> service_name</replaceable></term>
 <listitem>
 <para>
-Drop every other RADIUS request from a NAS.  This is a debugging feature
-intended to stress test the reply cache code.  The reply cache 
-implements state retention required for the use of One Time Passwords.
+Set service name for send-token function.
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>-w</term>
+<term>--version</term>
+<listitem>
+<para>
+Display software version.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-w, --otp-challenge-window=<replaceable> window</replaceable></term>
 <listitem>
 <para>
 Set the OTP challenge window.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-x, --debug-drop-udp-packets</term>
+<listitem>
+<para>
+Drop every other RADIUS request from a NAS.  This is a debugging feature
+intended to stress test the reply cache code.  The reply cache 
+implements state retention required for the use of One Time Passwords.
 </para>
 </listitem>
 </varlistentry>

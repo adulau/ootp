@@ -1,4 +1,4 @@
-# $Id: Makefile 13 2009-11-26 16:37:03Z maf $
+# $Id: Makefile 128 2010-06-15 14:25:09Z maf $
 
 what:
 	@echo
@@ -22,13 +22,18 @@ INSTALL=install -c -m0755
 
 .c.o:;  $(CC) $(CFLAGS) -c $*.c -o $*.o
 
-OBJS = ../common/xerr.o
-
-BINS = htsoft-downloader
+BIN = htsoft-downloader
+COBJS = ../common/xerr.o
+OBJS = version.o ${BIN}.o
 
 BINDIR=/usr/local/ootp/bin
 
-all: htsoft-downloader.c ${OBJS} ${BINS}
+all: version ${COBJS} ${OBJS} ${BIN}
+
+version:
+	rm -f version.c; ../build/version ../VERSION ${BIN} > version.c
+
+version.c:
 
 install:
 	mkdir -p ${BINDIR}
@@ -36,8 +41,8 @@ install:
 	@echo files installed in ${BINDIR}
 
 clean:
-	/bin/rm -f ${BINS} htsoft-downloader.o
+	/bin/rm -f ${BINS} ${OBJS} version.c
 
-htsoft-downloader: ${OBJS} htsoft-downloader.o
-	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o htsoft-downloader ${OBJS} htsoft-downloader.o $(LIBS)
+${BIN}: ${COBJS} ${OBJS}
+	$(CC) $(CFLAGS) $(LFLAGS) $(INC) -o ${BIN} ${COBJS} ${OBJS} $(LIBS)
 

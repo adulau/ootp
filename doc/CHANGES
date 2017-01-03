@@ -1,5 +1,54 @@
 # $Id:$
 
+urd/rc.d/urd: updated for new flags
+
+otp-control: mode generate will honor -c
+
+send-tokendd: reference implementation of OOB token.  Sends token to web
+page via ssl.  Used internally for SMS gateway.
+
+send-token feature.  Send to token to user via flexible OOB method.
+
+HOTPC.BAS rev 9.  Check PIN, readerKey
+
+otp-sca support SC_SETREADERKEY_CAP
+
+pam_otp.so: require_db_entry is now defaulted to enabled.  A new option
+allow_unknown_user which is mutually exclusive to require_db_entry is
+accepted for consistency with urd and openvpn.  kyriacou@osc.edu
+
+otpdb2sc missing quote.  kyriacou@osc.edu
+
+openvpn plugin accepts otp-allow-unknown-user
+
+otp-control will by default create a new user with count=1.  BasicCard
+code treats count=0 as a special case when a challenge (count) is supplied.
+0 is ignore challenge and use EEPROM stored count.
+
+getopt_long() support.  All binaries support --version.
+
+honor OTP_FLAGS_DISPNT in urd.  Use -c to force display
+
+urd will omit password when packed decode debug is enabled
+
+fix state hex encoding in urd when state > 127
+
+fix soft reload option in urd
+
+add PAM password authentication to urd
+
+str.c: tcsetattr() missing in str_input()
+
+otp-control -m list-sc will automatically set the correct FMT flags
+
+document behavior of count=0 in otp-sct, otp-sca, and spyrus-reader
+
+add urd/rc.d script to dist
+
+add rfc.card to dist
+
+spyrus1.4.hex installed instead of 1.3.  Also in QUICKSTART
+
 ### ootp-1.03.tar.gz
 
 add CHANGES and TODO to dist

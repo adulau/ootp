@@ -67,11 +67,7 @@ file from picc, MPLAB, gpasm, or other PIC compatible toolchains) is read
 on standard output and downloaded to a PIC on the
 \fIserial_device\fP\&.
 .SH "OPTIONS"
-.IP "-h" 10
-Help
-.IP "-i" 10
-Ignore timeout for last WOK after sending reset\&.
-.IP "-f\fI serial_device\fP" 10
+.IP "-f, --serial-device=\fI serial_device\fP" 10
 Serial device filename\&.  Examples:
 .IP "" 10
 \fB/dev/ttyUSB0\fP (Linux USB Serial Adapter)
@@ -80,14 +76,20 @@ Serial device filename\&.  Examples:
 .IP "" 10
 The default is \fB/dev/cuaU0\fP, a
 Prolific PL2303 USB to serial adaptor on FreeBSD\&.
-.IP "-r\fI retries\fP" 10
+.IP "-h, --help" 10
+Help
+.IP "-i, --ignore-last-wok-timeout" 10
+Ignore timeout for last WOK after sending reset\&.
+.IP "-r, --pic-retries=\fI retries\fP" 10
 Number of times to retry a block\&.  Defaults to 5\&.
-.IP "-t\fI timeout\fP" 10
+.IP "-t, --pic-timeout=\fI timeout\fP" 10
 Timeout in \&.1 second intervals\&.  Defaults to 25\&.
-.IP "-v\fI verbose_level\fP" 10
+.IP "-v, --verbose=\fI verbose_level\fP" 10
 Increasing the verbosity level will produce debug messages indicating
 the status of the download\&.  A level of 9 will include all debugging
 output\&.  A level of 1 will indicate the overall status of the transfer\&.
+.IP "--version" 10
+Display software version\&.
 .SH "EXAMPLE"
 .PP
 Transfer the HEX file spyrus1\&.1\&.hex to a PIC connected to
@@ -125,4 +127,4 @@ Intel Hexadecimal Object File Format Specification Rev A
 www\&.htsoft\&.com
 .PP
 http://www\&.ehl\&.cz/pic/pic_e\&.htm
-...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
+...\" created by instant / docbook-to-man, Sun 15 May 2011, 23:57

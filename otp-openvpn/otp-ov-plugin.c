@@ -24,14 +24,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-ov-plugin.c 50 2009-12-15 01:37:19Z maf $
+ *      $Id: otp-ov-plugin.c 177 2011-05-16 02:37:28Z maf $
  */
 
 #include <stdio.h>
-#include <sys/types.h>
 #include <fcntl.h>
-#include <sys/errno.h>
 #include <stdlib.h>
+#include <getopt.h>
+#include <sys/types.h>
+#include <sys/errno.h>
 #include "ffdb.h"
 #include "otplib.h"
 #include "xerr.h"
@@ -40,10 +41,24 @@ void help(void);
 
 int main (int argc, char **argv)
 {
+  extern char *ootp_version;
   struct otp_ctx *otpctx;
+  struct otp_user ou;
   u_long tmpul;
-  char *otpdb_fname, *username, *pass, *endptr;
-  int db_flags, i, r, ret, otp_window;
+  char *otpdb_fname, *username, *pass, *endptr, *service;
+  int db_flags, i, r, ret, otp_window, opt_version, otp_allow_unknown;
+
+  struct option longopts[] = {
+    { "otp-allow-unknown-user",     0, (void*)0L, 'u'},
+    { "help",                       0, (void*)0L, 'h'},
+    { "help",                       0, (void*)0L, '?'},
+    { "otp-db",                     1, (void*)0L, 'o'},
+    { "verbose",                    0, (void*)0L, 'v'},
+    { "service-name",               0, (void*)0L, 'V'},
+    { "otp-challenge-window",       1, (void*)0L, 'w'},
+    { "version",                    0, &opt_version, 1},
+    { 0, 0, 0, 0},
+  };
 
   /* init xerr */
   xerr_setid(argv[0]);
@@ -51,12 +66,17 @@ int main (int argc, char **argv)
   otpdb_fname = OTP_DB_FNAME;
   db_flags = 0;
   otp_window = OTP_WINDOW_DEFAULT;
+  opt_version = 0;
+  otp_allow_unknown = 0;
+  service = "otp-openvpn";
+  bzero(&ou, sizeof(ou));
   ret = -1; /* fail */
 
-  while ((i = getopt(argc, argv, "h?o:vw:")) != -1) {
+  while ((i = getopt_long(argc, argv, "h?o:uvV:w:", longopts,
+    (int*)0L)) != -1) {
 
-    switch (i) { 
-  
+    switch (i) {
+
       case 'h':
       case '?':
         help();
@@ -66,8 +86,16 @@ int main (int argc, char **argv)
         otpdb_fname = optarg;
         break;
 
+      case 'u':
+        otp_allow_unknown = 1;
+        break;
+
       case 'v':
         db_flags |= OTP_DB_VERBOSE;
+        break;
+
+      case 'V':
+        service = optarg;
         break;
 
       case 'w':
@@ -79,9 +107,16 @@ int main (int argc, char **argv)
         otp_window = tmpul;
         break;
 
+      case 0:
+        if (opt_version) {
+          printf("%s\n", ootp_version);
+          exit(0);
+        }
+        break;
+
       default:
-        help();
-        exit(1);
+        xerr_errx(1, "getopt_long(): fatal.");
+        break; /* not reached */
 
      } /* switch */
 
@@ -99,8 +134,39 @@ int main (int argc, char **argv)
   if ((r = otp_user_exists(otpctx, username)) < 0)
     xerr_errx(1, "otp_user_exists(): failed.");
 
+  if ((r == 1) && (otp_allow_unknown == 0)) {
+       
+    xerr_info("OTP_AUTH_FAIL via otp_user_exists() allow_unknown=0");
+    ret = 1;
+    goto done;
+
+  }
+
+  if ((r == 1) && (otp_allow_unknown == 1)) {
+
+    xerr_info("OTP_AUTH_PASS via unknown user and allow_unknown=1");
+    ret = 0;
+    goto done;
+
+  }
+
   if (r != 0)
     xerr_errx(1, "User %s does not exist in otp database.", username);
+
+  if (otp_urec_open(otpctx, username, &ou, O_RDONLY,
+    FFDB_OP_LOCK_EX) < 0)
+    xerr_errx(1, "otp_urec_open(%s): failed.", username);
+
+  if (otp_urec_get(otpctx, &ou) < 0)
+    xerr_errx(1, "otp_urec_get(): failed.");
+
+  if (otp_urec_close(otpctx, &ou) < 0)
+    xerr_errx(1, "otp_urec_close(): failed.");
+
+  if (ou.flags & OTP_FLAGS_SEND_TOKEN) {
+    if (otp_user_send_token(otpctx, username, service) < 0)
+      xerr_warnx("otp_user_send_token(): failed.");
+  }
   
   if ((r = otp_user_auth(otpctx, username, pass, otp_window)) < 0)
     xerr_errx(1, "otp_user_auth(): failed.");
@@ -110,14 +176,14 @@ int main (int argc, char **argv)
 
   /* convert otp auth status to openvpn auth return code space */
   if (r == OTP_AUTH_PASS) {
-    if (db_flags & OTP_DB_VERBOSE)
-      xerr_info("OTP_AUTH_PASS");
+    xerr_info("OTP_AUTH_PASS");
     ret = 0;
   } else {
-    if (db_flags & OTP_DB_VERBOSE)
-      xerr_info("OTP_AUTH_FAIL");
+    xerr_info("OTP_AUTH_FAIL");
     ret = 1;
   }
+
+done:
 
   return ret;
 

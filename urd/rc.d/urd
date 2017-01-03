@@ -1,0 +1,239 @@
+#!/bin/sh
+
+# PROVIDE: urd
+# REQUIRE: DAEMON
+
+. /etc/rc.subr
+
+# urd_enable="YES"
+# urd_list="engvpn1 testvpn1"
+# urd_engvpn1_dir="/var/urd/engvpn1"
+# urd_engvpn1_ip="10.1.0.1"
+# urd_engvpn1_flags="-dD"
+# urd_engvpn1_passwd="passwd"
+# urd_engvpn1_authorized_users="authorized_users"
+# urd_engvpn1_otp="otp.db"
+# urd_engvpn1_secret="server_secret"
+# urd_engvpn1_pid="pid.10.1.0.1"
+# urd_engvpn1_pgm="/usr/local/ootp/bin/urd"
+# urd_engvpn1_service="urd"
+
+name="urd"
+rcvar=`set_rcvar`
+start_cmd="urd_start"
+stop_cmd="urd_stop"
+status_cmd="urd_status"
+extra_commands="status list"
+extra_arg=$2
+list_cmd="urd_list"
+w="/usr/local/ootp/bin"
+RTPRIO="/usr/sbin/rtprio"
+ARGV0="/usr/local/bin/argv0"
+URD="$w/urd"
+
+if [ -z "$autoboot" ]; then
+  autoboot="NO"
+fi
+
+# shutdown does a fast stop, use to trigger stop all
+if echo $1 | egrep '^fast'>/dev/null; then
+  DO_ALL=1
+else
+  DO_ALL=0
+fi
+
+# startup scripts set autoboot, start all instances
+if checkyesno autoboot; then
+  DO_ALL=1
+fi
+
+load_rc_config $name
+
+urd_debug()
+{
+  echo "********"
+  echo "urd_instance=$n"
+  echo "dir=$urd_dir"
+  echo "ip=$urd_ip"
+  echo "port=$urd_port"
+  echo "flags=$urd_flags"
+  echo "passwd=$urd_passwd"
+  echo "authorized_users=$urd_au"
+  echo "otpdb=$urd_otpdb"
+  echo "server_secret=$urd_ss"
+  echo "pid=$urd_pid"
+  echo "pgm=$urd_pgm"
+}
+
+urd_expand()
+{
+  eval urd_dir=\$urd_${1}_dir
+  eval urd_ip=\$urd_${1}_ip
+  eval urd_port=\$urd_${1}_port
+  eval urd_flags=\$urd_${1}_flags
+  eval urd_passwd=\$urd_${1}_passwd
+  eval urd_au=\$urd_${1}_authorized_users
+  eval urd_otpdb=\$urd_${1}_otpdb
+  eval urd_ss=\$urd_${1}_server_secret
+  eval urd_pid=\$urd_${1}_pid
+  eval urd_pgm=\$urd_${1}_pgm
+  eval urd_service=\$urd_${1}_service
+
+  if [ -z "$urd_dir" ]; then
+    urd_dir="/var/urd/$1"
+  fi
+
+  if [ -z "$urd_ip" ]; then
+    urd_ip="0.0.0.0"
+  fi
+
+  if [ -z "$urd_port" ]; then
+    urd_port="1812"
+  fi
+
+  if [ -z "$urd_passwd" ]; then
+    urd_passwd="$urd_dir/passwd"
+  fi
+
+  if [ -z "$urd_au" ]; then
+    urd_au="$urd_dir/authorized_users"
+  fi
+
+  if [ -z "$urd_otpdb" ]; then
+    urd_otpdb="$urd_dir/otpdb"
+  fi
+
+  if [ -z "$urd_pid" ]; then
+    if [ "X$urd_ip" = "X0.0.0.0" ]; then
+      urd_pid="$urd_dir/pid"
+    else
+      urd_pid="$urd_dir/pid.$urd_ip"
+    fi
+  fi
+ 
+  if [ -z "$urd_ss" ]; then
+    urd_ss="$urd_dir/server_secret"
+  fi
+
+  if [ -z "$urd_pgm" ]; then
+    urd_pgm=$URD
+  fi
+
+  if [ -z "$urd_service" ]; then
+    urd_service="urd"
+  fi
+    
+} # urd_expand
+
+
+urd_status()
+{
+
+  if [ ! -z "$extra_arg" ]; then
+    urd_list=$extra_arg
+  fi
+
+  for n in $urd_list; do
+
+    echo -n "$n "
+    a0="urd.$n"
+
+    p=`check_process $a0`
+    if [ -z "$p" ]; then
+      echo "*** not running ***"
+    else
+      echo $p
+    fi
+
+  done
+    
+} # urd_status
+
+urd_list()
+{
+  for n in $urd_list; do
+    urd_expand $n
+    urd_debug $n
+  done
+} # urd_list
+
+urd_start()
+{
+
+  if [ "$DO_ALL" -eq 0 ]; then
+
+    if [ -z "$extra_arg" ]; then
+      err 1 "start requires config name argument.  Try list."
+    fi
+
+    urd_list=$extra_arg
+
+  fi
+
+  PATH=$w:$PATH
+
+  for n in $urd_list; do
+
+    urd_expand $n
+
+    if [ ! -d "$urd_dir" ]; then
+      err 1 "$n: missing config dir $urd_dir"
+    fi
+
+    a0="urd.$n"
+
+    echo starting urd for $n.
+
+    # pre 173 does not take -V
+    if [ "$urd_service" = "urd" ]; then
+      $ARGV0 $urd_pgm $a0 -a $urd_au -b $urd_ip -B $urd_port\
+        -o $urd_otpdb -p $urd_passwd -P $urd_pid -s $urd_ss \
+        $urd_flags
+    else
+      $ARGV0 $urd_pgm $a0 -a $urd_au -b $urd_ip -B $urd_port\
+        -o $urd_otpdb -p $urd_passwd -P $urd_pid -s $urd_ss \
+        -V $urd_service $urd_flags
+    fi
+
+  done
+
+} # urd_start
+
+urd_stop()
+{
+
+  if [ "$DO_ALL" -eq 0 ]; then
+
+    if [ -z "$extra_arg" ]; then
+      err 1 "stop requires config name argument.  Try list."
+    fi
+
+    urd_list=$extra_arg
+
+  fi
+
+  for n in $urd_list; do
+
+    urd_expand $n
+
+    if [ ! -d "$urd_dir" ]; then
+      err 1 "$n: missing config dir $urd_dir"
+    fi
+
+    a0="urd.$n"
+
+    pid=`check_process $a0`
+
+    if [ -n "$pid" ]; then
+      kill -9 $pid
+      echo "$n: stopped"
+    else
+      echo "$n: not running."
+    fi
+
+  done
+
+} # urd_stop
+
+run_rc_command "$1"
+

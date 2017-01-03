@@ -97,7 +97,7 @@ NAME="AEN26"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->-d<TT
+>-d, --debug=<TT
 CLASS="REPLACEABLE"
 ><I
 > debug_level</I
@@ -108,7 +108,7 @@ CLASS="REPLACEABLE"
 >Set debug level.</P
 ></DD
 ><DT
->-f<TT
+>-f, --image=<TT
 CLASS="REPLACEABLE"
 ><I
 > fname</I
@@ -119,19 +119,19 @@ CLASS="REPLACEABLE"
 >Name of BasicCard Image file.  Defaults to HOTPC.IMG</P
 ></DD
 ><DT
->-h</DT
+>-h, --help</DT
 ><DD
 ><P
 >Help.</P
 ></DD
 ><DT
->-l</DT
+>-l, --list-readers</DT
 ><DD
 ><P
 >List SC Readers</P
 ></DD
 ><DT
->-p</DT
+>-p, --no-paranoid</DT
 ><DD
 ><P
 >Disable paranoid check for ZC3.9 hardware.  Enhanced Smart Cards will
@@ -142,7 +142,7 @@ CLASS="FILENAME"
 >.</P
 ></DD
 ><DT
->-r<TT
+>-r, --reader=<TT
 CLASS="REPLACEABLE"
 ><I
 > reader</I
@@ -166,17 +166,23 @@ reader.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
 with serial port /dev/cuaU0.</P
 ></DD
 ><DT
->-t</DT
+>-t, --force-test</DT
 ><DD
 ><P
 >Force card mode to TEST after programming.  Defaults to the mode
 specified in the image file.</P
 ></DD
 ><DT
->-v</DT
+>-v, --verbose</DT
 ><DD
 ><P
 >Display verbose status messages while programming the card.</P
+></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
 ></DD
 ></DL
 ></DIV
@@ -184,7 +190,7 @@ specified in the image file.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN67"
+NAME="AEN71"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -193,7 +199,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN69"
+NAME="AEN73"
 ></A
 ><P
 >Download the HOTPC.IMG file to the default Smart Card reader.  Display
@@ -236,7 +242,7 @@ BCSetState: test</SAMP
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN74"
+NAME="AEN78"
 ></A
 ><H2
 >AUTHOR</H2
@@ -253,7 +259,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN81"
+NAME="AEN85"
 ></A
 ><H2
 >SEE ALSO</H2

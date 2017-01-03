@@ -1,0 +1,29 @@
+#!/bin/sh
+
+ME=`whoami`
+DATE=`date`
+HOST=`hostname`
+
+if [ "X$1" = "X" ]; then
+  echo "Usage: version <idfile> <program>" 1>&2
+  exit 1
+fi
+
+if [ "X$2" = "X" ]; then
+  PGM="ootp"
+else
+  PGM="$2"
+fi
+
+# if VERSION file exists, then this is a snapshot or release build,
+if [ -e $1 ]; then
+  R=`cat $1`
+# else assume building in sandbox
+else
+  SVN=`which svn`
+  RR=`svn info | grep "^Repository Root:" | awk '{print $3}'`
+  R=`svn info $RR | grep "^Revision:" | awk '{print $2}'`
+  R="devel r$R"
+fi
+
+echo "char *ootp_version = \"$PGM $R $ME@$HOST $DATE\";"

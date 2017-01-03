@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: spyrus-par2.sgml 78 2009-12-26 23:23:40Z maf $ -->
+<!-- $Id: spyrus-par2.sgml 106 2009-12-30 10:24:34Z maf $ -->
 
 <refentry>
 
@@ -105,7 +105,8 @@ index 0.
 <para>
 <keysym>#</keysym> Toggle Challenge/Count input.  The per-host count, incremented
 by 1 and stored on the SC after each HOTP generation can be overridden
-with this option.
+with this option.  A count value of 0 indicates the HOTP value is to be
+calculated with the current stored count.
 
 <para>
 <keysym>DOWN</keysym> Enable host menu.

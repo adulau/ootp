@@ -10,21 +10,23 @@ what:
 	@echo
 
 i386-fbsd:
-	@make CC="gcc" CFLAGS="-I../common -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LIBS="-lssl" all
+	@make CC="gcc" CFLAGS="-I../common -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LIBS="-lcurl" all
 
 i386-linux:
-	@make CC="gcc" CFLAGS="-I../common -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -D_BSD_SOURCE -D_XOPEN_SOURCE -Wall -std=c99 -pedantic" LIBS="-lssl -lcrypto" all
+	@make CC="gcc" CFLAGS="-I../common -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -D_BSD_SOURCE -D_XOPEN_SOURCE -Wall -std=c99 -pedantic" LIBS="-lcurl " all
 
 i386-macosx:
-	@make CC="gcc" CFLAGS="-I../common -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LIBS="-lssl -lcrypto" all
+	@make CC="gcc" CFLAGS="-I../common -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LIBS="-lcurl" all
 
 INSTALL=install -c -m0755
 
-.c.o:;  $(CC) $(CFLAGS) -c $*.c -o $*.o
+.c.o:;  $(CC) $(CFLAGS) $(INC) -c $*.c -o $*.o
 
-BIN = otp-control
-COBJS = ../common/xerr.o ../common/str.o ../common/otplib.o ../common/ffdb.o
+BIN = otp-tokend
+COBJS = ../common/xerr.o
 OBJS = version.o ${BIN}.o
+LFLAGS = -L/usr/local/lib
+INC = -I/usr/local/include
 
 BINDIR=/usr/local/ootp/bin
 

@@ -24,13 +24,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-sca.c 88 2009-12-28 00:12:01Z maf $
+ *      $Id: otp-sca.c 144 2010-10-19 02:05:40Z maf $
  */
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/errno.h>
+#include <getopt.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,9 +116,10 @@ static int debug;
 /* XXX many of these +1 LEN's are not necessary */
 int main(int argc, char **argv)
 {
+  extern char *ootp_version;
   struct scr_ctx *scrctx;
   int i, j, k, r, mode, sc_idx_set, j_start, j_end, done, sc_idx_tmp, opt_mod;
-  int no_PIN, list_readers;
+  int no_PIN, list_readers, opt_version;
   uint32_t tmp_count, tmp_cap, tmp32u;
   uint64_t tmp64u;
   char sc_hostname[SC_HOSTNAME_LEN+1], sc_PIN[SC_PIN_LEN+1];
@@ -136,6 +138,25 @@ int main(int argc, char **argv)
   char *adminkey_hex160_fname, *endptr, *err_msg, *username, *reader;
   char *readerkey_hex40_fname;
 
+  struct option longopts[] = {
+    { "sc-admin-key",               1, (void*)0L, 'a'},
+    { "sc-count",                   1, (void*)0L, 'c'},
+    { "debug",                      1, (void*)0L, 'd'},
+    { "help",                       0, (void*)0L, 'h'},
+    { "help",                       0, (void*)0L, '?'},
+    { "sc-index",                   1, (void*)0L, 'i'},
+    { "list-readers",               0, (void*)0L, 'l'},
+    { "sc-command",                 1, (void*)0L, 'm'},
+    { "sc-command-modifier",        1, (void*)0L, 'M'},
+    { "no-pin",                     0, (void*)0L, 'p'},
+    { "reader",                     1, (void*)0L, 'r'},
+    { "sc-reader-key",              1, (void*)0L, 'R'},
+    { "sc-username",                1, (void*)0L, 'u'},
+    { "sc-version",                 1, (void*)0L, 'v'},
+    { "version",                    0, &opt_version, 1},
+    { 0, 0, 0, 0},
+  };
+
   /* init xerr */
   xerr_setid(argv[0]);
 
@@ -144,6 +165,7 @@ int main(int argc, char **argv)
   mode = 0;
   opt_mod = 0;
   sc_idx_set = 0;
+  opt_version = 0;
   adminkey_hex160_fname = (char*)0L;
   readerkey_hex40_fname = (char*)0L;
   sc_fv = 5;
@@ -173,7 +195,8 @@ int main(int argc, char **argv)
   bcopy(SC_PIN_DEFAULT, sc_newPIN, SC_PIN_LEN);
   bcopy(SC_ADMINKEY_DEFAULT, sc_adminkey, SC_ADMINKEY_LEN);
 
-  while ((i = getopt(argc, argv, "a:c:d:h?i:lm:M:pr:R:u:v:")) != -1) {
+  while ((i = getopt_long(argc, argv, "a:c:d:h?i:lm:M:pr:R:u:v:", longopts,
+    (int*)0L)) != -1) {
 
     switch (i) {
 
@@ -304,9 +327,18 @@ int main(int argc, char **argv)
           xerr_errx(1, "strtoul(%s): failed at %c.", optarg, *endptr);
         break;
 
+     case 0:
+        if (opt_version) {
+          printf("%s\n", ootp_version);
+          exit(0);
+        }
+
+     default:
+        xerr_errx(1, "getopt_long(): fatal.");
+
     } /* switch */
 
-  } /* while getopt() */
+  } /* while getopt_long() */
 
   /* work to do? */
   if (!mode && !list_readers) {
@@ -578,6 +610,9 @@ int main(int argc, char **argv)
 
       if (tmp_cap & SC_CLEARALL_CAP)
         printf(" %s", SC_CLEARALL_STR);
+
+      if (tmp_cap & SC_SETREADERKEY_CAP)
+        printf(" %s", SC_GETCAPABILITIES_STR);
 
       printf("\n");
 

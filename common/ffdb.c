@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: ffdb.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: ffdb.c 117 2010-03-08 04:24:07Z maf $
  */
 
 #include <sys/fcntl.h>
@@ -504,6 +504,7 @@ struct ffdb_ctx *ffdb_db_open(char *base_dir_pn, size_t max_key_size,
   else
     verbose = 0;
 
+  ffdbctx = (struct ffdb_ctx*)0L;
   ret = -1; /* fail */
 
   base_dir_pn_size = strlen(base_dir_pn) + 1;

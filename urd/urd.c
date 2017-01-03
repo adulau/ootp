@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: urd.c 50 2009-12-15 01:37:19Z maf $
+ *      $Id: urd.c 176 2011-05-16 02:17:30Z maf $
  */
 
 #include <sys/types.h>
@@ -34,6 +34,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <getopt.h>
 #include <netdb.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -56,7 +57,6 @@
 
 /*
  * XXX
- * urd_rep_msg in access-challenge hard coded to ABC..
  * copy proxy variables into reply packet per RFC?
  * packet stress testing
  */
@@ -66,9 +66,12 @@ static int server_secret_load(char *fname, char *buf, int buf_len);
 static u_long scan_ip(char *s);
 static int write_pidfile(char *fname);
 
+#define URDCTX_USER_NAME (allow_n_logins ?\
+  urdctx->req.user_name_base : urdctx->req.user_name)
 
 int main(int argc, char **argv)
 {
+  extern char *ootp_version;
   struct sockaddr_in loc_addr;
   struct urd_ctx *urdctx;
   struct pass_db_ctx *pdbctx;
@@ -76,26 +79,65 @@ int main(int argc, char **argv)
   struct otp_ctx *otpctx;
   struct otp_user ou;
   char *otpdb_fname;
-  int otp_skip_unknown, otpdb_flags, otp_enable;
+  int otp_allow_unknown, otpdb_flags, otp_enable;
 #endif /* OOTP_ENABLE */
   fd_set rfd;
   u_long tmpul;
-  uint64_t rep_state;
+  uint64_t rep_state, rep_otp_count;
   uint32_t local_ip;
   uint16_t local_port;
   uint8_t rep_code;
   uint rem_addr_len;
-  char *authorized_users_fname, *pwfile_fname, *server_secret_fname, *endptr;
-  char server_secret[URD_SECRET_LEN+1], buf[1024], *pid_fname;
-  int rep_enc_flags, rep_cache_flags, debug, daemon_mode;
+  char *au_fname, *pwfile_fname, *server_secret_fname, *endptr, *loc;
+  char server_secret[URD_SECRET_LEN+1], buf[1024], *pid_fname, *as_name;
+  char *service;
+  int rep_enc_flags, rep_cache_flags, debug, daemon_mode, pdb_type;
   int drop, drop_mode, req_cache_hit, buf_l, pkt_fd, r, i, otp_window;
+  int opt_version, otp_display_count, tmp_cache_flags;
+  int disable_authorized_users, allow_n_logins;
+
+  struct option longopts[] = {
+    { "authorized-users-db",          1, (void*)0L, 'a'},
+    { "disable-authorized-users",     0, (void*)0L, 'A'},
+    { "bind-ip-address",              1, (void*)0L, 'b'},
+    { "bind-udp-port",                1, (void*)0L, 'B'},
+#ifdef OOTP_ENABLE
+    { "display-count",                0, (void*)0L, 'c'},
+#endif /* OOTP_ENABLE */
+    { "debug",                        1, (void*)0L, 'd'},
+    { "disable-daemon-mode",          0, (void*)0L, 'D'},
+    { "help",                         0, (void*)0L, 'h'},
+    { "help",                         0, (void*)0L, '?'},
+    { "pam-authentication-enable",    0, (void*)0L, 'm'},
+    { "pam-authentication-exclusive", 0, (void*)0L, 'M'},
+    { "n-logins-enable",              0, (void*)0L, 'n'},
+#ifdef OOTP_ENABLE
+    { "otp-db",                       1, (void*)0L, 'o'},
+    { "otp-disable",                  0, (void*)0L, 'O'},
+#endif /* OOTP_ENABLE */
+    { "password-db",                  1, (void*)0L, 'p'},
+    { "pidfile",                      1, (void*)0L, 'P'},
+    { "server-secret",                1, (void*)0L, 's'},
+    { "pam-service-name",             1, (void*)0L, 'S'},
+#ifdef OOTP_ENABLE
+    { "otp-allow-unknown-user",       0, (void*)0L, 'u'},
+    { "service-name",                 0, (void*)0L, 'V'},
+    { "otp-challenge-window",         1, (void*)0L, 'w'},
+#endif /* OOTP_ENABLE */
+    { "debug-drop-udp-packets",       0, (void*)0L, 'x'},
+    { "version",                      0, &opt_version, 1},
+    { 0, 0, 0, 0},
+  };
 
   bzero(&loc_addr, sizeof loc_addr);
   bzero(&pkt_fd, sizeof pkt_fd);
   bzero(&rfd, sizeof rfd);
+  allow_n_logins = 0;
+  opt_version = 0;
   debug = 0;
   daemon_mode = 1;
-  authorized_users_fname = "/var/urd/authorized_users";
+  au_fname = "/var/urd/authorized_users";
+  disable_authorized_users = 0;
   pwfile_fname = "/var/urd/passwd";
   server_secret_fname = "/var/urd/server_secret";
   pid_fname = (char*)0L;
@@ -104,30 +146,36 @@ int main(int argc, char **argv)
   drop = 1;
   drop_mode = 0;
   otp_window = OTP_WINDOW_DEFAULT;
+  pdb_type = PASS_DB_TYPE_LOCAL;
+  as_name = "urd";
+  service = "urd";
 #ifdef OOTP_ENABLE
   otpctx = (struct otp_ctx*)0L;
   otpdb_fname = OTP_DB_FNAME;
-  otp_skip_unknown = 0;
+  otp_allow_unknown = 0;
   otpdb_flags = 0;
   otp_enable = 1;
+  otp_display_count = 0;
 #endif /* OOTP_ENABLE */
   
   xerr_setid(argv[0]);
 
 #ifdef OOTP_ENABLE
-  while ((i = getopt(argc, argv, "AhduDOx?a:b:B:o:p:s:P:w:")) != -1) {
+  while ((i = getopt_long(argc, argv, "AhduDOx?a:cb:B:mMno:p:s:S:P:V:w:",
+    longopts, (int*)0L)) != -1) {
 #else
-  while ((i = getopt(argc, argv, "AhdDx?a:b:B:p:s:P:w:")) != -1) {
+  while ((i = getopt_long(argc, argv, "AhdDx?a:b:B:mMnp:s:S:P:V:",
+    longopts, (int*)0L)) != -1) {
 #endif /* OOTP_ENABLE */
 
     switch (i) {
 
       case 'a':
-        authorized_users_fname = optarg;
+        au_fname = optarg;
         break;
 
       case 'A':
-        authorized_users_fname = (char*)0L;
+        disable_authorized_users = 1;
         break;
 
       case 'b':
@@ -144,6 +192,10 @@ int main(int argc, char **argv)
         local_port = tmpul;
         break;
 
+      case 'c':
+        otp_display_count = 1;
+        break;
+
       case 'd':
         debug ++;
 #ifdef OOTP_ENABLE
@@ -156,9 +208,21 @@ int main(int argc, char **argv)
         break;
 
       case 'h':
-      case '"':
+      case '?':
         usage();
         exit(0);
+        break;
+
+      case 'm':
+        pdb_type = PASS_DB_TYPE_PAM;
+        break;
+
+      case 'M': /* xxx only here for compatability */
+        disable_authorized_users = 1;
+        break;
+
+      case 'n':
+        allow_n_logins = 1;
         break;
 
 #ifdef OOTP_ENABLE
@@ -183,11 +247,18 @@ int main(int argc, char **argv)
         server_secret_fname = optarg;
         break;
 
+      case 'S':
+        as_name = optarg;
+        break;
+
+      case 'V':
+        service = optarg;
+        break;
+
 #ifdef OOTP_ENABLE
       case 'u':
-        otp_skip_unknown = 1;
+        otp_allow_unknown = 1;
         break;
-#endif /* OOTP_ENABLE */
 
       case 'w':
         tmpul = strtoul(optarg, &endptr, 0);
@@ -197,14 +268,24 @@ int main(int argc, char **argv)
           xerr_errx(1, "Challenge window %lu > %lu.", tmpul, OTP_WINDOW_MAX);
         otp_window = tmpul;
         break;
+#endif /* OOTP_ENABLE */
 
       case 'x':
         drop_mode = 1;
         break;
 
+      case 0:
+        if (opt_version) {
+          printf("%s\n", ootp_version);
+          exit(0);
+        }
+
+      default:
+        xerr_errx(1, "getopt_long(): fatal.");
+
     } /* switch */
 
-  } /* while getopt() */
+  } /* while getopt_long() */
 
   if (daemon_mode) {
 
@@ -216,10 +297,10 @@ int main(int argc, char **argv)
 
   } /* daemon_mode */
 
-  buf_l = snprintf(buf, 1024, "urd start:");
+  buf_l = snprintf(buf, sizeof(buf), "urd start:");
   if (debug) {
     for (i = 0; i < argc; ++i)
-      buf_l += snprintf(buf+buf_l, 1024-buf_l, " %s", argv[i]);
+      buf_l += snprintf(buf+buf_l, sizeof(buf)-buf_l, " %s", argv[i]);
   }
   xerr_info(buf);
 
@@ -233,12 +314,12 @@ int main(int argc, char **argv)
 
     if (local_ip || (local_port != URD_PORT)) {
 
-      buf_l = snprintf(buf, 1024,
+      buf_l = snprintf(buf, sizeof(buf),
         "/var/urd/pid.%s.%d", inet_ntoa(loc_addr.sin_addr), (int)local_port);
 
     } else {
 
-      buf_l = snprintf(buf, 1024, "/var/urd/pid");
+      buf_l = snprintf(buf, sizeof(buf), "/var/urd/pid");
 
     }
 
@@ -255,10 +336,28 @@ int main(int argc, char **argv)
     URD_SECRET_LEN+1) < 0)
     xerr_errx(1, "server_secret_load(%s): fatal", server_secret_fname);
 
+  /* location is password file or pam service name */
+  if (pdb_type == PASS_DB_TYPE_LOCAL)
+    loc = pwfile_fname;
+  else if (pdb_type == PASS_DB_TYPE_PAM)
+    loc = as_name;
+  else
+    xerr_errx(1, "loc fatal, pdb_type=%d", pdb_type);
+
+  /* disable authorized users? */
+  if (disable_authorized_users) {
+    if (pdb_type == PASS_DB_TYPE_LOCAL)
+      pdb_type = PASS_DB_TYPE_EX_LOCAL;
+    else if (pdb_type == PASS_DB_TYPE_PAM)
+      pdb_type = PASS_DB_TYPE_EX_PAM;
+    else
+      xerr_errx(1, "au fatal, pdb_type=%d", pdb_type);
+  }
+
   /* setup password database */
-  if (!(pdbctx = pass_db_ctx_new(pwfile_fname, authorized_users_fname))) 
+  if (!(pdbctx = pass_db_ctx_new(loc, au_fname, pdb_type)))
     xerr_errx(1, "pass_db_ctx_new(%s,%s): fatal", pwfile_fname, 
-      authorized_users_fname);
+      au_fname);
 
   pass_db_debug(pdbctx, debug);
 
@@ -338,7 +437,7 @@ int main(int argc, char **argv)
      *   req_cache lookup:
      *     hit :
      *       rep_code and state_counter from cache
-     *       rep_msg from cache XXX future
+     *       rep_msg from cache 
      *     miss :
      *       state_cache lookup :
      *         hit :
@@ -392,6 +491,7 @@ int main(int argc, char **argv)
       rep_state = 0LL;
       rep_enc_flags = 0;
       rep_cache_flags = 0;
+      rep_otp_count = 0;
 
       /* initial no state access request */
       if (!urdctx->req.tlv_State) {
@@ -400,7 +500,8 @@ int main(int argc, char **argv)
           xerr_info("req: (no state)");
 
         /* first check the cache for a previously composed reply */
-        if ((r = urd_req_cache_lookup(urdctx, &rep_code, &rep_state)) < 0)
+        if ((r = urd_req_cache_lookup(urdctx, &rep_code, &rep_state,
+          &rep_otp_count, &tmp_cache_flags)) < 0)
           xerr_errx(1, "urd_req_cache_lookup(): fatal");
 
         /* hit, then skip to response gen */
@@ -415,7 +516,10 @@ int main(int argc, char **argv)
 
           } else if (rep_code == RADIUS_CODE_ACCESS_CHALLENGE) {
 
-            rep_enc_flags = URD_ENCODE_FLAG_STATE|URD_ENCODE_FLAG_MSG;
+            rep_enc_flags = URD_ENCODE_FLAG_STATE;
+
+            if (tmp_cache_flags & URD_CACHE_FLAG_MSG)
+              rep_enc_flags |= URD_ENCODE_FLAG_MSG;
 
           }
 
@@ -431,11 +535,11 @@ int main(int argc, char **argv)
 
         }
 
-        /* default to reject */
+        /* cache lookup invalid, default to ACCESS_REJECT */
         rep_code = RADIUS_CODE_ACCESS_REJECT;
 
-        /* check password database */
-        if ((r = pass_db_auth(pdbctx, urdctx->req.user_name,
+        /* authenticate user */
+        if ((r = pass_db_auth(pdbctx, URDCTX_USER_NAME,
           urdctx->req.user_pass)) < 0)
           xerr_errx(1, "pass_db_auth(): fatal");
 
@@ -492,12 +596,12 @@ int main(int argc, char **argv)
         goto access_request_rep;
 
 #else /* OOTP_ENABLE */
+
         /*
-         * if one time passwords are disabled, then the password
-         * check above meets auth requirements, reply with ACCEPT
+         * if one time passwords are disabled then the password
+         * check above meets auth requirements.  Reply with ACCESS_ACCEPT.
          *
          */
-
         if (!otp_enable) {
 
           rep_code = RADIUS_CODE_ACCESS_ACCEPT;
@@ -511,22 +615,67 @@ int main(int argc, char **argv)
         /*
          * check OTP
          */
-        if ((r = otp_user_exists(otpctx, urdctx->req.user_name)) < 0)
+        if ((r = otp_user_exists(otpctx, URDCTX_USER_NAME)) < 0)
           xerr_errx(1, "otp_user_exists(): fail.");
 
-        /* if user does not exist and not okay to skip OTP users then fail */
-        if ((r == 1) && (otp_skip_unknown == 0)) {
+
+        /*
+         * if user does not exist and not okay to allow non OTP users
+         * then authentication request fails with default ACCESS_REJECT.
+         */
+        if ((r == 1) && (otp_allow_unknown == 0)) {
 
           if (debug)
-            xerr_info("req: fail via otp_user_exists() skip_unknown=0");
+            xerr_info("req: fail via otp_user_exists() allow_unknown=0");
+
+          /* reply with an REJECT */
+          rep_code = RADIUS_CODE_ACCESS_REJECT;
+
+          rep_enc_flags = 0x0;
 
           goto access_request_rep;
 
         }
 
-        if (otp_urec_open(otpctx, urdctx->req.user_name, &ou,
+        /*
+         * if user does not exist in database and okay to allow non OTP
+         * users then authentication request is successful without OTP.
+         * password check was done above, reply with ACCEPT
+         */
+        if ((r == 1) && (otp_allow_unknown == 1)) {
+
+          if (debug)
+            xerr_info("req: pass via otp_user_exists() allow_unknown=1");
+
+          /* reply with an ACCEPT, no state, no challenge message */
+          rep_code = RADIUS_CODE_ACCESS_ACCEPT;
+
+          rep_enc_flags = 0x0;
+
+          goto access_request_rep;
+
+        }
+
+        /*
+         * unknown response from otp_user_exists()
+         */
+        if (r != 0) {
+
+          if (debug)
+            xerr_info("otp_user_exists() unknown response r=%d", r);
+
+          /* reply with an REJECT */
+          rep_code = RADIUS_CODE_ACCESS_REJECT;
+
+          rep_enc_flags = 0x0;
+
+          goto access_request_rep;
+
+        }
+
+        if (otp_urec_open(otpctx, URDCTX_USER_NAME, &ou,
           O_RDONLY, FFDB_OP_LOCK_EX) < 0)
-          xerr_errx(1, "otp_urec_open(%s): failed.", urdctx->req.user_name);
+          xerr_errx(1, "otp_urec_open(%s): failed.", URDCTX_USER_NAME);
 
         if (otp_urec_get(otpctx, &ou) < 0)
           xerr_errx(1, "otp_urec_get(): failed.");
@@ -534,7 +683,7 @@ int main(int argc, char **argv)
         if (otp_urec_close(otpctx, &ou) < 0)
           xerr_errx(1, "otp_urec_close(): failed.");
 
-        /* disabled user is rejected */
+        /* disabled user defaults to ACCESS_REJECT */
         if (ou.status == OTP_STATUS_DISABLED) {
 
           if (debug)
@@ -579,11 +728,25 @@ int main(int argc, char **argv)
           /* reply with challenge, challenge message, new state */
           rep_code = RADIUS_CODE_ACCESS_CHALLENGE;
 
-          rep_enc_flags = URD_ENCODE_FLAG_STATE|URD_ENCODE_FLAG_MSG;
+          rep_enc_flags = URD_ENCODE_FLAG_STATE;
 
           rep_state = ++urdctx->state_counter;
 
+          rep_otp_count = ou.count;
+
           rep_cache_flags = URD_CACHE_FLAG_STATE;
+
+          if (otp_display_count || ou.flags & OTP_FLAGS_DSPCNT) {
+            rep_enc_flags |= URD_ENCODE_FLAG_MSG;
+            rep_cache_flags |= URD_CACHE_FLAG_MSG;
+          }
+
+          if (ou.flags & OTP_FLAGS_SEND_TOKEN) {
+
+            if (otp_user_send_token(otpctx, URDCTX_USER_NAME, service) < 0)
+              xerr_warnx("otp_user_send_token(): failed.");
+
+          }
 
           if (debug)
             xerr_info("req: pass via otp_user_get() (active)");
@@ -606,9 +769,6 @@ int main(int argc, char **argv)
         /* reply with inbound state */
         rep_state = urdctx->req.state_counter;
 
-        /* default to reject */
-        rep_code = RADIUS_CODE_ACCESS_REJECT;
-
         if (debug)
           xerr_info("req: state set, nothing to do, REJECT.");
 
@@ -621,7 +781,8 @@ int main(int argc, char **argv)
         if (debug)
           xerr_info("req: (state)");
 
-        if ((r = urd_req_cache_lookup(urdctx, &rep_code, &rep_state)) < 0)
+        if ((r = urd_req_cache_lookup(urdctx, &rep_code, &rep_state,
+          &rep_otp_count, &tmp_cache_flags)) < 0)
           xerr_errx(1, "urd_req_cache_lookup(): fatal");
 
         /* hit, then skip to response gen */
@@ -641,11 +802,11 @@ int main(int argc, char **argv)
 
         }
 
+        /* cache lookup invalid, default to ACCESS_REJECT */
+        rep_code = RADIUS_CODE_ACCESS_REJECT;
+
         /* reply with inbound state */
         rep_state = urdctx->req.state_counter;
-
-        /* default to reject */
-        rep_code = RADIUS_CODE_ACCESS_REJECT;
 
         /*
          * state cache lookup -- user must have previously authenticated
@@ -659,6 +820,9 @@ int main(int argc, char **argv)
 
           if (debug)
             xerr_info("state: cache miss (user not validated with passwd)");
+
+          /* cache lookup invalid, default to ACCESS_REJECT */
+          rep_code = RADIUS_CODE_ACCESS_REJECT;
 
           goto access_request_rep;
 
@@ -680,12 +844,13 @@ int main(int argc, char **argv)
         }
 
         /*
-         * default to reject.  State cache lookup will have CHALLENGE
-         * code as it is shared with the request cache.
+         * default to ACCESS_REJECT.  State cache lookup will have
+         * ACCESS_CHALLENGE code as it is shared with the request cache.
          */
+
         rep_code = RADIUS_CODE_ACCESS_REJECT;
 
-        if ((r = otp_user_exists(otpctx, urdctx->req.user_name)) < 0)
+        if ((r = otp_user_exists(otpctx, URDCTX_USER_NAME)) < 0)
           xerr_errx(1, "otp_user_exists(): fail.");
 
         /* user exist?, if not failure */
@@ -699,9 +864,9 @@ int main(int argc, char **argv)
 
         }
 
-        if (otp_urec_open(otpctx, urdctx->req.user_name, &ou,
+        if (otp_urec_open(otpctx, URDCTX_USER_NAME, &ou,
           O_RDONLY, FFDB_OP_LOCK_EX) < 0)
-          xerr_errx(1, "otp_urec_open(%s): failed.", urdctx->req.user_name);
+          xerr_errx(1, "otp_urec_open(%s): failed.", URDCTX_USER_NAME);
   
         if (otp_urec_get(otpctx, &ou) < 0)
           xerr_errx(1, "otp_urec_get(): failed.");
@@ -730,7 +895,7 @@ int main(int argc, char **argv)
 
         }
 
-        if ((r = otp_user_auth(otpctx, urdctx->req.user_name,
+        if ((r = otp_user_auth(otpctx, URDCTX_USER_NAME,
           urdctx->req.user_pass, otp_window)) < 0)
             xerr_errx(1, "otp_user_auth(): failed.");
 
@@ -781,12 +946,13 @@ access_request_rep:
        * construct reply
        */
 
-      if (urd_rep_encode(urdctx, rep_code, rep_state, rep_enc_flags) < 0) {
+      if (urd_rep_encode(urdctx, rep_code, rep_state, rep_otp_count,
+        rep_enc_flags) < 0) {
         xerr_errx(1, "urd_rep_encode(): fatal");
       }
 
       /* update reply cache */
-      if (urd_req_cache_update(urdctx, rep_code, rep_state,
+      if (urd_req_cache_update(urdctx, rep_code, rep_state, rep_otp_count,
         rep_cache_flags) < 0)
         xerr_errx(1, "urd_req_cache_update(): fatal");
 
@@ -973,7 +1139,7 @@ int write_pidfile(char *fname)
   int fd, buf_l;
   char buf[512];
 
-  buf_l = snprintf(buf, 512, "%lu\n", (unsigned long)getpid());
+  buf_l = snprintf(buf, sizeof(buf), "%lu\n", (unsigned long)getpid());
 
   if ((fd = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0 ) {
     xerr_warn("open(%s)", fname);
@@ -998,21 +1164,23 @@ void usage(void)
 {
 #ifdef OOTP_ENABLE
   fprintf(stderr,
-    "urd [-AhdDOux?] [-a allowed_users_file] [-b local_ip] [-B local_port ]\n");
+    "urd [-AhcdDmMnOux?] [-a allowed_users_file] [-b local_ip] [-B local_port ]\n");
   fprintf(stderr,
     "             [-o otp_db] [-p passwd_file] [-P pid_file] [-s secret_file]\n");
 #else
   fprintf(stderr,
-    "urd [-AhdDx?] [-a allowed_users_file] [-b local_ip] [-B local_port ]\n");
+    "urd [-AdDmMnhx?] [-a allowed_users_file] [-b local_ip] [-B local_port ]\n");
   fprintf(stderr,
     "             [-p passwd_file] [-P pid_file] [-s secret_file]\n");
 
 #endif /* OOTP_ENABLE */
-  fprintf(stderr, "             [-w otp_window]\n\n");
+  fprintf(stderr, "             [-S auth_service_name] [-w otp_window]\n\n");
   fprintf(stderr, "  -A disable authorized_users file (all users in passwd_file valid)\n");
   fprintf(stderr, "  -h help\n");
   fprintf(stderr, "  -d enable debugging\n");
   fprintf(stderr, "  -D disable daemon mode\n");
+  fprintf(stderr, "  -m use PAM for password authentication\n");
+  fprintf(stderr, "  -M use PAM exclusively for password authentication\n");
 #ifdef OOTP_ENABLE
   fprintf(stderr, "  -O disable one time passwords\n");
   fprintf(stderr, "  -u allow users which do not exist in OTP database\n");
