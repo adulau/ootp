@@ -1,4 +1,4 @@
-# $Id: Makefile 131 2010-06-15 14:26:23Z maf $
+# $Id: Makefile 188 2011-05-26 03:50:33Z maf $
 
 what:
 	@echo
@@ -10,7 +10,7 @@ what:
 	@echo
 
 i386-fbsd:
-	@make CC="gcc" CFLAGS="-I../common -I/usr/local/pcsc/include/PCSC -DSCR_PCSC -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LFLAGS="-L/usr/local/pcsc/lib" LIBS="-lpcsclite" all
+	@make CC="gcc" CFLAGS="-I../common -I/usr/local/pcsc/include/PCSC -DSCR_PCSC -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LFLAGS="-L/usr/local/pcsc/lib -L/usr/local/lib" LIBS="-lpcsclite" all
 
 i386-linux:
 	@make CC="gcc" CFLAGS="-I../common -I/usr/local/include/PCSC -DSCR_PCSC -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -D_BSD_SOURCE -D_XOPEN_SOURCE -std=c99 -pedantic" LFLAGS="-L/usr/local/pcsc/lib" LIBS="/usr/local/lib/libpcsclite.a -lpthread" all

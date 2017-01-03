@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otplib.c 174 2011-05-16 02:09:26Z maf $
+ *      $Id: otplib.c 193 2011-06-12 16:43:51Z maf $
  */
 
 #include <openssl/ssl.h>
@@ -1104,6 +1104,28 @@ int otp_user_add(struct otp_ctx *otpctx, char *u_username,
   /*
    * sanity checks
    */
+
+  if (!u_username) {
+    if (otpctx->verbose)
+      xerr_warnx("u_username is null.");
+    goto otp_user_add_out;
+  }
+
+  if (!u_key_val) {
+    if (otpctx->verbose)
+      xerr_warnx("u_key_val is null.");
+    goto otp_user_add_out;
+  }
+
+  /* u_loc can be null */
+  if (u_loc) {
+    if (strlen(u_loc) > OTP_USER_LOC_LEN) {
+      if (otpctx->verbose)
+        xerr_warnx("strlen(u_loc) > OTP_USER_LOC_LEN.");
+      goto otp_user_add_out;
+    }
+  }
+
   if (ou.db_key.size > OTP_USER_NAME_LEN) {
     if (otpctx->verbose)
       xerr_warnx("strlen(u_username) > OTP_USER_NAME_LEN.");
@@ -1116,19 +1138,14 @@ int otp_user_add(struct otp_ctx *otpctx, char *u_username,
     goto otp_user_add_out;
   }
 
-  if (strlen(u_loc) > OTP_USER_LOC_LEN) {
-    if (otpctx->verbose)
-      xerr_warnx("strlen(u_loc) > OTP_USER_LOC_LEN.");
-    goto otp_user_add_out;
-  }
-
   /*
    * copy in user fields to ou
    */
 
   /* lengths checked above */
   strncpy(ou.username, u_username, OTP_USER_NAME_LEN);
-  strncpy(ou.loc, u_loc, OTP_USER_LOC_LEN);
+  if (u_loc)
+    strncpy(ou.loc, u_loc, OTP_USER_LOC_LEN);
   bcopy(u_key_val, &ou.key, u_key_size);
   ou.key_size = u_key_size;
   ou.count = u_count;

@@ -1,5 +1,13 @@
 # $Id:$
 
+htsoft-downloader: Makefile install target fix - eshicks
+
+pam_otp: allown_unknown typo - eshicks
+
+otplib: more sanity checking on otp_user_add - eshicks
+
+otp-tokend: smtp support, fork() on message
+
 urd/rc.d/urd: updated for new flags
 
 otp-control: mode generate will honor -c

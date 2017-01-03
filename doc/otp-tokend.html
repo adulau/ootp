@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>otp-tokend</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="APPLICATION"
+>otp-tokend</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="APPLICATION"
+>otp-tokend</SPAN
+>&nbsp;--&nbsp;Deliver tokens via SMTP(S) or HTTP(S).</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN10"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>otp-tokend</B
+>  [-?Dv] [-b<TT
+CLASS="REPLACEABLE"
+><I
+> bind-path</I
+></TT
+>] [-f<TT
+CLASS="REPLACEABLE"
+><I
+> from-address</I
+></TT
+>] [-s<TT
+CLASS="REPLACEABLE"
+><I
+> subject</I
+></TT
+>] [-S<TT
+CLASS="REPLACEABLE"
+><I
+> smtp_url</I
+></TT
+>] [-P<TT
+CLASS="REPLACEABLE"
+><I
+> pidfile</I
+></TT
+>] [-H<TT
+CLASS="REPLACEABLE"
+><I
+> httl_url</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN26"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The <B
+CLASS="COMMAND"
+>otp-tokend</B
+> daemon processes send-token
+requests from the Unix domain socket <TT
+CLASS="FILENAME"
+>/var/run/otp-tokend</TT
+>.
+Tokens are then delivered to the end-user via SMTP, SMTPS, HTTP, or HTTPS.
+Delivery through SMS or other out of band mechanisms can be implemented
+with a HTTPS back end.</P
+><P
+>Otplib will optionally generate a send-token request when the user record has
+the send-token flag and location information set.  This can be done with
+<B
+CLASS="COMMAND"
+>otp-control</B
+>.</P
+><P
+>The send-token request is a single datagram with the following ASCII fields
+separated by newlines:</P
+><PRE
+CLASS="SCREEN"
+>service
+username
+location
+token</PRE
+><P
+>If the location (destination to send the token) is all digits the request is
+sent via HTTP(S).  A request with the @ symbol is sent via SMTP(S).  All other
+requests are ignored.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN36"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>-b, --bind-path=<TT
+CLASS="REPLACEABLE"
+><I
+> bind_path</I
+></TT
+></DT
+><DD
+><P
+>Listen for send-token requests from an alternate Unix domain socket.</P
+></DD
+><DT
+>-D, --disable-daemon-mode</DT
+><DD
+><P
+>Disable daemon mode.  When specified <B
+CLASS="COMMAND"
+>otp-tokend</B
+> will not
+run in the background and stdout is available for debugging information.</P
+></DD
+><DT
+>-f, --from-address=<TT
+CLASS="REPLACEABLE"
+><I
+> from_address</I
+></TT
+></DT
+><DD
+><P
+>Specify the e-mail from address when using SMTP(S).</P
+></DD
+><DT
+>-s, --subject=<TT
+CLASS="REPLACEABLE"
+><I
+> subject</I
+></TT
+></DT
+><DD
+><P
+>Specify the e-mail subject when using SMTP(S).</P
+></DD
+><DT
+>-s, --smtp-url=<TT
+CLASS="REPLACEABLE"
+><I
+> smtp_url</I
+></TT
+></DT
+><DD
+><P
+>Specify the URL to an SMTP(S) server.  Example smtp://127.0.0.1.</P
+></DD
+><DT
+>-P, --pidfile=<TT
+CLASS="REPLACEABLE"
+><I
+> pid_file</I
+></TT
+></DT
+><DD
+><P
+>Specify an alternate location for a file containing the process ID
+of the <B
+CLASS="COMMAND"
+>otp-tokend</B
+> server.</P
+></DD
+><DT
+>-H, --http-url=<TT
+CLASS="REPLACEABLE"
+><I
+> http_url</I
+></TT
+></DT
+><DD
+><P
+>Specify the URL to an HTTP(S) server.  A form will be posted to the
+url with the form "to" set to the location, and
+"msg" set to the token.</P
+></DD
+><DT
+>-v, --verbose</DT
+><DD
+><P
+>Increase verbosity.  Can be used multiple times.</P
+></DD
+><DT
+>--version</DT
+><DD
+><P
+>Display software version.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN83"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN85"
+></A
+><P
+>Start the <B
+CLASS="COMMAND"
+>otp-tokend</B
+> server in the foreground with verbose
+output using https://127.0.0.1:443/sms for HTTP and and smtp://127.0.0.1 for SMTP requests.
+<PRE
+CLASS="SCREEN"
+>otp-tokend -D -vvv -S smtp://127.0.0.1 -H https://127.0.0.1:443/sms</PRE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN89"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN96"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-ov-plugin</SPAN
+>(1)
+<SPAN
+CLASS="HARDWARE"
+>spyrus-par2</SPAN
+>(7)</P
+></DIV
+></BODY
+></HTML
+>

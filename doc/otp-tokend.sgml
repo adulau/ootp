@@ -1,0 +1,200 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id:$ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<application>otp-tokend</application>
+</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<application>otp-tokend</application>
+</refname>
+<refpurpose>
+Deliver tokens via SMTP(S) or HTTP(S).
+</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>otp-tokend</command>
+<arg>-?Dv</arg>
+<arg>-b<replaceable> bind-path</replaceable></arg>
+<arg>-f<replaceable> from-address</replaceable></arg>
+<arg>-s<replaceable> subject</replaceable></arg>
+<arg>-S<replaceable> smtp_url</replaceable></arg>
+<arg>-P<replaceable> pidfile</replaceable></arg>
+<arg>-H<replaceable> httl_url</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The <command>otp-tokend</command> daemon processes send-token
+requests from the Unix domain socket <filename>/var/run/otp-tokend</filename>.
+Tokens are then delivered to the end-user via SMTP, SMTPS, HTTP, or HTTPS.
+Delivery through SMS or other out of band mechanisms can be implemented
+with a HTTPS back end.
+</para>
+<para>
+Otplib will optionally generate a send-token request when the user record has
+the send-token flag and location information set.  This can be done with
+<command>otp-control</command>.
+</para>
+<para>
+The send-token request is a single datagram with the following ASCII fields
+separated by newlines:
+</para>
+<screen>
+service
+username
+location
+token
+</screen>
+<para>
+If the location (destination to send the token) is all digits the request is
+sent via HTTP(S).  A request with the @ symbol is sent via SMTP(S).  All other
+requests are ignored.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>-b, --bind-path=<replaceable> bind_path</replaceable></term>
+<listitem>
+<para>
+Listen for send-token requests from an alternate Unix domain socket.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-D, --disable-daemon-mode</term>
+<listitem>
+<para>
+Disable daemon mode.  When specified <command>otp-tokend</command> will not
+run in the background and stdout is available for debugging information.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-f, --from-address=<replaceable> from_address</replaceable></term>
+<listitem>
+<para>
+Specify the e-mail from address when using SMTP(S).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-s, --subject=<replaceable> subject</replaceable></term>
+<listitem>
+<para>
+Specify the e-mail subject when using SMTP(S).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-s, --smtp-url=<replaceable> smtp_url</replaceable></term>
+<listitem>
+<para>
+Specify the URL to an SMTP(S) server.  Example smtp://127.0.0.1.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-P, --pidfile=<replaceable> pid_file</replaceable></term>
+<listitem>
+<para>
+Specify an alternate location for a file containing the process ID
+of the <command>otp-tokend</command> server.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-H, --http-url=<replaceable> http_url</replaceable></term>
+<listitem>
+<para>
+Specify the URL to an HTTP(S) server.  A form will be posted to the
+url with the form "to" set to the location, and
+"msg" set to the token.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-v, --verbose</term>
+<listitem>
+<para>
+Increase verbosity.  Can be used multiple times.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>--version</term>
+<listitem>
+<para>
+Display software version.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>EXAMPLES</title>
+<informalexample>
+<para>
+Start the <command>otp-tokend</command> server in the foreground with verbose
+output using https://127.0.0.1:443/sms for HTTP and and smtp://127.0.0.1 for SMTP requests.
+<screen>
+otp-tokend -D -vvv -S smtp://127.0.0.1 -H https://127.0.0.1:443/sms
+</screen>
+</para>
+</informalexample>
+
+
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-control</application>(1)
+<application>otp-sca</application>(1)
+<application>otp-sct</application>(1)
+<application>pam_otp</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>bcload</application>(1)
+<application>otp-ov-plugin</application>(1)
+<hardware>spyrus-par2</hardware>(7)
+</para>
+</refsect1>
+
+</refentry>

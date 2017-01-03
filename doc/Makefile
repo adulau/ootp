@@ -1,4 +1,4 @@
-# $Id: Makefile 153 2011-04-01 02:38:36Z maf $
+# $Id: Makefile 196 2011-06-12 18:57:25Z maf $
 
 INSTALL=install -c -m0644
 
@@ -19,12 +19,13 @@ MISCDIR=/usr/local/ootp/doc
 	openjade -V nochunks -c /usr/local/share/sgml/docbook/dsssl/modular/catalog -c /usr/local/share/sgml/docbook/3.1/dtd/catalog -c /usr/local/share/sgml/jade/catalog -d /usr/local/share/sgml/docbook/dsssl/modular/html/docbook.dsl -t sgml $*.sgml > $*.html
 
 MAN1S = htsoft-downloader.1 bcload.1 otp-control.1 otp-ov-plugin.1\
-	pam_otp.1 urd.1 otp-sca.1 otp-sct.1
+	pam_otp.1 urd.1 otp-sca.1 otp-sct.1 otp-tokend.1
 
 MAN7S = spyrus-par2.7
 
 HTMLS = htsoft-downloader.html bcload.html otp-control.html otp-ov-plugin.html\
-	pam_otp.html urd.html otp-sca.html otp-sct.html spyrus-par2.html
+	pam_otp.html urd.html otp-sca.html otp-sct.html spyrus-par2.html\
+	otp-tokend.html
 
 MISC = QUICKSTART LICENSE PAR2-USER-GENERIC BALANCE-USER HOTP-2009.pdf
 

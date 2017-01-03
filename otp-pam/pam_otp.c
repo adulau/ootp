@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: pam_otp.c 168 2011-05-11 04:03:38Z maf $
+ *      $Id: pam_otp.c 191 2011-06-12 16:32:33Z maf $
  */
 
 #include <stdio.h>
@@ -378,7 +378,7 @@ void load_opts(struct opts *opts, int argc, const char **argv)
       opts->allow_inactive = 1;
     } else if (!strcmp(*argv, "require_db_entry")) {
       opts->allow_unknown = 0;
-    } else if (!strcmp(*argv, "allown_unknown")) {
+    } else if (!strcmp(*argv, "allow_unknown")) {
       opts->allow_unknown = 1;
     } else if (!strncmp(*argv, "otpdb=", 6)) {
       opts->otpdb_fname=(char*)(*argv)+6;

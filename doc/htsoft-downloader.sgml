@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: htsoft-downloader.sgml 126 2010-06-15 14:23:02Z maf $ -->
+<!-- $Id: htsoft-downloader.sgml 199 2011-06-12 18:59:50Z maf $ -->
 
 <refentry>
 
@@ -179,10 +179,16 @@ wDONE: reply=F0, expecting E4wPIC reset sent.
 Intel Hexadecimal Object File Format Specification Rev A
 </para>
 <para>
-www.htsoft.com
+http://www.htsoft.com
+</para>
+<para>
+http://www.microchip.com
 </para>
 <para>
 http://www.ehl.cz/pic/pic_e.htm
+</para>
+<para>
+ftp://ftp.htsoft.com/hitech/samples/bootldr.zip
 </para>
 </refsect1>
 

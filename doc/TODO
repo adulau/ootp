@@ -1,14 +1,15 @@
-urd option c should not require arg
-urd_oareng_pgm support in rc.d
+sshd[41599]: v2 format has 11 fields, not 10.
+sshd[41599]: otp_ou_fromascii(): failed.
+sshd[41599]: otp_urec_open(maf): failed.
+sshd[41599]: ffdb_rec_close(): rec_open_ref_count != 0.
+sshd[41599]: otp_db_close(): failed.
+
+OpenOTP patch: fix for weird balance reader
+
 urd opt n should include character list
 man page for option n
 
-tokend
-  man page
-  usage
-
-urd,openvpn
-  send-token
+document send-token option
 
 Enter PIN code does not issue a \n
 
@@ -18,8 +19,6 @@ RADIUS proxy support
 
 get documentation for the ACS balance reader
 ACS balance reader support dec31.6?
-
-break out htsoft-downloader, urd, bcload?
 
 full coverage testing for otplib and ffdb
 
@@ -49,6 +48,4 @@ otp-sca
   use RFC keys for examples
 
 urd - wtmp
-
-otp-control -c should do the right thing when generating otp
 

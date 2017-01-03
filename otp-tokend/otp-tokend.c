@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <signal.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
@@ -19,13 +20,14 @@
 #include "xerr.h"
 #include "otplib.h"
 
-/* XXX usage
+/* 
  * XXX man page
  */
-
-static u_long scan_ip(char *s);
 static void usage(void);
 static int write_pidfile(char *fname);
+
+#define REQ_MODE_HTTP 0x1
+#define REQ_MODE_SMTP 0x2
 
 #define NXT_FIELD(V1,V2)\
   f = strsep(&c, "\n");\
@@ -36,38 +38,57 @@ static int write_pidfile(char *fname);
   V2 = c;\
 
 size_t curl_write_cb(void *ptr, size_t size, size_t nmemb, void *userdata);
+size_t curl_read_cb(void *ptr, size_t size, size_t nmemb, void *userdata);
+
+char *global_token;
+char *global_svc;
+char *global_hdr_subject;
+char *global_hdr_from;
 
 int main(int argc, char **argv)
 {
   extern char *ootp_version;
   struct sockaddr_un rx_path;
+  pid_t pid_child;
   CURL *curl;
+  struct curl_slist *smtp_rcpt = NULL;
   char rx_buf[1024], *c, *f, *msg_svc, *msg_user, *msg_loc, *msg_token;
   char msg_buf[1024], post_buf[1024], *msg_ue, *loc_ue, *rx_pathname;
-  char buf[1024], *pid_fname, *url;
+  char buf[1024], *pid_fname, *url_http, *url_smtp, *url, *hdr_from;
+  char *hdr_subject;
   int rx_sock, len, verbose, opt_version, daemon_mode, buf_l, i;
+  int req_mode, isdigits, isemail;
 
   struct option longopts[] = {
     { "bind-path",            1, (void*)0L,    'b'},
-    { "disable-daemon-mode",  1, (void*)0L,    'D'},
+    { "disable-daemon-mode",  0, (void*)0L,    'D'},
+    { "from-address",         1, (void*)0L,    'f'},
     { "help",                 0, (void*)0L,    'h'},
     { "help",                 0, (void*)0L,    '?'},
+    { "subject",              1, (void*)0L,    's'},
+    { "smtp-url",             1, (void*)0L,    'S'},
     { "pidfile",              1, (void*)0L,    'P'},
-    { "url",                  1, (void*)0L,    'u'},
+    { "http-url",             1, (void*)0L,    'H'},
     { "verbose",              0, (void*)0L,    'v'},
     { "version",              1, &opt_version,  1},
     { 0, 0, 0, 0},
   };
 
+  req_mode = 0;
   daemon_mode = 1;
   opt_version = 0;
-  pid_fname = (char*)0L;
+  smtp_rcpt = (struct curl_slist*)0L;
+  pid_fname = "/var/run/otp-tokend.pid";
+  url_http = (char*)0L;
+  url_smtp = (char*)0L;
   url = (char*)0L;
+  hdr_from = "hotp@eng.oar.net";
+  hdr_subject = "HOTP Token";
   verbose = 0;
   xerr_setid(argv[0]);
   rx_pathname = OTP_SEND_TOKEN_PATHNAME;
 
-  while ((i = getopt_long(argc, argv, "b:Dh?P:u:v", longopts,
+  while ((i = getopt_long(argc, argv, "b:Df:h?H:P:s:S:v", longopts,
     (int*)0L)) != -1) {
 
     switch (i) {
@@ -80,6 +101,10 @@ int main(int argc, char **argv)
         daemon_mode = 0;
         break;
 
+      case 'f':
+        hdr_from = optarg;
+        break;
+
       case 'h':
       case '?':
         usage();
@@ -90,8 +115,16 @@ int main(int argc, char **argv)
         pid_fname = optarg;
         break;
 
-      case 'u':
-        url = optarg;
+      case 's':
+        hdr_subject = optarg;
+        break;
+
+      case 'S':
+        url_smtp = optarg;
+        break;
+
+      case 'H':
+        url_http = optarg;
         break;
 
       case 'v':
@@ -111,8 +144,11 @@ int main(int argc, char **argv)
 
   } /* while getopt_long() */
 
-  if (!url)
-    xerr_errx(1, "url required.");
+  global_hdr_subject = hdr_subject;
+  global_hdr_from = hdr_from;
+
+  if (!url_http || !url_smtp)
+    xerr_errx(1, "HTTP and SMTP url required.");
 
   if (daemon_mode) {
 
@@ -137,30 +173,9 @@ int main(int argc, char **argv)
     xerr_errx(1, "rx_pathname too long.");
   strncpy(rx_path.sun_path, rx_pathname, sizeof(rx_path.sun_path));
 
-  /* construct pid file name */
-  if (!pid_fname) {
-      
-    if (strcmp(rx_pathname, OTP_SEND_TOKEN_PATHNAME)) {
-        
-      snprintf(buf, sizeof(buf), "/var/run/otp-tokend.pid.%s",
-        rx_pathname);
-          
-    } else {
-    
-      snprintf(buf, sizeof(buf), "/var/run/otp-tokend.pid");
-        
-    }
- 
-    pid_fname = (char*)&buf;
-        
-  }
-    
   /* write out pidfile */
   if (write_pidfile(pid_fname) < 0)
     xerr_errx(1, "write_pidfile(%s): fatal", buf);
-
-  if (!(curl = curl_easy_init()))
-    xerr_errx(1, "curl_easy_init()");
 
   if ((rx_sock = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
     xerr_err(1, "socket()");
@@ -172,30 +187,31 @@ int main(int argc, char **argv)
   if (bind(rx_sock, (struct sockaddr*)&rx_path, sizeof(rx_path)) < 0)
     xerr_err(1, "bind(%s)", rx_pathname);
 
-  if (verbose > 1)
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
-
-  if (curl_easy_setopt(curl, CURLOPT_URL, url) != CURLE_OK)
-    xerr_errx(1, "curl_easy_setopt(url): failed.");
-
-  if (curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-    &curl_write_cb) != CURLE_OK) 
-    xerr_errx(1, "curl_easy_setopt(CURLOPT_WRITEFUNCTION): failed.");
+  /* reap children */
+  if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
+    xerr_errx(1, "signal(SIGCHLD)");
 
   while (1) {
 
     if ((len = recv(rx_sock, &rx_buf, sizeof(rx_buf), 0)) < 0)
       xerr_err(1, "recv()");
 
-    if (len == 0) {
-      xerr_warnx("rx_buf empty.");
-      continue;
-    }
+    if ((pid_child = fork()) == -1)
+      xerr_err(1, "fork()");
 
-    if (rx_buf[len - 1] != 0) {
-      xerr_warnx("recv(): rx_buf not null terminated, skipping.");
+    /* parent? */
+    if (pid_child)
       continue;
-    }
+
+    /* child */
+    if (verbose > 2)
+      xerr_info("Child pid=%lu.", (unsigned long)getpid());
+
+    if (len == 0)
+      xerr_errx(1, "rx_buf empty.");
+
+    if (rx_buf[len - 1] != 0)
+      xerr_errx(1, "recv(): rx_buf not null terminated, skipping.");
 
     c = rx_buf;
 
@@ -208,34 +224,107 @@ int main(int argc, char **argv)
       if (*c == '\n')
         *c = 0;
 
-    snprintf(msg_buf, sizeof(msg_buf), "%s: %s", msg_svc, msg_token);
-
-    if (!(msg_ue = curl_escape(msg_buf, 0))) {
-      xerr_warnx("curl_escape(msg_buf): failed.");
-      continue;
+    /* guess destination.  All digits == http, @ == smtp */
+    isdigits = 1;
+    isemail = 0;
+    for (c = msg_loc; *c; ++c) {
+      if (!isdigit(*c))
+        isdigits = 0;
+      if (*c == '@')
+        isemail = 1;
+    }
+    if (isdigits) {
+      req_mode = REQ_MODE_HTTP;
+      url = url_http;
+    } else if (isemail) {
+      req_mode = REQ_MODE_SMTP;
+      url = url_smtp;
+    } else {
+      xerr_errx(1, "Req mode not set for %s.", msg_loc);
     }
 
-    if (!(loc_ue = curl_escape(msg_loc, 0))) {
-      xerr_warnx("curl_escape(msg_loc): failed.");
-      free(msg_ue);
-      continue;
-    }
+    if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK)
+      xerr_errx(1, "curl_global_init(): failed.");
 
-    snprintf(post_buf, sizeof(post_buf), "to=%s&msg=%s", loc_ue, msg_ue);
+    if (!(curl = curl_easy_init()))
+      xerr_errx(1, "curl_easy_init()");
 
-    if (curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_buf) != CURLE_OK)
-      xerr_errx(1, "curl_easy_setopt(CURLOPT_POSTFIELDS, %s): failed.",
-        post_buf);
-
-    if (curl_easy_perform(curl) != CURLE_OK)
-      xerr_warnx("1, curl_easy_perform(): failed.");
+    if (curl_easy_setopt(curl, CURLOPT_URL, url) != CURLE_OK)
+      xerr_errx(1, "curl_easy_setopt(url): failed.");
 
     if (verbose > 1)
-      xerr_info("msg_buf=%s", msg_buf);
+      curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
-  }
+    if (req_mode == REQ_MODE_HTTP) {
 
-}
+      if (curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+        &curl_write_cb) != CURLE_OK) 
+        xerr_errx(1, "curl_easy_setopt(CURLOPT_WRITEFUNCTION): failed.");
+
+      snprintf(msg_buf, sizeof(msg_buf), "%s: %s", msg_svc, msg_token);
+
+      if (!(msg_ue = curl_escape(msg_buf, 0)))
+        xerr_errx(1, "curl_escape(%s): failed.", msg_buf);
+
+      if (!(loc_ue = curl_escape(msg_loc, 0))) {
+        free(msg_ue);
+        xerr_errx(1, "curl_escape(%s): failed.", msg_loc);
+      }
+
+      snprintf(post_buf, sizeof(post_buf), "to=%s&msg=%s", loc_ue, msg_ue);
+
+      if (curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_buf) != CURLE_OK)
+        xerr_errx(1, "curl_easy_setopt(CURLOPT_POSTFIELDS, %s): failed.",
+          post_buf);
+
+      if (curl_easy_perform(curl) != CURLE_OK)
+        xerr_errx(1, "curl_easy_perform(): failed.");
+
+      if (verbose > 1)
+        xerr_info("msg_buf=%s", msg_buf);
+
+      curl_easy_cleanup(curl);
+
+      curl_global_cleanup();
+
+    } else if (req_mode == REQ_MODE_SMTP) {
+
+      if (curl_easy_setopt(curl, CURLOPT_MAIL_FROM, hdr_from) != CURLE_OK)
+        xerr_errx(1, "curl_easy_setopt(CURLOPT_MAIL_FROM): failed.");
+
+      if (!(smtp_rcpt = curl_slist_append(smtp_rcpt, msg_loc)))
+        xerr_errx(1, "curl_slist_append(smtp_rcpt, msg_loc): failed.");
+
+      if (curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, smtp_rcpt) != CURLE_OK)
+        xerr_errx(1, "curl_easy_setopt(CURLOPT_MAIL_RCPT): failed.");
+
+      /* needed by read_cb */
+      global_token = msg_token;
+      global_svc = msg_svc;
+
+      if (curl_easy_setopt(curl, CURLOPT_READFUNCTION,
+        &curl_read_cb) != CURLE_OK)
+        xerr_errx(1, "curl_easy_setopt(CURLOPT_READFUNCTION): failed.");
+
+      if (curl_easy_perform(curl) != CURLE_OK)
+        xerr_errx(1, "curl_easy_perform(): failed.");
+
+      curl_slist_free_all(smtp_rcpt);
+
+    } else {
+
+      xerr_errx(1, "req_mode");
+
+    }
+   
+    /* exit child */
+    if (verbose > 2)
+      xerr_info("child exit");
+    exit(0);
+
+  } /* forever waiting messages */
+
+} /* main */
 
 size_t curl_write_cb(void *ptr, size_t size, size_t nmemb, void *userdata)
 {
@@ -248,8 +337,33 @@ size_t curl_write_cb(void *ptr, size_t size, size_t nmemb, void *userdata)
   return size*nmemb;
 }
 
+size_t curl_read_cb(void *ptr, size_t size, size_t nmemb, void *userdata)
+{
+  size_t t, r;
+  static int cd;
+
+  if (cd == 0) {
+    t = size*nmemb;
+    r = snprintf(ptr, t,
+      "From: %s <HOTP>\r\nSubject: %s\r\n\r\nToken for %s: %s\r\n",
+      global_hdr_from, global_hdr_subject, global_svc, global_token);
+    ++cd;
+    return r;
+  } else {
+    return 0;
+  }
+
+}
+
 void usage(void)
 {
+  extern char *ootp_version;
+         
+  fprintf(stderr, "otp-tokend [-?Dhv] [-b bind-path] [-f from-address] [-s subject]\n");
+  fprintf(stderr, "           -S smtp-url [-P pidfile] -H http-url\n");
+
+  printf("%s\n", ootp_version);
+
 }
 
 /*
@@ -281,80 +395,4 @@ int write_pidfile(char *fname)
   return (close(fd));
 
 } /* write_pidfile */
-
-/*
- * function: scan_ip
- *
- *  IP address in string S is converted to a u_long
- *  (borrowed from tcpdump)
- *
- *  left shift any partial dotted quads, ie 10 is 0x0a000000 not 0x0a
- *  so scan_ip_prefix() works for standard prefix notation, ie 10/8
- */
-u_long scan_ip(char *s)
-{
-  struct hostent *he;
-  struct in_addr *ina;
-  u_long addr = 0;
-  uint n;
-  int dns, shift;
-  char *t;
-
-  /* if there is anything ascii in here, this may be a hostname */
-  for (dns = 0, t = s; *t; ++t) {
-    if (islower((int)*t) || isupper((int)*t)) {
-      dns = 1;
-      break;
-    }
-  }
-
-  if (dns) {
-
-    if (!(he = gethostbyname(s)))
-      goto numeric;
-
-    if (he->h_addrtype != AF_INET)
-      goto numeric;
-
-    if (he->h_length != sizeof (uint32_t))
-      goto numeric;
-
-    ina = (struct in_addr*)*he->h_addr_list;
-    return (ntohl(ina->s_addr));
-
-  } /* dns */
-
-  shift = 0;
-
-numeric:
-  while (1) {
-
-    /* n is the nibble */
-    n = 0;
-
-    /* nibble's are . bounded */
-    while (*s && (*s != '.') && (*s != ' ') && (*s != '\t'))
-      n = n * 10 + *s++ - '0';
-
-    /* shift in the nibble */
-    addr <<=8;
-    addr |= n & 0xff;
-    ++shift;
-
-    /* return on end of string */
-    if ((!*s) || (*s == ' ') || (*s == '\t'))
-      goto ndone;
-
-    /* skip the . */
-    ++s;
-  } /* forever */
-
-ndone:
-
-  for (; shift < 4; ++shift)
-    addr <<=8;
-
-  return addr;
-
-} /* scan_ip */
 

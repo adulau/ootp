@@ -1,4 +1,4 @@
-# $Id: Makefile 128 2010-06-15 14:25:09Z maf $
+# $Id: Makefile 192 2011-06-12 16:33:42Z maf $
 
 what:
 	@echo
@@ -37,7 +37,7 @@ version.c:
 
 install:
 	mkdir -p ${BINDIR}
-	${INSTALL} ${BINS} ${BINDIR}
+	${INSTALL} ${BIN} ${BINDIR}
 	@echo files installed in ${BINDIR}
 
 clean:

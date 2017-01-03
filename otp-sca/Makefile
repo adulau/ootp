@@ -1,4 +1,4 @@
-# $Id: Makefile 130 2010-06-15 14:26:10Z maf $
+# $Id: Makefile 187 2011-05-26 03:50:28Z maf $
 
 what:
 	@echo
@@ -10,7 +10,7 @@ what:
 	@echo
 
 i386-fbsd:
-	@make CC="gcc" CFLAGS="-I../common -I/usr/local/pcsc/include/PCSC -DSCR_PCSC -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LFLAGS="-L/usr/local/pcsc/lib" LIBS="-lpcsclite" all
+	@make CC="gcc" CFLAGS="-I../common -I/usr/local/pcsc/include/PCSC -DSCR_PCSC -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -Wall -std=c99 -pedantic" LFLAGS="-L/usr/local/pcsc/lib -L/usr/local/lib" LIBS="-lpcsclite" all
 
 i386-linux:
 	@make CC="gcc" CFLAGS="-I../common -I/usr/local/include/PCSC -DSCR_PCSC -g -DHAVE_STRING_H -DHAVE_STRINGS_H -DDEBUG -D_BSD_SOURCE -D_XOPEN_SOURCE -Wall -std=c99 -pedantic" LFLAGS="-L/usr/local/pcsc/lib" LIBS="/usr/local/lib/libpcsclite.a -lpthread" all
@@ -23,7 +23,7 @@ i386-macosx:
 
 INSTALL=install -c -m0755
 
-.c.o:;  $(CC) $(CFLAGS) -c $*.c -o $*.o
+.c.o:;  $(CC) $(CFLAGS) $(INC) -c $*.c -o $*.o
 
 BIN = otp-sca
 COBJS = ../common/xerr.o ../common/str.o ../common/acr30.o ../common/scr.o ../common/sccmd.o
