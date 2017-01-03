@@ -1,0 +1,802 @@
+#
+# $Id: QUICKSTART 102 2009-12-28 03:04:55Z maf $
+#
+
+OpenOTP is an implementation of the HOTP protocol using a ZeitControl
+Cardsystems ZC3.9 BasicCard and standalone balance reader, standalone Spyrus
+PAR2 (Personal Access Reader), or PCSC-Lite supported Smart Card reader.
+
+Included is a C library implementation of the HOTP protocol and
+associated user database management, HOTP PAM library, OpenVPN plug-in module,
+micro RADIUS server with HOTP support, and utilties for managing the Smart
+Card, Spyrus reader, and host side HOTP user database.  The PCSC-Lite
+API provides reader support for Smart Card management.
+
+The card management, firmware loaders, C API, and authentication methods
+have been developed & tested for FreeBSD and Linux.
+
+The PARII HOTP firmware is provided as a pre-compiled binary with source
+for the HOTP implementation.  The Spyrus development toolkit and 
+Hi-Tech/Microchip C compiler are required for modification.  Run-time
+customization of strings is supported via an EEProm loader without need
+for the development toolkit & PIC16 compiler.  A Unix tool is included for
+downloading firmware to the reader with a Spyrus downloader cable.
+
+Source and Binary for the BasicCard firmware is supplied.  Modification
+requires the Windows BasicCard development software available as
+a free download from ZeitControl.  A Unix version of bcload implemented
+with the PCSC-Lite interface and embedded ACR30S driver is included.
+
+The Smart Card based token generator is standards based and may be
+used with other RFC compliant HOTP implementations.  Other HOTP
+token generators may be used with the Unix side HOTP library
+and authentication modules.
+
+Distribution:
+
+otp-control       - OTP database manager
+otp-pam           - OTP PAM module
+otp-sca           - Smart Card Admin Utility
+otp-sct           - Smart Card Terminal
+otp-openvpn       - OpenVPN OTP plug-in
+urd               - Micro RADIUS server with HOTP integration
+htsoft-downloader - PIC bootloader downloader utility for Spyrus firmware
+bcload            - BasicCard firmware loader
+basiccard         - BasicCard (Smart Card) firmware & source code
+spyrus-par2       - Spyrus PAR2 firmware & source code
+common            - otplib API and other common code
+doc               - Documentation & Man pages in Unix and HTML format.
+scripts           - shell scripts to setup list of users with HOTP
+                    Unix and SC databases.
+
+Required:
+
+  o ZC3.9 BasicCard Smart cards.  1 Per user.  These run about $3.00 (US)
+    in quantity 10, or about $5.00 in quantity 1.
+    http://www.basiccard.com
+
+  o Smart Card Reader.  Recommend a CCID compatible reader as this
+    driver is well supported under PCSC-Lite.  An embedded driver
+    for the ACR30S (which does not work well with PCSC-Lite) is
+    also included but it requires a RS232 Serial port and PC keyboard
+    port for power which is typically not available on newer laptops.
+    The OMNIKEY CardMan 1021 USB works well on Linux and FreeBSD
+    and can be found on ebay for ~ $17.00 (US).
+
+  o Balance Reader from Zeitcontrol.  (Optional).  Using a balance reader
+    to generate HOTP tokens limits the SC to one token and no PIN.
+
+  o Spyrus PAR II reader and download cable (Optional).  The PAR II
+    with a ZC3.9 SC will support about 85 keys.  These run about $60
+    in single quantities.  One cable for setup, 1 reader per user.
+    http://www.spyrus.com
+
+Software is available at http://www.splintered.net/sw/otp
+
+#
+# Quickstart install for ootp on Mac, FreeBSD, and Linux.
+#
+#
+# PART 1 - Unix side (FreeBSD/Linux)
+#
+#  o Install pcsc-lite & driver packages (optional / recommended).
+#  o Install developer packages openssl and PAM (if not available).
+#  o compile and install ootp.
+#  o create a user with otp-control.
+#  o configure PAM to use pam_otp.so with sshd.
+#  o test above configuration using software generated token.
+#
+# PART 2 hardware token generation
+#
+#  o download OTP firmware to Spyrus PAR II reader with htsoft-downloader
+#    The Spyrus reader is not required.  Tokens can be generated with
+#    only the SC and PC connected reader.
+#  o download OTP firmware to BasicCard SC with bcload.
+#  o copy hosts (hostname & key) to SC with otp-sca.
+#  o generate token with otp-sct.
+#  o generate token with Spyrus PAR II.
+#
+# PART 3 personalize Spyrus PAR II EEPROM
+#
+#  o download Spyrus personalization firmware to BasicCard SC with bcload.
+#  o create EEPROM image.
+#  o copy EEPROM image to SC with otp-sca.
+#  o load EEPROM image into Spyrus reader via SC.
+# 
+# 
+#
+# otp-sct and otp-sca will use pcsc-lite if it installed.  pcsc-lite provides
+# drivers for many Smart Card readers.  A built in driver is included for
+# ACR30S based Smart Card readers which only requires a serial port.  The
+# PL2303 USB to Serial adapter is known to work.
+#
+
+#
+# Installing pcsc-lite from source for Linux.  If using YUM see below for
+# the required packages.  Your distribution may # have some or all of
+# these packages previously installed, make sure to check the versions of
+# installed software.  The ACR38 driver is only available in source form.
+# The CCID driver package for pcsc-lite supports many Smart Card readers
+# conforming to the Chip/Smart Card Interface Devices USB standard.
+#
+
+wget --no-check-certificate https://alioth.debian.org/frs/download.php/3080/ccid-1.3.11.tar.bz2
+wget --no-check-certificate https://alioth.debian.org/frs/download.php/3082/pcsc-lite-1.5.5.tar.bz2
+wget 'http://www.acs.com.hk/drivers/eng/ACR38U_driver_Lnx_1710_P.tar.gz'  
+
+
+pcsc-lite:
+  tar -xf pcsc-lite-1.5.5.tar.bz2
+  cd pcsc-lite-1.5.5
+  ./configure
+  make
+  make install
+
+ccid
+  tar -xf ccid-1.3.11.tar.bz2
+  cd ccid-1.3.11/
+  ./configure
+   examples/scardcontrol.c:
+    remove FEATURE_IFD_PIN_PROPERTIES code -- did not compile
+  make
+  make install
+
+acr38u
+  tar -xf ACR38U_driver_Lnx_1710_P.tar.gz
+  cd ACR38_LINUX_100710_P
+  ./configure
+  make
+  make install
+
+mkdir -p /usr/local/pcsc
+cd /usr/local/pcsc
+ln -s /usr/lib/pcsc/drivers .
+
+# run in the foreground
+/usr/local/sbin/pcscd -d -f
+
+#
+# Using yum on a vanilla Fedore 11 install
+#
+yum install gcc.i586
+yum install openssl
+yum install openssl-devel
+yum install pcsc-lite
+yum install pcsc-lite-devel
+yum install ccid
+yum install pam-devel
+
+
+#
+# Mac OSX 10.5 has pcsc-lite and the CCID drivers installed by default.
+#
+
+install ACR38U MacOSX installer from acs.com.hk
+
+# 
+##### installing pcsc-lite from source for FreeBSD
+#
+
+fetch -o libusb-0.1.12.tar.gz 'http://sourceforge.net/projects/libusb/files/libusb-0.1%20%28LEGACY%29/0.1.12/libusb-0.1.12.tar.gz/download' 
+
+  patch < /usr/ports/devel/libusb/files/patch-bsd.c
+
+  ./configure
+  make > make.out 2>&1
+  make install > install.out 2>&1
+
+fetch https://alioth.debian.org/frs/download.php/3080/ccid-1.3.11.tar.bz2
+fetch https://alioth.debian.org/frs/download.php/3082/pcsc-lite-1.5.5.tar.bz2
+
+*** PCSCD
+
+  ./configure --enable-libusb --prefix=/usr/local/pcsc LDFLAGS="-lpthread"\
+    --enable-ipcdir=/var/tmp/ --enable-confdir=/etc\
+    --enable-usbdropdir=/usr/local/pcsc/lib/drivers/ --disable-libhal
+
+  make > make.out 2>&1
+  make install > install.out 2>&1
+  ldconfig -m /usr/local/pcsc/lib
+
+*** CCID
+
+  ./configure --enable-usbdropdir=/usr/local/pcsc/lib/drivers\
+     --enable-ccidtwindir=/usr/local/pcsc/lib/drivers/serial\
+     --enable-udev PCSC_CFLAGS="-I/usr/local/pcsc/include/PCSC"\
+     PCSC_LIBS="-L/usr/local/pcsc/lib/ -lpcsclite"
+
+  make > make.out 2>&1
+  make install > install.out 2>&1
+
+### start PCSCD in debug mode if not running.
+
+# run in the foreground
+/usr/local/sbin/pcscd -d -f
+
+#
+# The ACR38U drivers must be installed separately.  See 
+# http://www.acs.com.hk/drivers/eng/.  Linux is works, FreeBSD driver hangs
+# in libusb.  Mac driver works
+#
+
+##### OTP build
+
+
+# ootp install dir
+mkdir -p /usr/local/ootp/bin
+mkdir -p /usr/local/ootp/man/man1
+mkdir -p /usr/local/ootp/man/man7
+mkdir -p /usr/local/ootp/firmware
+mkdir -p /usr/local/ootp/doc
+mkdir -p /usr/local/ootp/lib
+chmod -R 755 /usr/local/ootp
+chown -R root:wheel /usr/local/ootp
+
+OOTP="/usr/local/ootp"
+PATH=$PATH:$OOTP/bin
+
+# build Intel Linux, pcsc-lite installed from source
+cd otp
+cd common; make clean; make i386-linux; cd ..
+cd bcload; make clean; make i386-linux; make install cd ..
+cd htsoft-downloader; make clean; make i386-linux; make install; cd ..
+cd otp-control; make clean; make i386-linux; make install; cd ..
+cd otp-pam; make clean; make i386-linux; make install; cd ..
+cd otp-sca; make clean; make i386-linux; make install; cd ..
+cd otp-sct; make clean; make i386-linux; make install; cd ..
+cd otp-openvpn; make clean; make i386-linux; make install; cd ..
+cd urd; make clean; make i386-linux; make install; cd ..
+cd basiccard; make install; cd ..
+cd spyrus-par2; make install; cd ..
+cd scripts; make install; cd ..
+cd doc; make install; cd ..
+
+# build Intel Linux, pcsc-lite installed with yum
+cd otp
+cd common; make clean; make i386-yum-linux; cd ..
+cd bcload; make clean; make i386-yum-linux; make install; cd ..
+cd htsoft-downloader; make clean; make i386-linux; make install; cd ..
+cd otp-control; make clean; make i386-linux; make install; cd ..
+cd otp-pam; make clean; make i386-linux; make install; cd ..
+cd otp-sca; make clean; make i386-yum-linux; make install; cd ..
+cd otp-sct; make clean; make i386-yum-linux; make install; cd ..
+cd otp-openvpn; make clean; make i386-linux; make install; cd ..
+cd urd; make clean; make i386-linux; make install; cd ..
+cd basiccard; make install; cd ..
+cd spyrus-par2; make install; cd ..
+cd scripts; make install; cd ..
+cd doc; make install; cd ..
+
+# build Intel FreeBSD
+cd otp
+cd common; make clean; make i386-fbsd; cd ..
+cd bcload; make clean; make i386-fbsd; make install; cd ..
+cd htsoft-downloader; make clean; make i386-fbsd; make install; cd ..
+cd otp-control; make clean; make i386-fbsd; make install; cd ..
+cd otp-pam; make clean; make i386-fbsd; make install; cd ..
+cd otp-sca; make clean; make i386-fbsd; make install; cd ..
+cd otp-sct; make clean; make i386-fbsd; make install; cd ..
+cd otp-openvpn; make clean; make i386-fbsd; make install; cd ..
+cd urd; make clean; make i386-fbsd; make install; cd ..
+cd basiccard; make install; cd ..
+cd spyrus-par2; make install; cd ..
+cd scripts; make install; cd ..
+cd doc; make install; cd ..
+
+# build Intel MacOSX
+cd otp
+cd common; make clean; make i386-macosx; cd ..
+cd bcload; make clean; make i386-macosx; make install; cd ..
+cd otp-control; make clean; make i386-macosx; make install; cd ..
+cd otp-pam; make clean; make i386-macosx; make install; cd ..
+cd otp-sca; make clean; make i386-macosx; make install; cd ..
+cd otp-sct; make clean; make i386-macosx; make install; cd ..
+cd otp-openvpn; make clean; make i386-macosx; make install; cd ..
+cd urd; make clean; make i386-macosx; make install; cd ..
+cd htsoft-downloader; make clean; make i386-macosx; make install; cd ..
+cd basiccard; make install; cd ..
+cd spyrus-par2; make install; cd ..
+cd scripts; make install; cd ..
+cd doc; make install; cd ..
+
+# where the OTP database files live by default
+mkdir /etc/otpdb
+chown root:wheel /etc/otpdb
+chmod 700 /etc/otpdb
+
+# install the pam_otp module
+# linux
+cp $OOTP/lib/pam_otp.so /lib/security
+chown root:wheel /lib/security/pam_otp.so
+chmod 755 /lib/security/pam_otp.so
+# freebsd
+cp $OOTP/lib/pam_otp.so /usr/lib
+chown root:wheel /usr/lin/pam_otp.so
+chmod 755 /usr/lib/pam_otp.so
+
+# if running SELinux:
+# http://docs.fedoraproject.org//selinux-faq-fc5/#faq-div-understanding-selinux
+#
+chcon -t textrel_shlib_t /lib/security/pam_otp.so
+semanage fcontext -a -t textrel_shlib_t /lib/security/pam_otp.so
+# sshd would also need priviliges to write to /etc/otpdb
+#
+# to temporarily disable SELinux for testing use
+# setenforce 0 
+
+# create the OTP database with one inactive user (joe)
+otp-control -n -u joe -m add
+otp-control -u joe -m set-status inactive
+otp-control -u joe -m list
+
+>Username.......joe
+>Key............784F37E95A8410400700DF1E52466AB1704F487B
+>Count..........0 (0x0)
+>Count Ceiling..18446744073709551615 (0xFFFFFFFFFFFFFFFF)
+>Version........1
+>Status.........inactive (2)
+>Format.........hex40 (1)
+>Type...........HOTP (1)
+
+# configure PAM sshd to use new OTP module
+/etc/pam.d/sshd:
+ # change auth lines:
+ auth       requisite    pam_unix.so    nullok try_first_pass
+ auth       required     pam_otp.so     expose_account display_count allow_inactive debug 
+ # expose_account enabled verbose logging via syslog:
+ #  OTP username=joe response=0E3F8E7C47
+ # display_count enables the HOTP count in the challenge prompt
+ #   HOTP Challenge (1843):
+ #                   ^^^^ this is the count
+ # allow_inactive will configure the module to allow a user in the OTP
+ # database set to status inactive to pass authentication without an OTP.
+
+/etc/ssh/sshd_config:
+ # PasswordAuthentication must be turned off (default is on)
+ # (note this is not true for all versions of sshd, see example
+ # below.
+ # SSH-2.0-OpenSSH_5.2 - PasswordAuthentication yes
+ # SSH-2.0-OpenSSH_4.5p1 - PasswordAuthentication no
+ PasswordAuthentication no
+ # usePAM to yes (default)
+ UsePAM yes
+ # ChallengeResponseAuthentication is required for the pam OTP module
+ # to interact with sshd
+ ChallengeResponseAuthentication yes
+ # Public Key Authentication must also be turned off
+ RSAAuthentication no
+ PubkeyAuthentication no
+
+# restart sshd (linux)
+/etc/init.d/sshd restart
+# restart sshd (FreeBSD)
+/etc/rc.d/sshd restart
+
+
+# example of incorrectly configured system, note after 3 attempts with
+# PAM, sshd reverts to internal authentication code allowing the OTP PAM
+# module to be bypassed.
+#
+# with later versions of sshd this is no longer true, ie
+# SSH-2.0-OpenSSH_5.2 is okay.  The second password prompt will
+# also call pam_otp
+#
+  bastion.eng:~% ssh 10.1.0.25 -l 'joe'
+  Password: 
+  Password: 
+  Password: 
+  joe@10.1.0.25's password: 
+
+# generate OTP
+otp-control -u joe -m generate
+ count=5 crsp=48B0D8D8E1
+
+# verify sshd is still working properly
+bastion.eng:~% ssh 10.1.0.25            
+Password: 
+Last login: Tue Sep  1 23:21:20 2009 from 10.1.0.26
+
+# activate user
+otp-control -u joe -m set-status -s active
+
+# login with OTP generated earlier
+bastion.eng:~% ssh 10.1.0.25 
+Password: 
+HOTP Challenge (5): 48B0D8D8E1
+Last login: Wed Sep  2 00:22:03 2009 from 10.1.0.26
+[joe@localhost ~]$ 
+
+#### Downloading firmware to the Spyrus reader
+
+The Spyrus PAR II will be programmed with the spyrus1.4.hex application
+included in the OTP distribution.  This will be done once per new reader,
+or when new application software is required.  An proprietary RS232 serial
+programming cable available from Spyrus is needed.
+
+Connect the programming cable to the Spyrus reader and a serial port on the
+computer with htsoft-downloader compiled.  A USB Serial adapter based on the
+Prolific PL2303 chip has been used during development on Linux and FreeBSD
+with the htsoft-downloader.  YMMV with other adapters.
+
+Press Calc/Off to turn on the reader.  If it does not power up, remove the
+paper insulator from the battery or replace the batteries.  Press the down
+arrow until the "DownloadApp" menu item is present.
+
+Start the htsoft-downloader utility using serial port at /dev/cuaU0 :
+
+# FreeBSD USB Serial Adapter
+htsoft-downloader -v1 -i -f /dev/cuaU0 < $OOTP/firmware/spyrus1.4.hex
+
+# Linux USB Serial Adapter
+htsoft-downloader -v1 -i -f /dev/ttyS0 < $OOTP/firmware/spyrus1.4.hex
+
+Press Enter on the spyrus reader to start the download application:
+
+Waiting for bootloader......
+
+DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDwTwF
+PIC reset sent, ignored last WOK timeout.
+
+Increase the verbosity level for more debugging information if necessary.
+The -i option is required for the bootloader provided with the Spyrus reader.
+
+A Windows PIC downloader which will work with the Spyrus reader is available
+at http://www.ehl.cz/pic/pic_e.htm.  It will also note an error when trying
+to reset the PIC.
+
+Press Card/On.  The LCD should display:
+
+     OARnet
+  PIN:
+
+Press Calc/Off to preserve the battery.
+
+##### Downloading firmware to the ZC3.9 BasicCard 
+
+The HOTP BasicCard firmware is programmed into the blank ZC3.9 card.
+This is typically done only once, the keys and other user information
+are configured using otp-sct.
+
+bcload -v -f $OOTP/firmware/HOTPC.IMG
+Card/State: ZC3.9 test
+EEChunkSize=2000
+BCSetState: load
+SC: Reset
+EEStart=8020,EELen=1fa0
+imgAddr=8020,imgLen=1fa0
+Clear: addr=8020,len=1fa0
+BCClearEEProm: success
+SC: Reset
+EEWRITE: nWrites=121,addr=8020,len=1e
+EEWRITE: nWrites=120,addr=8038,len=10
+EEWRITE: nWrites=119,addr=8170,len=38
+EEWRITE: nWrites=118,addr=81a0,len=48
+...
+EEWRITE: nWrites=1,addr=9f40,len=48
+EEWRITE: nWrites=0,addr=9f80,len=48
+EECRC: nWrites=1,addr=8020,len=1fa0,imgCRC=7a3f
+EECRC: SCCRC=7a3f
+EECRC: nWrites=0,addr=8020,len=00,imgCRC=00
+EECRC: SCCRC=0
+BCSetState: test
+SC: Reset
+
+
+##### Downloading firmware to the ZC3.9 BasicCard (Windows Alternative)
+
+Install the Windows BasicCard development toolkit from
+http://www.basiccard.com/.  This toolkit is a free download and required
+for modifying the BasicCard HOTP implementation.
+
+  Tools / Download to Real Card
+  (card debugger starts)
+  Card / Download to Real Card
+  Select the COM port - anything other than the reader included with the
+    development kit will require installing the vendor PC/SC Smart Card
+    driver first.
+  Select the HOTPC.IMG file included in OTP distribution.
+  Click Download to start the card download.
+
+
+#### Managing the Smart Card with otp-sca
+
+Working from the otp-control example above, user joe has been setup on host
+bastion.  The Smart Card must have the firmware loaded on it with the above
+procedure before otp-sca can be used with it.
+
+List available SC readers.  Examples will assume the default compiled in
+reader is PCSC: which will select the first available PCSC reader.  The default
+reader is a compile time option and may be set to the embedded acr30s driver
+if PCSC support is not enabled.  When using the acr30s driver the serial port
+can be configured by appending it to the reader name with a :, ie
+embedded:acr30s:/dev/cuaU0
+
+otp-sca -l
+embedded:acr30s
+PCSC:OmniKey CardMan 1021 00 00
+
+First change the admin key from the default.  The admin key is used to enable
+administrator mode on the Smart Card to access the GetHost and SetHost
+functions.  When in admin mode a PIN is not required.  Admin mode should be
+disabled after initial setup.
+
+Enable admin mode with default key:
+
+echo "3030303030303030303030303030303030303030" > default.key
+otp-sca -m admin-enable -a default.key
+
+Create a new admin key with openssl and set the Smart Card to use it:
+
+openssl rand 160 | openssl sha1 > secret.key
+otp-sca -a secret.key -m adminkey-set
+
+Dump user joe in an otp-sca friendly format with index 00.  Store record
+in SC.
+
+otp-control -u joe -m list-sc -Hcrypto | tail -1 | otp-sca -m host-set
+
+Dump the Smart Card to verify programming:
+
+otp-sca -m host-get
+
+#index:count:hostname:key
+00:00000000:63727970746F000000000000:784F37E95A8410400700DF1E52466AB1704F487B
+
+The hostname is encoded in HEX.  The key matches the one programmed above
+into the otpdb used with PAM.  Initial count is set to 0.
+
+Dump the available hosts in a friendlier format.  The card is still in admin
+mode so the PIN does not matter:
+
+otp-sca -m hostname-get
+Enter PIN: 99999
+00,crypto
+
+Disable admin mode:
+
+otp-sca -m admin-disable -a secret.key 
+
+Set PIN for card.  The default 28165 PIN can not be used to generate a HOTP:
+
+otp-sca -m pin-set
+Enter PIN: 28165
+New PIN: 12345
+New PIN (again): 12345
+SetPIN Good.
+
+Generate a HOTP for user.  The initial count is 0.  The count above
+is 5 (want 6 next).  To set the count on the Smart Card dump it to ASCII,
+change the count then load it from ASCII.  Alternately use the form of GetHOTP
+which passes the count in.  Note the other GetHOTP commands may be
+conditionally compiled out, by default only GetHOTPHostCount32 is enabled
+which also returns the hostname.
+
+otp-sca -m hotp-gen -Mch -c5
+Enter PIN: 12345
+HOTP: 48B0D8D8E1 -- crypto
+
+The HOTP generated here matches the one above for count 5.  The count
+on the Smart Card will automatically be incremented by one which can be
+verified by dumping the card contents:
+
+otp-sca -m admin-enable -a secret.key
+AdminMode: enabled.
+
+otp-sca -m host-get                  
+#index:count:hostname:key
+00:00000006:63727970746F000000000000:784F37E95A8410400700DF1E52466AB1704F487B
+
+otp-sca -m admin-disable -a secret.key
+AdminMode: disabled.
+
+As a precaution admin mode is automatically disabled when a GetHOTP* command is
+received.
+
+#### Using a Smart Card with otp-sct
+
+otp-sct duplicates the functionality of the Spyrus PAR II reader with a Smart
+Card reader connected to the computer.  This significantly reduces the security
+of using one time passwords if the computer with the Smart Card inserted is
+compromised and the attacker has the SC PIN.  The 5 digit PIN is protected
+from brute force attacks by the Smart Card disabling the card when more than
+10 incorrect PIN's are tried in succession.  A middle ground may be available
+with newer readers which allow the PIN to be input on the reader.
+
+If your local security policy requires the use of the Spyrus reader, the
+reader will provide a 40 bit key to the SC which otp-sct will not.  Host
+entries on the SC can set the READERKEY flag to prevent HOTP generation
+without this shared key between the Spyrus reader and SC.
+
+otp-sct
+Enter PIN: 12345
+HOTP: crypto 6C960E4B21
+
+#### Using a Smart Card with Spyrus Reader
+
+Insert the SC into the Spyrus Reader.
+
+Press Card/ON.  Enter PIN.  Default PIN is 28165
+
+Press * to change PIN.  The default PIN can not be used to generate a token.
+
+Enter to generate a HOTP for the first system (index 00).
+
+Down arrow to enter the menu.  The menu will allow viewing of all hostnames
+programmed in the Smart Card with the up/down arrows.  Press Enter once the
+host is selected.
+
+Enter 2 digit index to bypass the menu.
+
+# before generating a HOTP will prompt for a Count input.  This can be used to
+synch a card or for Challenge/Response mode with shared keys.
+
+
+#### Spyrus PAR II Personalization
+
+Strings in the PAR II such as the text "OARnet" or the reader key are
+loaded from the onboard PIC16F877 256KByte EEPROM at runtime.  The EEPROM
+can can be reprogrammed with a SC loaded with SPYRUSP.IMG.
+
+First create a Smart Card with the SPYRUSP.IMG firmware.  This will need
+to be a different SC from the HOTPC.IMG loaded earlier.
+
+bcload -v -f $OOTP/firmware/SPYRUSP.IMG
+
+Card/State: ZC3.9 test
+EEChunkSize=2000
+BCSetState: load
+SC: Reset
+EEStart=8020,EELen=1fa0
+imgAddr=8020,imgLen=1fa0
+Clear: addr=8020,len=1fa0
+BCClearEEProm: success
+SC: Reset
+EEWRITE: nWrites=10,addr=8020,len=1e
+EEWRITE: nWrites=9,addr=8038,len=10
+EEWRITE: nWrites=8,addr=8170,len=38
+EEWRITE: nWrites=7,addr=81a0,len=48
+EEWRITE: nWrites=6,addr=81e0,len=48
+EEWRITE: nWrites=5,addr=8220,len=48
+EEWRITE: nWrites=4,addr=8260,len=48
+EEWRITE: nWrites=3,addr=82a0,len=48
+EEWRITE: nWrites=2,addr=82e0,len=48
+EEWRITE: nWrites=1,addr=8320,len=11
+EEWRITE: nWrites=0,addr=9fbd,len=a
+EECRC: nWrites=1,addr=8020,len=1fa0,imgCRC=6ef1
+EECRC: SCCRC=6ef1
+EECRC: nWrites=0,addr=8020,len=00,imgCRC=00
+EECRC: SCCRC=0
+BCSetState: test
+SC: Reset
+
+# create a copy of the default (OARnet) EEPROM ASCII string file
+cd $OOTP/firmware
+cp oar.str my.str
+vi my.str
+
+Edit the my.str file with a text editor.  The character strings
+in the second column can be changed.  Do not change the number of
+characters between the : delimiters or ordering of the symbols as the
+memory map is fixed in the Spyrus firmware.
+
+EE_L1MAIN          :   OARnet   :
+EE_L2MAIN          :  Verified  :
+ can be changed to
+EE_L1MAIN          :Company Name:
+EE_L2MAIN          :  Verified  :
+ but not (extended length of string)
+EE_L1MAIN          :My Company Name:
+EE_L2MAIN          :  Verified  :
+ or (truncated length of string)
+EE_L1MAIN          :Company:
+EE_L2MAIN          :  Verified  :
+
+Convert the str file to something otp-sca will parse with the str2ee
+utility.  The format is index:<16 hex bytes>.  The high bit of the index
+can be set to indicate the last block.  The Spyrus reader will stop
+after reading an index with the high bit set.
+
+str2ee < my.str > my.ee
+
+# my.hex will look something like:
+
+00:6D616630303030304F41526E65743A32
+01:303039202020204F41526E6574202020
+02:50494E3A20202020202020202020204F
+03:41526E65742020202020566572696669
+04:656420204368616C6C656E67653A2020
+05:3130204661696C757265732043617264
+06:204C6F636B6564202020204163636573
+07:7320202020202044656E696564202020
+08:20204E6F20486F737473202053657420
+09:4E65772050494E204E657750494E3A20
+0A:20202020416761696E3A202020202020
+0B:50494E204368616E676564204E6F2043
+0C:61726420202020205472792048617264
+8D:65722020000000000000000000000000
+
+# use otp-sca to program the SC with the above hex file
+
+otp-sca -m spyrus-ee-set < my.ee
+
+SetSpyrusEEBlock (0): Done
+SetSpyrusEEBlock (1): Done
+SetSpyrusEEBlock (2): Done
+SetSpyrusEEBlock (3): Done
+SetSpyrusEEBlock (4): Done
+SetSpyrusEEBlock (5): Done
+SetSpyrusEEBlock (6): Done
+SetSpyrusEEBlock (7): Done
+SetSpyrusEEBlock (8): Done
+SetSpyrusEEBlock (9): Done
+SetSpyrusEEBlock (10): Done
+SetSpyrusEEBlock (11): Done
+SetSpyrusEEBlock (12): Done
+SetSpyrusEEBlock (13): Done
+
+# insert the SC into the Spyrus reader.  Use the magic PIN sequence 3#
+# to reprogram the EEPROM.
+
+#
+# READERKEY
+#
+
+The Spyrus PAR II reader will send a 40 bit key to the SC when executing
+the GetHOTP* functions.  This key defaults to "00000".  Use the otp-sca
+reader-key-set command to change it in a SC.  The key is stored on the
+Spyrus PAR II EEPROM and can be changed using the personalization
+steps above.  This check is off by default in the SC.  To enable it, set
+the high bit of the 2nd character in the hostname.
+
+
+See also:
+  This site     http://www.splintered.net/sw/otp
+  HOTP ID       http://www.ietf.org/internet-drafts/draft-mraihi-oath-hmac-otp-02.txt
+  IETF slides   http://www3.ietf.org/proceedings/05mar/slides/saag-2/sld1.htm
+  SHA-1         http://www.itl.nist.gov/fipspubs/fip180-1.htm
+  HMAC          http://www.faqs.org/rfcs/rfc2104.html
+  BasicCard     http://www.basiccard.com/
+  Linux PAM     http://www.kernel.org/pub/linux/libs/pam/
+  PAM S-Key     http://kreator.esa.fer.hr/projects/tarballs/pam_skey-1.1.3.tar.gz
+   (used as a reference PAM module)
+  Spyrus        http://www.spyrus.com
+  PCSC-LITE     http://pcsclite.alioth.debian.org/
+  Smart Cards   http://www.smartcardfocus.com/
+  BalanceReader http://www.basiccard.com/chip/balanceR.pdf
+
+#
+# The HOTP database is not encrypted.  For added security use an encrypted
+# disk partition to store the HOTP database and SC files
+#
+
+#
+# FreeBSD encrypted USB drive install 
+#
+
+USB drive is on da0
+
+# create a key file used as part of the key to unlock the disk
+dd if=/dev/random of=/root/OarEng1.key bs=64 count=1
+# create a eli context for da0, passphrase is the rest of the key
+geli init -s 4096 -K /root/OarEng1.key /dev/da0
+<passph1rase> 
+# attach providing a plaintext device da0.eli
+geli attach -k /root/OarEng1.key /dev/da0
+# erase what was there
+dd if=/dev/zero of=/dev/da0.eli bs=4k
+
+# add a disk label
+bsdlabel -w /dev/da0.eli
+
+# make a partition whole disk
+disklabel -e /dev/da0.eli
+
+# create filesystem
+newfs /dev/da0.elia
+
+# create mountpoint
+mkdir /priv
+
+# mount it
+mount /dev/da0.elia /priv
+

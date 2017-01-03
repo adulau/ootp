@@ -1,0 +1,82 @@
+OARnet One Time Password system quick start:
+
+    Your account on XXX.YYY.oar.net now requires the use of a One Time
+    Password (OTP) to login.  The algorithm used is called the HMAC-Based
+    One-Time Password Algorithm (HOTP) and is described by RFC 4226.
+
+    You have been supplied with a Spyrus Smart Card reader and BasicCard
+    Smart Card.  The OTP is generated on the smart card and displayed on
+    the reader.  The Smart Card should not be removed from the reader.
+
+    Press the Card/On button to begin.
+
+    Your PIN is a 5 digit number and will initially be 28165. Enter 28165
+    then press the Enter key.  The Clear key can be used to clear an
+    incorrect PIN before pressing Enter.
+
+    The OARnet/Verified message will be displayed when the PIN has been
+    correctly entered.
+
+    Press the * key to set your own 5 digit Personal Identification Number.
+    The PIN must be kept secret and can not be shared.  Enter your new 5
+    digit PIN then press enter.  The reader will prompt for the PIN again to
+    confirm the entry is correct.  Confirm by pressing enter and a message
+    is displayed indicating your new PIN is active.  Press any key or
+    wait a few seconds for the main screen.  The default PIN can not be used
+    to generate a One Time Password.
+
+    Press the down arrow to start a menu listing hosts configured on the
+    Smart Card.  The Up and Down arrows can be used to scroll through
+    the host list.  The first two digits before the host are the index
+    which can be used as a shortcut without use of the menu.  Enter will choose
+    the host and generate the One Time Password.  Pressing # before Enter
+    will permit a challenge to be entered before the HOTP generation.  This
+    feature is used to re-synch a card, or used with systems configured for
+    shared keys.  Typically the challenge is a monotonically increasing 32
+    bit number which will automatically be synchronized with the host system
+    on every HOTP generation.  The challenge may be presented during
+    HOTP generation for some systems automatically.
+    
+    If the index of the host is known the menu can be skipped by
+    entering the two digit host index or a one digit host index followed
+    by Enter.  Pressing Enter alone will select the first index, which
+    for convenience will be configured as the host most often required.
+    Clear will reset the digits.  The # key will allow a challenge entry
+    as described above.  Using the host shortcut method to select a host
+    will extend the battery life as opposed to using the menu.
+
+    Select XXX.YYY to generate the host HOTP.
+
+    The Spyrus reader will now display the host name you selected and
+    your one time password.  The OTP is a 40 bit number expressed
+    in base 16 (hexadecimal).  Hexadecimal digits are 0-9 and A-F,
+    so your OTP may be 9ADF0D05A0.  The OTP is not case sensitive.
+
+    To log in to XXX use ssh and enter your password as usual.  An
+    additional HOTP Challenge prompt will appear after your password
+    has been entered.  Enter the OTP generated from the Spyrus reader.
+
+    If ssh provides a message similar to "WARNING: REMOTE HOST
+    IDENTIFICATION HAS CHANGED!" do not attempt to login.  This
+    indicates your connection is not secure and typing your username,
+    password, and OTP may be used to gain access to this system
+    by an intruder using your username and password.  Contact
+    your systems administrator.
+
+    The Challenge number must remain loosely synchronized between
+    the login server and the Smart Card.  Generating an OTP and
+    not using it to login can cause loss of synchronization.
+    If 10 OTP's are generated without a successful login your
+    card and login will become unsynchronized and need to be reset.
+
+    The card protects itself from unauthorized use with a PIN.  If
+    an incorrect PIN is used 10 times in a row the card will become
+    disabled and require a systems administrator to reset it.
+
+    Your Smart Card and reader is only for your use.  Nobody should
+    ever ask to borrow it or use the generated OTP.  The OTP will
+    only work for your login and password.  Remember you are directly
+    responsible for activity with your account.
+
+$Id: PAR2-USER-GENERIC 13 2009-11-26 16:37:03Z maf $
+

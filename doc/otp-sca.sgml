@@ -1,0 +1,584 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: otp-sca.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<application>otp-sca</application>
+</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<application>otp-sca</application>
+</refname>
+<refpurpose>
+Smart Card Administration for One Time Password package.
+</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>otp-sca</command>
+<arg>-?hlp</arg>
+<arg>-a<replaceable> admin_keyfile</replaceable></arg>
+<arg>-c<replaceable> count</replaceable></arg>
+<arg>-d<replaceable> debug_level</replaceable></arg>
+<arg>-i<replaceable> index</replaceable></arg>
+<arg>-m<replaceable> command_mode</replaceable></arg>
+<arg>-M<replaceable> modifiers</replaceable></arg>
+<arg>-r<replaceable> reader</replaceable></arg>
+<arg>-R<replaceable> reader_keyfile</replaceable></arg>
+<arg>-u<replaceable> username</replaceable></arg>
+<arg>-v<replaceable> card_api_version</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The <command>otp-sca</command> command implements a terminal for an MCU based
+smart card loaded with the OTP firmware (HOTPC.IMG).  Host entries consisting
+of {hostname,count,shared_key} are downloaded to the smart card using 
+<command>otp-sca</command>.  Additionally commands implemented on the
+smart card such as HOTP generation and PIN maintenance can be executed
+with the appropriate administratative key.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>-a<replaceable> admin_keyfile</replaceable></term>
+<listitem>
+<para>
+Smart Card administratative key.  The admin-enable command and
+administratative key are used to toggle the smart card into admin mode.
+Once in admin mode commands admin-disable, adminkey-set, balancecard-set,
+host-get, host-set, pin-set, and sc-clear can be executed.  The default admin
+key, "3030303030303030303030303030303030303030" (HEX), should be changed to
+restrict access to the above commands.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-c<replaceable> count</replaceable></term>
+<listitem>
+<para>
+Configure the count parameter optionally used by the hotp-gen command.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-d<replaceable> debug_level</replaceable></term>
+<listitem>
+<para>
+Set debug level.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-h</term>
+<listitem>
+<para>
+Help.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-i<replaceable> index</replaceable></term>
+<listitem>
+<para>
+Set the 8 bit index.  The smart card contains numerically indexed records
+for each host of the form {hostname,count,shared_key}.  The firmware
+will support indexes in the range 0..254.  255 is reserved.  Memory
+capacity on the smart card may further restrict the index range.  The
+ZC3.9 BasicCard with firmware revision 3 supports up to 85 records.
+</para>
+</listitem>
+
+<varlistentry>
+<term>-l</term>
+<listitem>
+<para>
+List SC Readers
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-m<replaceable> command_mode</replaceable></term>
+<listitem>
+<para>
+</para>
+<screen>
+         Command Mode       Description                Notes    Modifiers
+         ---------------------------------------------------------------
+         admin-enable     - Enable Admin Mode          1
+         admin-disable    - Disable Admin Mode
+         adminkey-set     - Set Admin Key              1
+         balancecard-set  - Set Balance Card Index     1
+         capabilities-get - Get Capabilities
+         host-get         - Get host entry             1,2,4    d
+         host-set         - Set host entry             1,4
+         hostname-get     - Get Hostname for Index     2,3
+         hotp-gen         - Generate HOTP for Index    3        chr
+         pin-set          - Set PIN                    3
+         pin-test         - Test/Verify PIN            3
+         reader-key-set   - Set Reader Key             1
+         sc-clear         - Clear all SC data          1
+         spyrus-ee-get    - Spyrus EEProm read         5
+         spyrus-ee-set    - Spyrus EEProm write        5
+         version          - Firmware version
+
+ Notes (*):
+   1 Admin Enable required.
+   2 Iterate over all if no index specified.
+   3 PIN or Admin Enable required.
+   4 version 3 firmware supports 32 bit count, version 2 16 bit count.
+   5 Spyrus customization SC firmware
+ Modifiers: (version 3+ SC firmware)
+   c pass count to SC.
+   h return hostname from SC.
+   d output in otpdb load friendly format.
+   r include reader key in request.
+
+</screen>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-M<replaceable> modifiers</replaceable></term>
+<listitem>
+<para>
+Configure command_mode modifiers.  Modifier d applied to the host-get
+command will generate output in otpdb format.  Count (c) and Host (h)
+used with hotp-gen allow passing the Count and Host parameters 
+respectively.  The smart card may not be configured to support
+all variations of a command.
+variations 
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-r<replaceable> reader</replaceable></term>
+<listitem>
+<para>
+Set the smart card reader.  Use -l to list available readers.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-R<replaceable> reader_keyfile</replaceable></term>
+<listitem>
+<para>
+Smart Card Reader key.  The reader-key-set command can be used
+to set this key in the Smart Card.  To emulate the behavior of
+a reader using the key the r modifier may be used with this option
+and the hotp-gen command to pass the key to the Smart Card.
+</para>
+<para>
+A key consists of 5 bytes in hexadecimal format.  The default
+key is "00000" or 3030303030.
+</para>
+<para>
+This key must match the key set in the reader.  With the Spyrus
+PAR II reader this is set in the PAR II EEProm.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-u<replaceable> username</replaceable></term>
+<listitem>
+<para>
+Set username.  The username is used with the host-get command and
+d modifier.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-v<replaceable> card_api_version</replaceable></term>
+<listitem>
+<para>
+Set the smart card API version.  The binary API between the terminal
+and smart card changed between version 2 and 3.  See command_mode notes
+above.  The default version is 3.  Configuring version 2 will allow
+maintenance of smart card with version 2 firmware.
+</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>SMART CARD COMMANDS</title>
+
+<para>
+<command>admin-enable</command>
+: enable administrative mode.  The commands admin-disable, admin-key-set,
+balancecard-set, host-get, and sc-clear require admin mode to be enabled.
+pin-set and commands requiring a PIN will not require a valid PIN while
+the SC is in admin mode.  A new key can be generated with
+<command>openssl rand 160 | openssl sha1</command>.  The hotp-gen
+command will automatically disable admin mode.
+</para>
+<para>
+<command>admin-disable</command>
+: disable administratative mode.  Using the command hotp-gen will also
+disable admin mode.
+</para>
+<para>
+<command>adminkey-set</command>
+: set the 160 bit administrative key.  The default key is
+"00000000000000000000" ASCII or "3030303030303030303030303030303030303030" HEX.
+</para>
+<para>
+<command>balancecard-set</command>
+: set host index for balance card reader, 0-254.  255 will disable
+this command.  Using a balance reader to generate a HOTP does not require
+the use of a PIN, and is disabled by default.
+</para>
+<para>
+<command>capabilities-get</command>
+: each command on the smart card is represented by a capabilities bit and
+conditionally compiled into HOTPC.IMG.
+capabilities-get will return the available, compiled-in commands.  Commands
+are defined in <filename>HOTP.DEF</filename>:
+<screen>
+' ZC commands CLA=80
+'  b =  Byte             Idx,Mode,Version
+'  i =  Integer          Count
+'  l =  Long             Count32,Capabilities
+'  sn = String length n  Hostname(12),ZCKey(20),*PIN(5),HOTP(5),
+'                        AdminKey(20), eeBlock(16), readerKey(5)
+'  INS  Name                       Format                    CapabilityID
+'------------------------------------------------------------------------
+'  00   PRDisplay  (CLA=C8)    -                             00000001
+'                 RecordNumber(byte), DataFormat(byte), DigitCount(byte)
+'                 DecimalPoint(byte), Delay(byte), MoreData(byte),
+'                 Data(String)
+'  40   SetHost                Idx,Count,Hostname,HOTPKey    00000002
+'  42   GetHost                Idx,Count,Hostname,HOTPKey    00000004
+'  44   GetHostName            Idx,myPIN,Hostname            00000008
+'  46   GetHOTP                Idx,myPIN,HOTP                00000010
+'  48   SetAdminMode           Mode,AdminKey                 00000020
+'  4A   SetBalanceCardIndex    Idx                           00000040
+'  4C   SetPIN                 myPIN,newPIN                  00000080
+'  4E   TestPIN                myPIN                         00000100
+'  50   GetVersion             Version                       00000200
+'  52   SetAdminKey            AdminKey                      00000400
+'  54   SetHost32              Idx,Count32,Hostname,HOTPKey  00000800
+'  56   GetHost32              Idx,Count32,Hostname,HOTPKey  00001000
+'  58   GetHOTPCount32         Idx,myPIN,Count32,HOTP        00002000
+'  5A   GetHOTPHost            Idx,myPIN,HOTP,Hostname       00004000
+'  5C   GetHOTPHostCount32     Idx,myPIN,Count,HOTP,Hostname 00008000
+'  5E   ClearAll                                             00010000
+'  60   SetReaderKey           readerKey                     00020000
+
+'  90   GetCapabilities        Capabilities                  XXXXXXXX
+'  A0   GetEEBlock             P1=Idx,eeBlock                XXXXXXXX
+'  A1   SetEEBlock             P1=Idx,eeBlock                XXXXXXXX
+</screen>
+</para>
+<para>
+<command>host-get</command>
+: retrieve a host record, or all host records if the index is not set.
+Fields {index,count,hostname,key} are : separated and represented in HEX.
+An index up to 254 may be specified if the SC EEPROM is sufficient.
+Count (32 bits) and key (160 bits) are used for generating a HOTP.  The
+hostname field (12 bytes) can be displayed on readers such as the Spyrus
+PAR II.  The high bit of each hostname character serve as 12 flag bits,
+F0..F11.
+</para>
+<screen>
+F0: challenge (count) input is required by the user.
+
+F1: enable reader authentication by the SC for the GetHOTP* commands.
+
+F2..F11: reserved
+
+Example host record with index=0, count=7, hostname=dev1.eng,
+                         key=E4AACE5EC7291C405ED28949BB6DACA05768319D
+#index:count:hostname:key
+00:00000007:646576312E656E6700000000:E4AACE5EC7291C405ED28949BB6DACA05768319D
+
+</screen>
+<para>
+<command>host-set</command>
+: set a host record.  Multiple host records may be set, one record per
+line.
+</para>
+<para>
+<command>hostname-get</command>
+: return the hostname for an index, or all hostnames if no index is
+specified.  Hostnames tagged "**" require the reader PIN.
+<para>
+<command>hotp-gen</command>
+: generate an HOTP for an index.  Index is 0 if not specified.
+There are four versions of this command, GetHOTP, GetHOTPHost,
+GetHOTPCount32, GetHOTPHostCount32 which can be selected
+with the Modifiers option.  The default SC build includes
+the GetHOTPHostCount32 (-Mch), and GetHOTPCount32 (-Mc) commands.
+Executing this command will disable administratative mode if set.
+</para>
+<para>
+<command>pin-set</command>
+: set a user PIN.  If the SC is in admin mode the current PIN is not
+validated.
+</para>
+<para>
+<command>pin-test</command>
+: test a user PIN.  Specifing a PIN incorrectly more than ten times in
+succession will lock the SC.  Use the pin-test command in admin mode
+to unlock a SC.
+</para>
+<para>
+<command>reader-key-set</command>
+: set the 40 bit SC reader key.  A reader will present this key to the
+SC when executing the GetHOTP* commands.  If the F1 (flag 1) bit of
+the hostname is set, this key must match the key provided by the
+reader.  This functionality allows the reader to weakly authenticate
+itself to the smart card and may be used to restrict HOTP generation to
+a Spyrus PAR II reader.
+</para>
+<para>
+<command>sc-clear</command>
+: reset the SC to defaults, erase all host entries.
+</para>
+<para>
+<command>spyrus-ee-get</command>
+: get spyrus EEProm blocks.  The HOTP firmware for the Spyrus Reader
+will load run-time strings from the on-board EEProm programmable from
+a SC loaded with the Spyrus Personalization firmware.  The spyrus-ee-get
+command will read these strings from a SC.  The 256K Byte EEProm is read
+organized into 16 byte blocks.  The high bit of the index serves as a last
+block flag indicator for the Spyrus reader, allowing for example only block
+0 to be overwritten.
+</para>
+
+<screen>
+Spyrus EEProm Memory map and flash defaults:
+
+Note the field length is defined by the number of characters between :'s.
+The field length for EE_MAGIC is 3, EE_READER_KEY 5, and EE_CALC_MSG 12.
+
+Symbol             Contents/Length
+---------------------------------------
+EE_MAGIC           :maf:
+EE_READER_KEY      :00000:
+EE_CALC_MSG        :OARnet:2009 :
+EE_L1GREET         :   OARnet   :
+EE_L2GREET         :PIN:        :
+EE_L1MAIN          :   OARnet   :
+EE_L2MAIN          :  Verified  :
+EE_CHALLENGE       :Challenge:  :
+EE_L1LOCKED        :10 Failures :
+EE_L2LOCKED        :Card Locked :
+EE_L1ACCESS_DENY   :   Access   :
+EE_L2ACCESS_DENY   :   Denied   :
+EE_NOHOSTS         :  No Hosts  :
+EE_L1NEWPIN        :Set New PIN :
+EE_L2NEWPIN        :NewPIN:     :
+EE_L3NEWPIN        :Again:      :
+EE_PINCHANGED      :PIN Changed :
+EE_NOCARD          :No Card     :
+EE_TRYHARDER       :Try Harder  :
+</screen>
+<screen>
+00:6D616630303030304F41526E65743A32
+01:303039202020204F41526E6574202020
+02:50494E3A20202020202020202020204F
+03:41526E65742020202020566572696669
+04:656420204368616C6C656E67653A2020
+05:3130204661696C757265732043617264
+06:204C6F636B6564202020204163636573
+07:7320202020202044656E696564202020
+08:20204E6F20486F737473202053657420
+09:4E65772050494E204E657750494E3A20
+0A:20202020416761696E3A202020202020
+0B:50494E204368616E676564204E6F2043
+0C:61726420202020205472792048617264
+8D:65722020000000000000000000000000
+</screen>
+<para>
+Note this command works with the Spyrus Personalization SC firmware only.
+</para>
+<para>
+<command>spyrus-ee-set</command>
+: set spyrus EEProm blocks.
+</para>
+<para>
+Note this command works with the Spyrus Personalization SC firmware only.
+</para>
+<para>
+<command>version</command>
+: display firmware version of SC.
+</para>
+
+</refsect1>
+
+<refsect1>
+<title>EXAMPLES</title>
+
+<informalexample>
+<para>
+Change the administratative key from the default.  Disable admin mode
+when done.
+</para>
+<screen>
+<command>echo "3030303030303030303030303030303030303030" > default.key</command>
+
+<command>otp-sca -a default.key -m admin-enable</command>
+
+<computeroutput>AdminMode: enabled.</computeroutput>
+
+<command>openssl rand 160 | openssl sha1 > secret.key </command>
+
+<command>otp-sca -a secret.key -m adminkey-set</command>
+
+<computeroutput>Set AdminKey: Done</computeroutput>
+
+<command>otp-sca -a secret.key -m admin-disable</command>
+
+<computeroutput>AdminMode: disabled.</computeroutput>
+
+</screen>
+</informalexample>
+
+<informalexample>
+<para>
+Use <command>otp-control</command> to create a new database for system dev1 with
+user test, store the test user database entry to the smart card with
+<command>otp-sca</command>.
+</para>
+<screen>
+# Create a new new OTP database /tmp/otpdb
+<command>otp-control -no /tmp/otpdb -m create</command>
+
+<computeroutput>Created db /tmp/otpdb.</computeroutput>
+
+# add user test
+<command>otp-control -o /tmp/otpdb -u test -m add</command>
+
+<computeroutput>Adding user test.</computeroutput>
+
+# list user test entry in format ready for otp-sca to import.  Hostname
+# of system is dev1
+<command>otp-control -o /tmp/otpdb -u test -m list-sc -H dev1 | tail -1 > /tmp/test.list</command>
+
+# copy card entry to smart card as index 0
+<command>echo -n "00:"| cat - /tmp/test.list | ./otp-sca -m host-set</command>
+
+<computeroutput>SetHost (0): Done</computeroutput>
+
+</screen>
+</informalexample>
+
+<informalexample>
+<para>
+Dump card contents to stdout.  Note fields are encoded in HEX including
+the hostname.  A high bit set on the first character in the hostname
+signals the terminal to prompt for a count.
+</para>
+<screen>
+<command>otp-sca -m host-get</command>
+<computeroutput>#index:count:hostname:key
+00:00000002:646576312E656E6700000000:E4AACE5EC7291C405ED28949BB6DACA05768319D
+01:00000000:646576322E656E6700000000:4120522AAC6B9C32274E2B3D966000D790EFEBFA
+02:00000021:646576332E656E6700000000:9CDF3C14792A512FBE0D530E4DCFC726841B21BD
+03:00000000:76706E312E656E6700000000:B8A64BE3DDAE4B873683ACE9B9DBF95D72782CBE
+</computeroutput>
+</screen>
+</informalexample>
+
+<informalexample>
+<para>
+Reset user PIN for card with secret.key as the admin key.
+</para>
+<screen>
+<command>otp-sca -m admin-enable -a secret.key</command>
+
+<computeroutput>AdminMode: enabled.</computeroutput>
+
+<command>otp-sca -p -m pin-set</command>
+
+<computeroutput>New PIN: 23456
+New PIN (again): 23456
+SetPIN Good.
+</computeroutput>
+
+<command>otp-sca -m admin-disable -a secret.key</command>
+
+<computeroutput>AdminMode: disabled.</computeroutput>
+</screen>
+</informalexample>
+
+<informalexample>
+<para>
+Generate HOTP for dev1.  Use hostname-get to find the index for dev1.  Use
+the GetHOTPHostCount32 command with count 1 (modifiers c and h).
+</para>
+<screen>
+<command>otp-sca -m hostname-get</command>
+
+<computeroutput>Enter PIN: 23456
+00,dev1
+01,dev2.eng
+02,dev3.eng
+03,vpn1.eng
+04,base4.eng
+05,base6.eng
+06,base7.eng</computeroutput>
+
+<command>otp-sca -d99 -m hotp-gen -Mch -i 0 -c1</command>
+
+<computeroutput>Enter PIN: 23456
+HOTP: 52DCD05FE5 -- dev1</computeroutput>
+
+</screen>
+</informalexample>
+
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-control</application>(1)
+<application>otp-sct</application>(1)
+<application>pam_otp</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>otp-ov-plugin</application>(1)
+<application>bcload</application>(1)
+<application>urd</application>(1)
+<hardware>spyrus-par2</hardware>(7)
+</para>
+</refsect1>
+
+</refentry>

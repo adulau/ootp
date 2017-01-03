@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>pam_otp</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+>&nbsp;--&nbsp;PAM OTP module</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN10"
+></A
+><H2
+>Synopsis</H2
+><P
+>[<TT
+CLASS="REPLACEABLE"
+><I
+>service-name</I
+></TT
+>] {auth} {<TT
+CLASS="REPLACEABLE"
+><I
+>control-flag</I
+></TT
+>} {pam_otp} [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN20"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The OTP authentication service module for PAM, pam_otp, provides
+functionality for only PAM authentication.  Users are optionally
+sent a challenge and then authenticated via the OTP database.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN23"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
+>expose_account</I
+></TT
+></DT
+><DD
+><P
+>Enable logging output with username and challenge response.</P
+></DD
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
+>allow_inactive</I
+></TT
+></DT
+><DD
+><P
+>Users set to a status of inactive will return PAM_SUCCESS when
+the allow_inactive option is set.  The default behavior for inactive users
+is to return PAM_AUTH_ERR.</P
+></DD
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
+>display_count</I
+></TT
+></DT
+><DD
+><P
+>The HOTP challenge will include the current count for the user when
+the display_count option is set.  The default behavior will not display
+the count unless the user record flags field has OTP_USER_FLAGS_DSPCNT set.</P
+></DD
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
+>require_db_entry</I
+></TT
+></DT
+><DD
+><P
+>A user not in the OTP database will be denied access with the
+require_db_entry option is set.  By default users not in the OTP
+database are permitted.</P
+></DD
+><DT
+><TT
+CLASS="REPLACEABLE"
+><I
+>otpdb=</I
+></TT
+><TT
+CLASS="FILENAME"
+>alternate_otpdb</TT
+></DT
+><DD
+><P
+><TT
+CLASS="FILENAME"
+>alternate_otpdb</TT
+> is used as the OTP database.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN53"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN60"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-openvpn-plugin</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>urd</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>pam</SPAN
+>(8)
+<SPAN
+CLASS="HARDWARE"
+>spyrus-par2</SPAN
+>(7)</P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,283 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>bcload</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>&nbsp;--&nbsp;ZeitControl Firmware downloader for enhanced BasicCard Smart Cards</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN10"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>bcload</B
+>  [-?hlptv?] [-d<TT
+CLASS="REPLACEABLE"
+><I
+> debug_level</I
+></TT
+>] [-f<TT
+CLASS="REPLACEABLE"
+><I
+> fname</I
+></TT
+>] [-r<TT
+CLASS="REPLACEABLE"
+><I
+> reader</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN20"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The <B
+CLASS="COMMAND"
+>bcload</B
+> command is a firmware downloader for
+ZeitControl BasicCard Smart Cards.  <B
+CLASS="COMMAND"
+>Bcload</B
+> is based
+off the bcload example included in the development environment.
+<B
+CLASS="COMMAND"
+>Bcload</B
+> has only been tested with ZC3.9 Smart Card
+hardware.  Small changes would be required to support the Professional
+line of cards.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN26"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>-d<TT
+CLASS="REPLACEABLE"
+><I
+> debug_level</I
+></TT
+></DT
+><DD
+><P
+>Set debug level.</P
+></DD
+><DT
+>-f<TT
+CLASS="REPLACEABLE"
+><I
+> fname</I
+></TT
+></DT
+><DD
+><P
+>Name of BasicCard Image file.  Defaults to HOTPC.IMG</P
+></DD
+><DT
+>-h</DT
+><DD
+><P
+>Help.</P
+></DD
+><DT
+>-l</DT
+><DD
+><P
+>List SC Readers</P
+></DD
+><DT
+>-p</DT
+><DD
+><P
+>Disable paranoid check for ZC3.9 hardware.  Enhanced Smart Cards will
+probably work, support for the professional cards require changes
+to <TT
+CLASS="FILENAME"
+>bcload.c</TT
+>.</P
+></DD
+><DT
+>-r<TT
+CLASS="REPLACEABLE"
+><I
+> reader</I
+></TT
+></DT
+><DD
+><P
+>Set the smart card reader.  Use -l to list available readers.</P
+></DD
+><DT
+>-t</DT
+><DD
+><P
+>Force card mode to TEST after programming.  Defaults to the mode
+specified in the image file.</P
+></DD
+><DT
+>-v</DT
+><DD
+><P
+>Display verbose status messages while programming the card.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN65"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN67"
+></A
+><P
+>Download the HOTPC.IMG file to the default smart card reader.  Display
+verbose results.</P
+><PRE
+CLASS="SCREEN"
+><B
+CLASS="COMMAND"
+>bcload -v -f HOTPC.IMG</B
+>
+
+<SAMP
+CLASS="COMPUTEROUTPUT"
+>Card/State: ZC3.9 test
+EEChunkSize=2000
+BCSetState: load
+SC: Reset
+EEStart=8020,EELen=1fa0
+imgAddr=8020,imgLen=1fa0
+Clear: addr=8020,len=1fa0
+BCClearEEProm: success
+SC: Reset
+EEWRITE: nWrites=118,addr=8020,len=1e
+EEWRITE: nWrites=117,addr=8038,len=10
+EEWRITE: nWrites=116,addr=8170,len=38
+...
+EEWRITE: nWrites=1,addr=9f40,len=48
+EEWRITE: nWrites=0,addr=9f80,len=48
+EECRC: nWrites=1,addr=8020,len=1fa0,imgCRC=b17a
+EECRC: SCCRC=b17a
+EECRC: nWrites=0,addr=8020,len=00,imgCRC=00
+EECRC: SCCRC=0
+BCSetState: test
+BCSetState: test</SAMP
+></PRE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN72"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN79"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-ov-plugin</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>urd</SPAN
+>(1)
+<SPAN
+CLASS="HARDWARE"
+>spyrus-par2</SPAN
+>(7)</P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,134 @@
+...\" $Header: /usr/src/docbook-to-man/cmd/RCS/docbook-to-man.sh,v 1.3 1996/06/17 03:36:49 fld Exp $
+...\"
+...\"	transcript compatibility for postscript use.
+...\"
+...\"	synopsis:  .P! <file.ps>
+...\"
+.de P!
+\\&.
+.fl			\" force out current output buffer
+\\!%PB
+\\!/showpage{}def
+...\" the following is from Ken Flowers -- it prevents dictionary overflows
+\\!/tempdict 200 dict def tempdict begin
+.fl			\" prolog
+.sy cat \\$1\" bring in postscript file
+...\" the following line matches the tempdict above
+\\!end % tempdict %
+\\!PE
+\\!.
+.sp \\$2u	\" move below the image
+..
+.de pF
+.ie     \\*(f1 .ds f1 \\n(.f
+.el .ie \\*(f2 .ds f2 \\n(.f
+.el .ie \\*(f3 .ds f3 \\n(.f
+.el .ie \\*(f4 .ds f4 \\n(.f
+.el .tm ? font overflow
+.ft \\$1
+..
+.de fP
+.ie     !\\*(f4 \{\
+.	ft \\*(f4
+.	ds f4\"
+'	br \}
+.el .ie !\\*(f3 \{\
+.	ft \\*(f3
+.	ds f3\"
+'	br \}
+.el .ie !\\*(f2 \{\
+.	ft \\*(f2
+.	ds f2\"
+'	br \}
+.el .ie !\\*(f1 \{\
+.	ft \\*(f1
+.	ds f1\"
+'	br \}
+.el .tm ? font underflow
+..
+.ds f1\"
+.ds f2\"
+.ds f3\"
+.ds f4\"
+.ta 8n 16n 24n 32n 40n 48n 56n 64n 72n 
+.TH "\fBotp-sct\fP" "1"
+.SH "NAME"
+\fBotp-sct\fP \(em Smart Card Terminal for One Time Password package\&.
+.SH "SYNOPSIS"
+.PP
+\fBotp-sct\fP [-1hlpv?]  [-c\fI count\fP]  [-d\fI debug_level\fP]  [-i\fI index\fP]  [-r\fI reader\fP]  [-v\fI firmware_api_version\fP] 
+.SH "DESCRIPTION"
+.PP
+The \fBotp-sct\fP command is a user interface to generating
+One Time Passwords with a smart card loaded with OTP software\&.
+.SH "OPTIONS"
+.IP "-c\fI count\fP" 10
+Configure the optional count parameter to sync a smart card to a challenge\&.
+.IP "-d\fI debug_level\fP" 10
+Set debug level\&.
+.IP "-h" 10
+Help\&.
+.IP "-i\fI index\fP" 10
+Set the 8 bit index\&.  The smart card contains numerically indexed records
+for each host system\&.  Use the -l option to list hostnames associated with
+the index\&.  The default index is 0\&.
+.IP "-l" 10
+List SC Readers
+.IP "-L" 10
+List host systems configured on the smart card\&.  The index is used with the -i option\&.
+.IP "-o" 10
+Set new PIN\&.
+.IP "-r\fI reader\fP" 10
+Set the smart card reader\&.  Use -l to list available readers\&.
+.IP "-v\fI card_api_version\fP" 10
+Set the smart card API version\&.  The binary API between the terminal
+and smart card changed between version 2 and 3\&.  See command mode notes
+above\&.  The default version is 3\&.  Configuring version 2 will allow
+maintenance of smart card with version 2 firmware\&.
+.IP "-V" 10
+List the smart card firmware version\&.
+.IP "-1" 10
+Use the version 1 GetHOTP command instead of the default GetHOTPHostCount32\&.
+The latter is not available on firmware revision 1\&.  GetHOTP may be conditionally
+compiled out of newer firmware\&.
+.SH "EXAMPLES"
+.PP
+Generate a HOTP for the first system on the first PCSC reader found\&.
+.PP
+.nf
+\fBotp-sct -r PCSC:\fP 
+\f(CWEnter PIN: 12345
+HOTP: dev1\&.eng 2A5AB4B78D\fP
+.fi
+.PP
+List systems configured on smart card in default reader\&.  Generate HOTP
+for dev3\&.eng with count 32\&.
+.PP
+.nf
+\fBotp-sct -L\fP 
+\f(CWEnter PIN: 12345
+00:dev1\&.eng
+01:dev2\&.eng
+02:dev3\&.eng
+03:vpn1\&.eng\fP 
+\fBotp-sct -i 2 -c 32\fP 
+\f(CWEnter PIN: 12345
+HOTP: dev3\&.eng 2A9BE3F142\fP
+.fi
+.PP
+Note that hosts with the READERKEY flag set will not be displayed\&.
+\fBotp-sct\fP can not set the reader key\&.
+.SH "AUTHOR"
+.PP
+Mark Fullmer maf@splintered\&.net
+.SH "SEE ALSO"
+.PP
+\fBotp-sca\fP(1)
+\fBotp-control\fP(1)
+\fBpam_otp\fP(1)
+\fBhtsoft-downloader\fP(1)
+\fBotp-ov-plugin\fP(1)
+\fBbcload\fP(1)
+\fBurd\fP(1)
+spyrus-par2(7)
+...\" created by instant / docbook-to-man, Tue 01 Dec 2009, 17:12

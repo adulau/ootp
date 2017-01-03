@@ -1,0 +1,284 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: spyrus-par2.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<hardware>Spyrus PAR II</hardware>
+</refentrytitle>
+<manvolnum>7</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<hardware>Spyrus PAR II</hardware>
+</refname>
+<refpurpose>
+Spyrus PAR II reader with HOTP firmware
+</refpurpose>
+</refnamediv>
+
+<refsect1>
+<title>SETUP</title>
+<para>
+</para>
+</refsect1>
+
+<refsect1>
+<title>KEY SEQUENCES</title>
+<para></para>
+<para>
+A HOTP token is obtained by activating the reader, authenticating
+with a 5 digit PIN, and picking a numerically indexed host.  Interactive
+menu and two digit shortcut methods are provided for host selection.
+Additional functionality includes Smart Card PIN change, overriding default
+increment-on-generate per-host HOTP count behavior, and firmware management.
+</para>
+<para>
+With the HOTP displayed, press Enter to repeat the host selection process
+for additional token generation.
+</para>
+<para>
+Use the host selection shortcut to extend battery life.
+</para>
+<refsect2>
+<title>Basic Functions:</title>
+<para>
+<keysym>Card/ON</keysym> Power up reader.
+</para>
+<para>
+<keysym>Calc/OFF</keysym> Power down reader, firmware menu.  The reader
+should be powered down after utilizing the HOTP to extend battery
+life.  A timeout will turn off the reader off without intervention.
+</para>
+</refsect2>
+
+<refsect2>
+<title>
+PIN Entry:
+</title>
+
+<para>
+<keysym>0123456789</keysym> 5 digit PIN.  Default is 28165.
+</para>
+
+<para>
+<keysym>Clear</keysym> Clear input.
+</para>
+
+<para>
+<keysym>Enter</keysym> Accept PIN sequence.
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>
+Host Selection:
+</title>
+
+<para>
+<keysym>Enter</keysym> Select host.  A single digit + <keysym>Enter</keysym>
+will select host 0..9. Minus other digits, <keysym>Enter</keysym> will select
+index 0.
+</para>
+
+<para>
+<keysym>0123456789</keysym> 2 digit host index.
+</para>
+
+<para>
+<keysym>Clear</keysym> Clear host digit.
+</para>
+
+<para>
+<keysym>*</keysym> Change PIN.
+</para>
+
+<para>
+<keysym>#</keysym> Toggle Challenge/Count input.  The per-host count, incremented
+by 1 and stored on the SC after each HOTP generation can be overridden
+with this option.
+
+<para>
+<keysym>DOWN</keysym> Enable host menu.
+</para>
+</refsect2>
+
+<refsect2>
+<title>
+Host Selection With Menu:
+</title>
+<para>
+
+<para>
+<keysym>Enter</keysym> Select host.
+</para>
+
+<para>
+<keysym>UP</keysym> Cursor up one line.
+</para>
+
+<para>
+<keysym>DOWN</keysym> Cursor down one line.
+</para>
+</refsect2>
+
+</refsect1>
+
+<refsect1>
+<title>LOADING FIRMWARE</title>
+<para>
+The PAR II is factory loaded with the
+<application>HI-TECH Software Bootloaders for Microchip 16F87x version 1</application>.
+<procedure>
+
+<title>
+Firmware Download Procedure:
+</title>
+
+<para>
+The download will progress and end in an error resetting the PIC.  This
+is a bug in the PAR II downloader and can be safely ignored.
+</para>
+
+<step>
+<para>
+connect the Spyrus download cable to a workstation with
+<application>htsoft-downloader</application> or
+<application>pic-downloader</application>.
+</para>
+</step>
+
+<step>
+<para>
+start <application>htsoft-downloader</application> or <application>pic-downloader</application>.
+</para>
+</step>
+
+<step>
+<para>
+press CALC/OFF then down arrow 3 times to select DownloadApp.
+</para>
+</step>
+
+<step>
+<para>
+press Enter to initiate the download.
+</para>
+</step>
+
+<step>
+<para>
+press CARD/ON to verify new firmware is loaded.
+</para>
+</step>
+
+</procedure>
+</refsect1>
+
+<refsect1>
+<title>EEPROM CUSTOMIZATION</title>
+<para>
+The Spyrus PAR II HOTP application utilizes the onboard EEPROM for string
+storage allowing customization without re-compiling.  A fixed memory
+map is as follows:
+</para>
+<screen>
+Offset   Length    Default        Description
+-------------------------------------------------------------------------
+0        3         "maf"          EEPROM Signature.  Reset if no match.
+3        5         "00000"        Reader Key
+8        12        "OARnet:2009 " Calculator message
+20       12        "   OARnet   " Line 1 initial
+32       12        "PIN:        " Line 2 initial
+44       12        "   OARnet   " Line 1 after PIN success
+56       12        "  Verified  " Line 2 after PIN success
+68       12        "Challenge:  " Message to indicate count entry
+80       12        "10 Failures " Line 1 card locked / excessive PIN fail
+92       12        "Card Locked " Line 2 card locked / excessive PIN fail
+104      12        "   Access   " Line 1 incorrect PIN
+116      12        "   Denied   " Line 2 incorrect PIN
+128      12        "  No Hosts  " Line 1, SC with no host entries
+140      12        "Set New PIN " Line 1 reset PIN
+152      12        "NewPIN:     " Line 2 reset PIN
+164      12        "Again:      " Line 3 reset PIN
+176      12        "PIN Changed " PIN Change notification
+188      12        "No Card     " No SC at powerup
+200      12        "Try Harder  " all PIN digits equal
+</screen>
+
+<procedure>
+
+<title>
+EEPROM Load Procedure:
+</title>
+
+<para>
+The EEPROM is customized with a Smart Card loaded with the Spyrus
+Personalization software <filename>SPYRUSP.IMG</filename>.  Blocks
+of 16 bytes are loaded sequentially until the 8 bit block id
+has the high bit set.  Use <application>bcload</application>
+to load a SC with <filename>SPYRUSP.IMG</filename> then the command
+<command>spyrus-ee-set</command> with <application>otp-sca</application>
+to store the EEPROM image on the SC.  A default EEPROM configuration is
+supplied in the file <filename>oar.str</filename> which is converted to
+<filename>oar.ee</filename> with the <application>str2ee</application>
+utility.  <filename>oar.ee</filename> is suitable for
+<application>otp-sca</application>.
+</para>
+
+<step>
+<para>
+Insert the SC loaded with <filename>SPYRUSP.IMG</filename> and configured
+using <command>spyrus-ee-set</command> with <application>otp-sca></application>.
+</para>
+</step>
+
+<step>
+<para>
+Press Card/ON.  Enter the magic PIN 3#.  The Spyrus reader will reset after the last block is loaded.
+</para>
+</step>
+
+</procedure>
+
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>BUGS</title>
+<para>
+The Spyrus reader is not waterproof and will not survive a permanent-press
+cycle.  The Smart Card will survive your back pocket when seated, the reader
+may not.
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-sca</application>(1)
+<application>otp-sct</application>(1)
+<application>otp-control</application>(1)
+<application>pam_otp</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>urd</application>(1)
+<application>bcload</application>(1)
+<application>OpenVPN</application>(8)
+</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,337 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>otp-sct</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+>&nbsp;--&nbsp;Smart Card Terminal for One Time Password package.</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN10"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>otp-sct</B
+>  [-1hlpv?] [-c<TT
+CLASS="REPLACEABLE"
+><I
+> count</I
+></TT
+>] [-d<TT
+CLASS="REPLACEABLE"
+><I
+> debug_level</I
+></TT
+>] [-i<TT
+CLASS="REPLACEABLE"
+><I
+> index</I
+></TT
+>] [-r<TT
+CLASS="REPLACEABLE"
+><I
+> reader</I
+></TT
+>] [-v<TT
+CLASS="REPLACEABLE"
+><I
+> firmware_api_version</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN24"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The <B
+CLASS="COMMAND"
+>otp-sct</B
+> command is a user interface to generating
+One Time Passwords with a smart card loaded with OTP software.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN28"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>-c<TT
+CLASS="REPLACEABLE"
+><I
+> count</I
+></TT
+></DT
+><DD
+><P
+>Configure the optional count parameter to sync a smart card to a challenge.</P
+></DD
+><DT
+>-d<TT
+CLASS="REPLACEABLE"
+><I
+> debug_level</I
+></TT
+></DT
+><DD
+><P
+>Set debug level.</P
+></DD
+><DT
+>-h</DT
+><DD
+><P
+>Help.</P
+></DD
+><DT
+>-i<TT
+CLASS="REPLACEABLE"
+><I
+> index</I
+></TT
+></DT
+><DD
+><P
+>Set the 8 bit index.  The smart card contains numerically indexed records
+for each host system.  Use the -l option to list hostnames associated with
+the index.  The default index is 0.</P
+></DD
+><DT
+>-l</DT
+><DD
+><P
+>List SC Readers</P
+></DD
+><DT
+>-L</DT
+><DD
+><P
+>List host systems configured on the smart card.  The index is used with the -i option.</P
+></DD
+><DT
+>-o</DT
+><DD
+><P
+>Set new PIN.</P
+></DD
+><DT
+>-r<TT
+CLASS="REPLACEABLE"
+><I
+> reader</I
+></TT
+></DT
+><DD
+><P
+>Set the smart card reader.  Use -l to list available readers.</P
+></DD
+><DT
+>-v<TT
+CLASS="REPLACEABLE"
+><I
+> card_api_version</I
+></TT
+></DT
+><DD
+><P
+>Set the smart card API version.  The binary API between the terminal
+and smart card changed between version 2 and 3.  See command mode notes
+above.  The default version is 3.  Configuring version 2 will allow
+maintenance of smart card with version 2 firmware.</P
+></DD
+><DT
+>-V</DT
+><DD
+><P
+>List the smart card firmware version.</P
+></DD
+><DT
+>-1</DT
+><DD
+><P
+>Use the version 1 GetHOTP command instead of the default GetHOTPHostCount32.
+The latter is not available on firmware revision 1.  GetHOTP may be conditionally
+compiled out of newer firmware.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN80"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN82"
+></A
+><P
+>Generate a HOTP for the first system on the first PCSC reader found.</P
+><PRE
+CLASS="SCREEN"
+><B
+CLASS="COMMAND"
+>otp-sct -r PCSC:</B
+>
+
+<SAMP
+CLASS="COMPUTEROUTPUT"
+>Enter PIN: 12345
+HOTP: dev1.eng 2A5AB4B78D</SAMP
+>&#13;</PRE
+><P
+></P
+></DIV
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN87"
+></A
+><P
+>List systems configured on smart card in default reader.  Generate HOTP
+for dev3.eng with count 32.</P
+><PRE
+CLASS="SCREEN"
+><B
+CLASS="COMMAND"
+>otp-sct -L</B
+>
+
+<SAMP
+CLASS="COMPUTEROUTPUT"
+>Enter PIN: 12345
+00:dev1.eng
+01:dev2.eng
+02:dev3.eng
+03:vpn1.eng</SAMP
+>
+
+<B
+CLASS="COMMAND"
+>otp-sct -i 2 -c 32</B
+>
+
+<SAMP
+CLASS="COMPUTEROUTPUT"
+>Enter PIN: 12345
+HOTP: dev3.eng 2A9BE3F142</SAMP
+>&#13;</PRE
+><P
+></P
+></DIV
+><P
+>Note that hosts with the READERKEY flag set will not be displayed.
+<B
+CLASS="COMMAND"
+>otp-sct</B
+> can not set the reader key.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN96"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN103"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-ov-plugin</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>urd</SPAN
+>(1)
+<SPAN
+CLASS="HARDWARE"
+>spyrus-par2</SPAN
+>(7)</P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,82 @@
+#!/usr/local/bin/python
+
+import re,string,sys
+from operator import itemgetter
+import getopt
+
+addr=0
+sym_addr={}
+sym_len={}
+ee_data = ''
+c_code = 0;
+
+(opts,rags) = getopt.getopt(sys.argv[1:],'c')
+
+for o,v in opts:
+
+  if o == '-c':
+    c_code = 1
+
+for line in sys.stdin.readlines() :
+
+  l = line.strip()
+  (sym,txt) = re.split("\s+",l,1)
+
+  if ((txt[0] != ':') or (txt[-1] != ':')):
+    raise ValueError, "Txt not bounded by :"
+
+  t = txt[1:-1]
+
+  ee_data += t
+
+  sym_addr[sym] = addr
+  sym_len[sym] = len(t)
+
+  addr += len(t)
+
+# pad to block length of 16
+blocks = len(ee_data)/16
+remain = 16 - (len(ee_data)-(blocks*16))
+ee_data += '\0' * remain
+blocks = len(ee_data)/16
+
+for i in xrange(0,blocks):
+  tmp=''
+  for j in xrange(0,16):
+    tmp += "%2.2X" % ord(ee_data[i*16+j])
+  if (i == (blocks-1)) :
+    i |= 0x80
+  print "%2.2X:%s" % (i,tmp)
+
+
+#
+# generate C code for spyrus main.c
+#
+if (c_code == 0):
+  sys.exit(0)
+
+print
+
+for i in sorted(sym_addr.items(), key=itemgetter(1)):
+  print "#define %s_ADDR %s %s" % (i[0], ' ' * (16-len(i[0])), i[1])
+
+for i in sorted(sym_addr.items(), key=itemgetter(1)):
+  print "#define %s_LEN %s %s" % (i[0], ' ' * (17 - len(i[0])), sym_len[i[0]])
+
+print
+print "#define EE_INIT_SIZE %s" % len(ee_data)
+print
+
+for i in xrange(0,blocks):
+  tmp=''
+  for j in xrange(0,8):
+    tmp += "0x%2.2x," % ord(ee_data[i*16+j])
+  print "  %s" % (tmp)
+  tmp=''
+  for j in xrange(8,16):
+    tmp += "0x%2.2x," % ord(ee_data[i*16+j])
+  print "  %s" % (tmp)
+  print
+
+
+

@@ -1,0 +1,226 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: otp-sct.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<application>otp-sct</application>
+</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<application>otp-sct</application>
+</refname>
+<refpurpose>
+Smart Card Terminal for One Time Password package.
+</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>otp-sct</command>
+<arg>-1hlpv?</arg>
+<arg>-c<replaceable> count</replaceable></arg>
+<arg>-d<replaceable> debug_level</replaceable></arg>
+<arg>-i<replaceable> index</replaceable></arg>
+<arg>-r<replaceable> reader</replaceable></arg>
+<arg>-v<replaceable> firmware_api_version</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The <command>otp-sct</command> command is a user interface to generating
+One Time Passwords with a smart card loaded with OTP software.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>-c<replaceable> count</replaceable></term>
+<listitem>
+<para>
+Configure the optional count parameter to sync a smart card to a challenge.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-d<replaceable> debug_level</replaceable></term>
+<listitem>
+<para>
+Set debug level.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-h</term>
+<listitem>
+<para>
+Help.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-i<replaceable> index</replaceable></term>
+<listitem>
+<para>
+Set the 8 bit index.  The smart card contains numerically indexed records
+for each host system.  Use the -l option to list hostnames associated with
+the index.  The default index is 0.
+</para>
+</listitem>
+
+<varlistentry>
+<term>-l</term>
+<listitem>
+<para>
+List SC Readers
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-L</term>
+<listitem>
+<para>
+List host systems configured on the smart card.  The index is used with the -i option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-o</term>
+<listitem>
+<para>
+Set new PIN.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-r<replaceable> reader</replaceable></term>
+<listitem>
+<para>
+Set the smart card reader.  Use -l to list available readers.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-v<replaceable> card_api_version</replaceable></term>
+<listitem>
+<para>
+Set the smart card API version.  The binary API between the terminal
+and smart card changed between version 2 and 3.  See command mode notes
+above.  The default version is 3.  Configuring version 2 will allow
+maintenance of smart card with version 2 firmware.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-V</term>
+<listitem>
+<para>
+List the smart card firmware version.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-1</term>
+<listitem>
+<para>
+Use the version 1 GetHOTP command instead of the default GetHOTPHostCount32.
+The latter is not available on firmware revision 1.  GetHOTP may be conditionally
+compiled out of newer firmware.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>EXAMPLES</title>
+
+<informalexample>
+<para>
+Generate a HOTP for the first system on the first PCSC reader found.
+</para>
+<screen>
+<command>otp-sct -r PCSC:</command>
+
+<computeroutput>Enter PIN: 12345
+HOTP: dev1.eng 2A5AB4B78D</computeroutput>
+
+</screen>
+</informalexample>
+
+<informalexample>
+<para>
+List systems configured on smart card in default reader.  Generate HOTP
+for dev3.eng with count 32.
+</para>
+<screen>
+<command>otp-sct -L</command>
+
+<computeroutput>Enter PIN: 12345
+00:dev1.eng
+01:dev2.eng
+02:dev3.eng
+03:vpn1.eng</computeroutput>
+
+<command>otp-sct -i 2 -c 32</command>
+
+<computeroutput>Enter PIN: 12345
+HOTP: dev3.eng 2A9BE3F142</computeroutput>
+
+</screen>
+</informalexample>
+
+<para>
+Note that hosts with the READERKEY flag set will not be displayed.
+<command>otp-sct</command> can not set the reader key.
+</para>
+
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-sca</application>(1)
+<application>otp-control</application>(1)
+<application>pam_otp</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>otp-ov-plugin</application>(1)
+<application>bcload</application>(1)
+<application>urd</application>(1)
+<hardware>spyrus-par2</hardware>(7)
+</para>
+</refsect1>
+
+</refentry>

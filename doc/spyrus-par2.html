@@ -1,0 +1,427 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Spyrus PAR II</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="HARDWARE"
+>Spyrus PAR II</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="HARDWARE"
+>Spyrus PAR II</SPAN
+>&nbsp;--&nbsp;Spyrus PAR II reader with HOTP firmware</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN10"
+></A
+><H2
+>SETUP</H2
+><P
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN13"
+></A
+><H2
+>KEY SEQUENCES</H2
+><P
+></P
+><P
+>A HOTP token is obtained by activating the reader, authenticating
+with a 5 digit PIN, and picking a numerically indexed host.  Interactive
+menu and two digit shortcut methods are provided for host selection.
+Additional functionality includes Smart Card PIN change, overriding default
+increment-on-generate per-host HOTP count behavior, and firmware management.</P
+><P
+>With the HOTP displayed, press Enter to repeat the host selection process
+for additional token generation.</P
+><P
+>Use the host selection shortcut to extend battery life.</P
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN19"
+></A
+><H3
+>Basic Functions:</H3
+><P
+><SPAN
+CLASS="KEYSYM"
+>Card/ON</SPAN
+> Power up reader.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>Calc/OFF</SPAN
+> Power down reader, firmware menu.  The reader
+should be powered down after utilizing the HOTP to extend battery
+life.  A timeout will turn off the reader off without intervention.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN25"
+></A
+><H3
+>PIN Entry:</H3
+><P
+><SPAN
+CLASS="KEYSYM"
+>0123456789</SPAN
+> 5 digit PIN.  Default is 28165.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>Clear</SPAN
+> Clear input.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>Enter</SPAN
+> Accept PIN sequence.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN33"
+></A
+><H3
+>Host Selection:</H3
+><P
+><SPAN
+CLASS="KEYSYM"
+>Enter</SPAN
+> Select host.  A single digit + <SPAN
+CLASS="KEYSYM"
+>Enter</SPAN
+>
+will select host 0..9. Minus other digits, <SPAN
+CLASS="KEYSYM"
+>Enter</SPAN
+> will select
+index 0.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>0123456789</SPAN
+> 2 digit host index.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>Clear</SPAN
+> Clear host digit.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>*</SPAN
+> Change PIN.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>#</SPAN
+> Toggle Challenge/Count input.  The per-host count, incremented
+by 1 and stored on the SC after each HOTP generation can be overridden
+with this option.&#13;</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>DOWN</SPAN
+> Enable host menu.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN49"
+></A
+><H3
+>Host Selection With Menu:</H3
+><P
+></P
+><P
+><SPAN
+CLASS="KEYSYM"
+>Enter</SPAN
+> Select host.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>UP</SPAN
+> Cursor up one line.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>DOWN</SPAN
+> Cursor down one line.</P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN58"
+></A
+><H2
+>LOADING FIRMWARE</H2
+><P
+>The PAR II is factory loaded with the
+<SPAN
+CLASS="APPLICATION"
+>HI-TECH Software Bootloaders for Microchip 16F87x version 1</SPAN
+>.</P
+><DIV
+CLASS="PROCEDURE"
+><P
+><B
+>Firmware Download Procedure:</B
+></P
+><P
+>The download will progress and end in an error resetting the PIC.  This
+is a bug in the PAR II downloader and can be safely ignored.</P
+><OL
+TYPE="1"
+><LI
+CLASS="STEP"
+><P
+>connect the Spyrus download cable to a workstation with
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+> or
+<SPAN
+CLASS="APPLICATION"
+>pic-downloader</SPAN
+>.</P
+></LI
+><LI
+CLASS="STEP"
+><P
+>start <SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+> or <SPAN
+CLASS="APPLICATION"
+>pic-downloader</SPAN
+>.</P
+></LI
+><LI
+CLASS="STEP"
+><P
+>press CALC/OFF then down arrow 3 times to select DownloadApp.</P
+></LI
+><LI
+CLASS="STEP"
+><P
+>press Enter to initiate the download.</P
+></LI
+><LI
+CLASS="STEP"
+><P
+>press CARD/ON to verify new firmware is loaded.</P
+></LI
+></OL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN79"
+></A
+><H2
+>EEPROM CUSTOMIZATION</H2
+><P
+>The Spyrus PAR II HOTP application utilizes the onboard EEPROM for string
+storage allowing customization without re-compiling.  A fixed memory
+map is as follows:</P
+><PRE
+CLASS="SCREEN"
+>Offset   Length    Default        Description
+-------------------------------------------------------------------------
+0        3         "maf"          EEPROM Signature.  Reset if no match.
+3        5         "00000"        Reader Key
+8        12        "OARnet:2009 " Calculator message
+20       12        "   OARnet   " Line 1 initial
+32       12        "PIN:        " Line 2 initial
+44       12        "   OARnet   " Line 1 after PIN success
+56       12        "  Verified  " Line 2 after PIN success
+68       12        "Challenge:  " Message to indicate count entry
+80       12        "10 Failures " Line 1 card locked / excessive PIN fail
+92       12        "Card Locked " Line 2 card locked / excessive PIN fail
+104      12        "   Access   " Line 1 incorrect PIN
+116      12        "   Denied   " Line 2 incorrect PIN
+128      12        "  No Hosts  " Line 1, SC with no host entries
+140      12        "Set New PIN " Line 1 reset PIN
+152      12        "NewPIN:     " Line 2 reset PIN
+164      12        "Again:      " Line 3 reset PIN
+176      12        "PIN Changed " PIN Change notification
+188      12        "No Card     " No SC at powerup
+200      12        "Try Harder  " all PIN digits equal</PRE
+><DIV
+CLASS="PROCEDURE"
+><P
+><B
+>EEPROM Load Procedure:</B
+></P
+><P
+>The EEPROM is customized with a Smart Card loaded with the Spyrus
+Personalization software <TT
+CLASS="FILENAME"
+>SPYRUSP.IMG</TT
+>.  Blocks
+of 16 bytes are loaded sequentially until the 8 bit block id
+has the high bit set.  Use <SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>
+to load a SC with <TT
+CLASS="FILENAME"
+>SPYRUSP.IMG</TT
+> then the command
+<B
+CLASS="COMMAND"
+>spyrus-ee-set</B
+> with <SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>
+to store the EEPROM image on the SC.  A default EEPROM configuration is
+supplied in the file <TT
+CLASS="FILENAME"
+>oar.str</TT
+> which is converted to
+<TT
+CLASS="FILENAME"
+>oar.ee</TT
+> with the <SPAN
+CLASS="APPLICATION"
+>str2ee</SPAN
+>
+utility.  <TT
+CLASS="FILENAME"
+>oar.ee</TT
+> is suitable for
+<SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>.</P
+><OL
+TYPE="1"
+><LI
+CLASS="STEP"
+><P
+>Insert the SC loaded with <TT
+CLASS="FILENAME"
+>SPYRUSP.IMG</TT
+> and configured
+using <B
+CLASS="COMMAND"
+>spyrus-ee-set</B
+> with <SPAN
+CLASS="APPLICATION"
+>otp-sca&#62;</SPAN
+>.</P
+></LI
+><LI
+CLASS="STEP"
+><P
+>Press Card/ON.  Enter the magic PIN 3#.  The Spyrus reader will reset after the last block is loaded.</P
+></LI
+></OL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN103"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN110"
+></A
+><H2
+>BUGS</H2
+><P
+>The Spyrus reader is not waterproof and will not survive a permanent-press
+cycle.  The Smart Card will survive your back pocket when seated, the reader
+may not.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN113"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>urd</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>OpenVPN</SPAN
+>(8)</P
+></DIV
+></BODY
+></HTML
+>

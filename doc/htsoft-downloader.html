@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>htsoft-downloader</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>&nbsp;--&nbsp;Download code to PIC microcontroller with HI-TECH version_1 bootloader
+installed using RS232 serial port.</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN10"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>htsoft-downloader</B
+>  [-?hv] [-f<TT
+CLASS="REPLACEABLE"
+><I
+> serial_device</I
+></TT
+>] [-r<TT
+CLASS="REPLACEABLE"
+><I
+> retries</I
+></TT
+>] [-t<TT
+CLASS="REPLACEABLE"
+><I
+> timeout (.1 second/timeout)</I
+></TT
+>] [-v<TT
+CLASS="REPLACEABLE"
+><I
+> verbose level</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN22"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The <B
+CLASS="COMMAND"
+>htsoft-downloader</B
+> command is an implementation of
+a download application for the HI-TECH version_1 PIC bootloader.  An
+Intel Hexadecimal Object File Format Specification Rev A (ie a .hex
+file from picc, MPLAB, gpasm, or other PIC compatible toolchains) is read
+on standard output and downloaded to a PIC on the
+<TT
+CLASS="REPLACEABLE"
+><I
+>serial_device</I
+></TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN27"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>-h</DT
+><DD
+><P
+>Help</P
+></DD
+><DT
+>-f<TT
+CLASS="REPLACEABLE"
+><I
+> serial_device</I
+></TT
+></DT
+><DD
+><P
+>Serial device filename.  Examples:</P
+><P
+><TT
+CLASS="FILENAME"
+>/dev/ttyUSB0</TT
+> (Linux USB Serial Adapter)</P
+><P
+><TT
+CLASS="FILENAME"
+>/dev/cuad0</TT
+> (FreeBSD COM port).</P
+><P
+>The default is <TT
+CLASS="FILENAME"
+>/dev/cuaU0</TT
+>, a
+Prolific PL2303 USB to serial adaptor on FreeBSD.</P
+></DD
+><DT
+>-r<TT
+CLASS="REPLACEABLE"
+><I
+> retries</I
+></TT
+></DT
+><DD
+><P
+>Number of times to retry a block.  Defaults to 5.</P
+></DD
+><DT
+>-t<TT
+CLASS="REPLACEABLE"
+><I
+> timeout</I
+></TT
+></DT
+><DD
+><P
+>Timeout in .1 second intervals.  Defaults to 25.</P
+></DD
+><DT
+>-v<TT
+CLASS="REPLACEABLE"
+><I
+> verbose_level</I
+></TT
+></DT
+><DD
+><P
+>Increasing the verbosity level will produce debug messages indicating
+the status of the download.  A level of 9 will include all debugging
+output.  A level of 1 will indicate the overall status of the transfer.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN60"
+></A
+><H2
+>EXAMPLE</H2
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN62"
+></A
+><P
+>Transfer the HEX file spyrus1.1.hex to a PIC connected to
+<TT
+CLASS="FILENAME"
+>/dev/ttyUSB0</TT
+> with verbose output.  Note that
+the bootloader in this device does not send the last WOK command, this
+appears to be harmless.</P
+><P
+>  <B
+CLASS="COMMAND"
+>pic-downloader -v9 -f /dev/ttyUSB0 &#60; spyrys1.1.hex</B
+></P
+><PRE
+CLASS="SCREEN"
+>Waiting for bootloader..........
+
+upload block: load_offset=0x0000 bytes_to_send=32
+Dwrite: cmd=E3 load=0000 bytes=20 csum=F8
+write: data=01833000018A280400003020008430652020300700E830FE00E7306500843067
+
+upload block: load_offset=0x0020 bytes_to_send=32
+Dwrite: cmd=E3 load=0010 bytes=20 csum=AF
+write: data=202530A0008430E8202017833010008430362020120A118A2DBD060401800A84
+
+...
+
+upload block: load_offset=0x1FFA bytes_to_send=6
+Dwrite: cmd=E3 load=0FFD bytes=06 csum=AA
+write: data=00CB30C42EBD
+wDONE: reply=F8, expecting E4wwwwpic-downloader: htsoft_v1bl_done(): failed
+PIC reset failed.&#13;</PRE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN68"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN75"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>Intel Hexadecimal Object File Format Specification Rev A</P
+><P
+>www.htsoft.com</P
+><P
+>http://www.ehl.cz/pic/pic_e.htm</P
+></DIV
+></BODY
+></HTML
+>

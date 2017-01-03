@@ -1,0 +1,640 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>otp-control</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+>&nbsp;--&nbsp;Local user database configuration for One Time Password package.</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN10"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>otp-control</B
+>  [-?hnv] [-c<TT
+CLASS="REPLACEABLE"
+><I
+> count</I
+></TT
+>] [-C<TT
+CLASS="REPLACEABLE"
+><I
+> count_ceil</I
+></TT
+>] [-F<TT
+CLASS="REPLACEABLE"
+><I
+> sc_flags</I
+></TT
+>] [-H<TT
+CLASS="REPLACEABLE"
+><I
+> sc_hostname</I
+></TT
+>] [-I<TT
+CLASS="REPLACEABLE"
+><I
+> sc_index</I
+></TT
+>] [-k<TT
+CLASS="REPLACEABLE"
+><I
+> key</I
+></TT
+>] [-m<TT
+CLASS="REPLACEABLE"
+><I
+> command_mode</I
+></TT
+>] [-o<TT
+CLASS="REPLACEABLE"
+><I
+> otpdb_pathname</I
+></TT
+>] [-u<TT
+CLASS="REPLACEABLE"
+><I
+> username</I
+></TT
+>] [-w<TT
+CLASS="REPLACEABLE"
+><I
+> window</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN34"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The <B
+CLASS="COMMAND"
+>otp-control</B
+> command is a front end to the
+local One Time Password database.  Users can be added, modified
+and removed by <B
+CLASS="COMMAND"
+>otp-control.</B
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN39"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>-c<TT
+CLASS="REPLACEABLE"
+><I
+> count</I
+></TT
+></DT
+><DD
+><P
+>User count.  The count increases with each OTP transaction.</P
+></DD
+><DT
+>-C<TT
+CLASS="REPLACEABLE"
+><I
+> count_ceil</I
+></TT
+></DT
+><DD
+><P
+>User count ceiling.  Highest count allowed for this user.  Configuring
+the count_ceiling allows a user key to be shared among multiple
+systems each with a unique count window, where count &#60;= count_ceiling.</P
+><P
+>A count value must only be allowed for authentication once.</P
+><P
+>Example:</P
+><P
+>host=h1, user=bob, count_current=0, count_ceil=10000.</P
+><P
+>host=h2, user=bob, count_current=10001, count_ceil=20000.</P
+><P
+>The number of keys a user must possess is decreased at the expense
+of security dependencies among multiple systems.  If system A is
+compromised, OTP's can be generated for the user(s) on system B from
+the shared keys on system A.  To generate an OTP out of sequence the count
+must be presented to the OTP generator.  The additional step of entering
+the count to the OTP generator is not necessary when keys are not
+shared, as the currrent count will increase on the OTP generator and
+system database during authentication.</P
+></DD
+><DT
+>-h</DT
+><DD
+><P
+>Help.</P
+></DD
+><DT
+>-F<TT
+CLASS="REPLACEABLE"
+><I
+> sc_flags</I
+></TT
+></DT
+><DD
+><P
+>Set the SC flags with the list-sc command mode.  0=CHALLENGE, 1=READERKEY.</P
+></DD
+><DT
+>-H<TT
+CLASS="REPLACEABLE"
+><I
+> sc_hostname</I
+></TT
+></DT
+><DD
+><P
+>Set the SC hostname with the list-sc command mode.</P
+></DD
+><DT
+>-I<TT
+CLASS="REPLACEABLE"
+><I
+> sc_index</I
+></TT
+></DT
+><DD
+><P
+>Set the SC index with the list-sc command mode.</P
+></DD
+><DT
+>-k<TT
+CLASS="REPLACEABLE"
+><I
+> key</I
+></TT
+></DT
+><DD
+><P
+>160 bit shared secret key in ASCII HEX.  The secret key is shared between
+the OTP generation hardware/software for a user and the local OTP database.
+Each user typically will have a unique key unless a shared key with
+unique count space is provisioned.  Use - for stdin.  Example key:
+C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745</P
+></DD
+><DT
+>-m<TT
+CLASS="REPLACEABLE"
+><I
+> command_mode</I
+></TT
+></DT
+><DD
+><P
+></P
+><PRE
+CLASS="SCREEN"
+>            Mode             Description
+            -------------------------------------------------
+            add                - Add user
+            activate           - Activate user
+            create             - Create database
+            deactivate         - Deactivate user
+            disable            - Disable user
+            dump               - ASCII dump user record(s)
+            flags-dspcnt       - Set user display count flag.
+            flags-no-dspcnt    - Clear user display count flag.
+            generate           - Generate HOTP for user
+            list               - List user record (printable)
+            list-sc            - List user record (SC friendly)
+            load               - ASCII load user record(s)
+            remove             - Remove user
+            set-count          - Reset count for user
+            set-count-ceil     - Reset count ceiling for user
+            test               - Test user</PRE
+></DD
+><DT
+>-n</DT
+><DD
+><P
+>Create new database if one does not exist.</P
+></DD
+><DT
+>-o<TT
+CLASS="REPLACEABLE"
+><I
+> otp_pathname</I
+></TT
+></DT
+><DD
+><P
+>Pathname of OTP database.</P
+></DD
+><DT
+>-u<TT
+CLASS="REPLACEABLE"
+><I
+> username</I
+></TT
+></DT
+><DD
+><P
+>Username to perform database operation on.</P
+></DD
+><DT
+>-v</DT
+><DD
+><P
+>Enable verbose output (debugging).</P
+></DD
+><DT
+>-w<TT
+CLASS="REPLACEABLE"
+><I
+> window</I
+></TT
+></DT
+><DD
+><P
+>Set the maximum window (count above the system count) where an OTP
+will successfully authenticate.  For user bob with with OTP generator
+count_current=30, and system OTP database for bob count_current 15, the
+default window (10) will not allow the user to authenticate, even though
+the OTP is computed with a valid shared key.  This can be caused by the
+user repeatedly generating an OTP which is not used for authentication.</P
+><P
+>When generating an OTP (mode generate) the window will configure the number
+of tokens generated.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN111"
+></A
+><H2
+>OTP-CONTROL COMMANDS</H2
+><P
+><B
+CLASS="COMMAND"
+>add</B
+>
+: add user to OTP database.  count_cur and count_ceiling may optionally
+be specified with -c and -C respectively.  A random key will be generated
+if no key is specified with -k.</P
+><P
+><B
+CLASS="COMMAND"
+>activate</B
+>
+: activate user.  An active user must provide a OTP for successful
+authentication.  An inactive user _may_ be successfully authenticated
+without a OTP depending on the application configuration.  The pam_otp
+module can be configured to use this flag with the "allow_inactive" option.</P
+><P
+><B
+CLASS="COMMAND"
+>create</B
+>
+: create OTP database.  The OTP database is a base directory with each
+user stored in a separate ASCII : delimited file in base_dir/d.</P
+><P
+><B
+CLASS="COMMAND"
+>deactivate</B
+>
+: deactivate user.  See activate.</P
+><P
+><B
+CLASS="COMMAND"
+>disable</B
+>
+: disable user.  A disabled user can not successfully authenticate.</P
+><P
+><B
+CLASS="COMMAND"
+>dump</B
+>
+: dump user database in ASCII.  User records are separated by a newline.
+Fields are : separated.  All fields except the username are HEX encoded.</P
+><P
+>#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000</P
+><P
+><B
+CLASS="COMMAND"
+>flags-dspcnt</B
+>
+: set the display count flag.  An application such as pam_otp will use
+this flag to control the display of the OTP count when challenging a
+user.</P
+><P
+><B
+CLASS="COMMAND"
+>flags-no-dspcnt</B
+>
+: clear the display count flag.</P
+><P
+><B
+CLASS="COMMAND"
+>generate</B
+>
+: generate OTP for user.  The -w flag may be used to generate multiple
+OTP tokens.</P
+><P
+><B
+CLASS="COMMAND"
+>list</B
+>
+: list user record in user friendly format.</P
+><P
+><B
+CLASS="COMMAND"
+>list-sc</B
+>
+: list user record in otp-sc import friendly format.  The SC hostname
+must be specified with -H.  The SC index and SC flags may optionally be
+specified with -I and -F.</P
+><P
+><B
+CLASS="COMMAND"
+>load</B
+>
+: load user record(s)s in ASCII format.  See dump.</P
+><P
+><B
+CLASS="COMMAND"
+>remove</B
+>
+: remove user from OTP database.</P
+><P
+><B
+CLASS="COMMAND"
+>set-count</B
+>
+: set count_current for user.</P
+><P
+><B
+CLASS="COMMAND"
+>set-count-ceil</B
+>
+: set count_ceiling for user.  A OTP will not authenticate when
+count_cur &#62;= count_cieiling.</P
+><P
+><B
+CLASS="COMMAND"
+>test</B
+>
+: test OTP authentication for user.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN146"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN148"
+></A
+><P
+>Create a new OTP database /etc/otpdb.  Add user bob with random key.</P
+><P
+>  <B
+CLASS="COMMAND"
+>otp-control -n -f /etc/otpdb -u bob -m add</B
+></P
+><PRE
+CLASS="SCREEN"
+>Generating random 160 bit key.
+Adding user bob.</PRE
+><P
+></P
+></DIV
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN153"
+></A
+><P
+>Display user bob OTP database entry.</P
+><P
+>  <B
+CLASS="COMMAND"
+>otp-control -u bob -m list</B
+></P
+><PRE
+CLASS="SCREEN"
+>Username.......bob
+Key............C381739834A63A67B0B9F7F7D36C8C567F6BFB3D
+Count..........0 (0x0)
+Count Ceiling..18446744073709551615 (0xFFFFFFFFFFFFFFFF)
+Version........1
+Status.........active (1)
+Format.........hex40 (1)
+Type...........HOTP (1)
+Flags..........00</PRE
+><P
+></P
+></DIV
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN158"
+></A
+><P
+>Generate OTP for user bob.</P
+><P
+>  <B
+CLASS="COMMAND"
+>otp-control -u bob -m generate</B
+></P
+><PRE
+CLASS="SCREEN"
+>count=0 crsp=882B0E8410</PRE
+><P
+></P
+></DIV
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN163"
+></A
+><P
+>Test OTP for user bob.</P
+><P
+>  <B
+CLASS="COMMAND"
+>otp-control -u bob -m test</B
+></P
+><PRE
+CLASS="SCREEN"
+>Testing authentication for user bob.
+OTP challenge for user bob (0): 882B0E8410
+Success.</PRE
+><P
+></P
+></DIV
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN168"
+></A
+><P
+>Dump OTP database to stdout.  Fields other than username are hex encoded.
+Use the load command to import records in this format.</P
+><P
+>  <B
+CLASS="COMMAND"
+>otp-control -m dump</B
+></P
+><PRE
+CLASS="SCREEN"
+>#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+01:bob:C381739834A63A67B0B9F7F7D36C8C567F6BFB3D:01:01:01:00:0000000000000001:FFFFFFFFFFFFFFFF:000000004AA02F9E</PRE
+><P
+></P
+></DIV
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN173"
+></A
+><P
+>Dump OTP user to stdout in format friendly to <B
+CLASS="COMMAND"
+>otp-sca</B
+>.  Note the
+hostname must be set with -H.  The index will default to 0 if not specified
+with -I.  SC flags may be set with -F.</P
+><P
+>  <B
+CLASS="COMMAND"
+>otp-control -u test -m list-sc -H dev1</B
+></P
+><PRE
+CLASS="SCREEN"
+><SAMP
+CLASS="COMPUTEROUTPUT"
+>#index:count:hostname:key
+00:000003E8:646576310000000000000000:1111111111111111111111111111111111111111</SAMP
+>&#13;</PRE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN180"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN187"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-ov-plugin</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>urd</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>(1)
+<SPAN
+CLASS="HARDWARE"
+>spyrus-par2</SPAN
+>(7)</P
+></DIV
+></BODY
+></HTML
+>

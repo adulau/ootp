@@ -1,0 +1,127 @@
+...\" $Header: /usr/src/docbook-to-man/cmd/RCS/docbook-to-man.sh,v 1.3 1996/06/17 03:36:49 fld Exp $
+...\"
+...\"	transcript compatibility for postscript use.
+...\"
+...\"	synopsis:  .P! <file.ps>
+...\"
+.de P!
+\\&.
+.fl			\" force out current output buffer
+\\!%PB
+\\!/showpage{}def
+...\" the following is from Ken Flowers -- it prevents dictionary overflows
+\\!/tempdict 200 dict def tempdict begin
+.fl			\" prolog
+.sy cat \\$1\" bring in postscript file
+...\" the following line matches the tempdict above
+\\!end % tempdict %
+\\!PE
+\\!.
+.sp \\$2u	\" move below the image
+..
+.de pF
+.ie     \\*(f1 .ds f1 \\n(.f
+.el .ie \\*(f2 .ds f2 \\n(.f
+.el .ie \\*(f3 .ds f3 \\n(.f
+.el .ie \\*(f4 .ds f4 \\n(.f
+.el .tm ? font overflow
+.ft \\$1
+..
+.de fP
+.ie     !\\*(f4 \{\
+.	ft \\*(f4
+.	ds f4\"
+'	br \}
+.el .ie !\\*(f3 \{\
+.	ft \\*(f3
+.	ds f3\"
+'	br \}
+.el .ie !\\*(f2 \{\
+.	ft \\*(f2
+.	ds f2\"
+'	br \}
+.el .ie !\\*(f1 \{\
+.	ft \\*(f1
+.	ds f1\"
+'	br \}
+.el .tm ? font underflow
+..
+.ds f1\"
+.ds f2\"
+.ds f3\"
+.ds f4\"
+.ta 8n 16n 24n 32n 40n 48n 56n 64n 72n 
+.TH "\fBhtsoft-downloader\fP" "1"
+.SH "NAME"
+\fBhtsoft-downloader\fP \(em Download code to PIC microcontroller with HI-TECH version_1 bootloader
+installed using RS232 serial port\&.
+.SH "SYNOPSIS"
+.PP
+\fBhtsoft-downloader\fP [-?hv]  [-f\fI serial_device\fP]  [-r\fI retries\fP]  [-t\fI timeout (\&.1 second/timeout)\fP]  [-v\fI verbose level\fP] 
+.SH "DESCRIPTION"
+.PP
+The \fBhtsoft-downloader\fP command is an implementation of
+a download application for the HI-TECH version_1 PIC bootloader\&.  An
+Intel Hexadecimal Object File Format Specification Rev A (ie a \&.hex
+file from picc, MPLAB, gpasm, or other PIC compatible toolchains) is read
+on standard output and downloaded to a PIC on the
+\fIserial_device\fP\&.
+.SH "OPTIONS"
+.IP "-h" 10
+Help
+.IP "-f\fI serial_device\fP" 10
+Serial device filename\&.  Examples:
+.IP "" 10
+\fB/dev/ttyUSB0\fP (Linux USB Serial Adapter)
+.IP "" 10
+\fB/dev/cuad0\fP (FreeBSD COM port)\&.
+.IP "" 10
+The default is \fB/dev/cuaU0\fP, a
+Prolific PL2303 USB to serial adaptor on FreeBSD\&.
+.IP "-r\fI retries\fP" 10
+Number of times to retry a block\&.  Defaults to 5\&.
+.IP "-t\fI timeout\fP" 10
+Timeout in \&.1 second intervals\&.  Defaults to 25\&.
+.IP "-v\fI verbose_level\fP" 10
+Increasing the verbosity level will produce debug messages indicating
+the status of the download\&.  A level of 9 will include all debugging
+output\&.  A level of 1 will indicate the overall status of the transfer\&.
+.SH "EXAMPLE"
+.PP
+Transfer the HEX file spyrus1\&.1\&.hex to a PIC connected to
+\fB/dev/ttyUSB0\fP with verbose output\&.  Note that
+the bootloader in this device does not send the last WOK command, this
+appears to be harmless\&.
+.PP
+  \fBpic-downloader -v9 -f /dev/ttyUSB0 < spyrys1\&.1\&.hex\fP
+.PP
+.nf
+Waiting for bootloader\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.
+
+upload block: load_offset=0x0000 bytes_to_send=32
+Dwrite: cmd=E3 load=0000 bytes=20 csum=F8
+write: data=01833000018A280400003020008430652020300700E830FE00E7306500843067
+
+upload block: load_offset=0x0020 bytes_to_send=32
+Dwrite: cmd=E3 load=0010 bytes=20 csum=AF
+write: data=202530A0008430E8202017833010008430362020120A118A2DBD060401800A84
+
+\&.\&.\&.
+
+upload block: load_offset=0x1FFA bytes_to_send=6
+Dwrite: cmd=E3 load=0FFD bytes=06 csum=AA
+write: data=00CB30C42EBD
+wDONE: reply=F8, expecting E4wwwwpic-downloader: htsoft_v1bl_done(): failed
+PIC reset failed\&.
+.fi
+.SH "AUTHOR"
+.PP
+Mark Fullmer maf@splintered\&.net
+.SH "SEE ALSO"
+.PP
+Intel Hexadecimal Object File Format Specification Rev A
+.PP
+www\&.htsoft\&.com
+.PP
+http://www\&.ehl\&.cz/pic/pic_e\&.htm
+...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:15

@@ -1,0 +1,189 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: bcload.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+<refmeta>
+<refentrytitle>
+<application>bcload</application>
+</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+<refnamediv>
+<refname>
+<application>bcload</application>
+</refname>
+<refpurpose>
+ZeitControl Firmware downloader for enhanced BasicCard Smart Cards
+</refpurpose>
+</refnamediv>
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>bcload</command>
+<arg>-?hlptv?</arg>
+<arg>-d<replaceable> debug_level</replaceable></arg>
+<arg>-f<replaceable> fname</replaceable></arg>
+<arg>-r<replaceable> reader</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The <command>bcload</command> command is a firmware downloader for
+ZeitControl BasicCard Smart Cards.  <command>Bcload</command> is based
+off the bcload example included in the development environment.
+<command>Bcload</command> has only been tested with ZC3.9 Smart Card
+hardware.  Small changes would be required to support the Professional
+line of cards.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>-d<replaceable> debug_level</replaceable></term>
+<listitem>
+<para>
+Set debug level.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-f<replaceable> fname</replaceable></term>
+<listitem>
+<para>
+Name of BasicCard Image file.  Defaults to HOTPC.IMG
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-h</term>
+<listitem>
+<para>
+Help.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-l</term>
+<listitem>
+<para>
+List SC Readers
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-p</term>
+<listitem>
+<para>
+Disable paranoid check for ZC3.9 hardware.  Enhanced Smart Cards will
+probably work, support for the professional cards require changes
+to <filename>bcload.c</filename>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-r<replaceable> reader</replaceable></term>
+<listitem>
+<para>
+Set the smart card reader.  Use -l to list available readers.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-t</term>
+<listitem>
+<para>
+Force card mode to TEST after programming.  Defaults to the mode
+specified in the image file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-v</term>
+<listitem>
+<para>
+Display verbose status messages while programming the card.
+</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>EXAMPLES</title>
+
+<informalexample>
+<para>
+Download the HOTPC.IMG file to the default smart card reader.  Display
+verbose results.
+</para>
+<screen>
+<command>bcload -v -f HOTPC.IMG</command>
+
+<computeroutput>
+Card/State: ZC3.9 test
+EEChunkSize=2000
+BCSetState: load
+SC: Reset
+EEStart=8020,EELen=1fa0
+imgAddr=8020,imgLen=1fa0
+Clear: addr=8020,len=1fa0
+BCClearEEProm: success
+SC: Reset
+EEWRITE: nWrites=118,addr=8020,len=1e
+EEWRITE: nWrites=117,addr=8038,len=10
+EEWRITE: nWrites=116,addr=8170,len=38
+...
+EEWRITE: nWrites=1,addr=9f40,len=48
+EEWRITE: nWrites=0,addr=9f80,len=48
+EECRC: nWrites=1,addr=8020,len=1fa0,imgCRC=b17a
+EECRC: SCCRC=b17a
+EECRC: nWrites=0,addr=8020,len=00,imgCRC=00
+EECRC: SCCRC=0
+BCSetState: test
+BCSetState: test
+</computeroutput>
+</screen>
+</informalexample>
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-control</application>(1)
+<application>otp-sca</application>(1)
+<application>otp-sct</application>(1)
+<application>pam_otp</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>otp-ov-plugin</application>(1)
+<application>urd</application>(1)
+<hardware>spyrus-par2</hardware>(7)
+</para>
+</refsect1>
+
+</refentry>

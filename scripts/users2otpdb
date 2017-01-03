@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+# $Id: users2otpdb 13 2009-11-26 16:37:03Z maf $
+
+OTPCONTROL="otp-control"
+DDIR="/priv/HOTP"
+USERS="$DDIR/$1.users"
+OTPDB="$DDIR/$1.db"
+
+if [ "X$1" = "X" ]; then
+  echo "Usage $0: system" 1>&2
+  exit 1
+fi
+
+if [ ! -e $USERS ]; then
+  echo "$USERS does not exist." 1>&2
+  exit 1
+fi
+
+if [ ! -e $OTPDB ]; then
+  $OTPCONTROL -m create -o $OTPDB
+fi
+
+for name in `cat $USERS`; do
+ if ! $OTPCONTROL -o $OTPDB -u $name -m dump | grep "^01:$name:" >/dev/null 2>&1 ; then
+   echo "*** new user $name, adding"
+   $OTPCONTROL -o $OTPDB -u $name -m add
+ else
+   echo "*** existing user $name, skipping"
+ fi
+done
+
+

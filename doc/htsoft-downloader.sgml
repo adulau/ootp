@@ -1,0 +1,173 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: htsoft-downloader.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<application>htsoft-downloader</application>
+</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<application>htsoft-downloader</application>
+</refname>
+<refpurpose>
+Download code to PIC microcontroller with HI-TECH version_1 bootloader
+installed using RS232 serial port.
+</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>htsoft-downloader</command>
+<arg>-?hv</arg>
+<arg>-f<replaceable> serial_device</replaceable></arg>
+<arg>-r<replaceable> retries</replaceable></arg>
+<arg>-t<replaceable> timeout (.1 second/timeout)</replaceable></arg>
+<arg>-v<replaceable> verbose level</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The <command>htsoft-downloader</command> command is an implementation of
+a download application for the HI-TECH version_1 PIC bootloader.  An
+Intel Hexadecimal Object File Format Specification Rev A (ie a .hex
+file from picc, MPLAB, gpasm, or other PIC compatible toolchains) is read
+on standard output and downloaded to a PIC on the
+<replaceable>serial_device</replaceable>.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>-h</term>
+<listitem>
+<para>
+Help
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-f<replaceable> serial_device</replaceable></term>
+<listitem>
+<para>
+Serial device filename.  Examples:
+</para>
+<para>
+<filename>/dev/ttyUSB0</filename> (Linux USB Serial Adapter)
+</para>
+<para>
+<filename>/dev/cuad0</filename> (FreeBSD COM port).
+</para>
+<para>
+The default is <filename>/dev/cuaU0</filename>, a
+Prolific PL2303 USB to serial adaptor on FreeBSD.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-r<replaceable> retries</replaceable></term>
+<listitem>
+<para>
+Number of times to retry a block.  Defaults to 5.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-t<replaceable> timeout</replaceable></term>
+<listitem>
+<para>
+Timeout in .1 second intervals.  Defaults to 25.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-v<replaceable> verbose_level</replaceable></term>
+<listitem>
+<para>
+Increasing the verbosity level will produce debug messages indicating
+the status of the download.  A level of 9 will include all debugging
+output.  A level of 1 will indicate the overall status of the transfer.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>EXAMPLE</title>
+
+<informalexample>
+<para>
+Transfer the HEX file spyrus1.1.hex to a PIC connected to
+<filename>/dev/ttyUSB0</filename> with verbose output.  Note that
+the bootloader in this device does not send the last WOK command, this
+appears to be harmless.
+</para>
+<para>
+  <command>pic-downloader -v9 -f /dev/ttyUSB0 < spyrys1.1.hex</command>
+</para>
+<screen>
+Waiting for bootloader..........
+
+upload block: load_offset=0x0000 bytes_to_send=32
+Dwrite: cmd=E3 load=0000 bytes=20 csum=F8
+write: data=01833000018A280400003020008430652020300700E830FE00E7306500843067
+
+upload block: load_offset=0x0020 bytes_to_send=32
+Dwrite: cmd=E3 load=0010 bytes=20 csum=AF
+write: data=202530A0008430E8202017833010008430362020120A118A2DBD060401800A84
+
+...
+
+upload block: load_offset=0x1FFA bytes_to_send=6
+Dwrite: cmd=E3 load=0FFD bytes=06 csum=AA
+write: data=00CB30C42EBD
+wDONE: reply=F8, expecting E4wwwwpic-downloader: htsoft_v1bl_done(): failed
+PIC reset failed.
+
+</screen>
+</informalexample>
+
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+Intel Hexadecimal Object File Format Specification Rev A
+</para>
+<para>
+www.htsoft.com
+</para>
+<para>
+http://www.ehl.cz/pic/pic_e.htm
+</para>
+</refsect1>
+
+</refentry>

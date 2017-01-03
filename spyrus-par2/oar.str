@@ -1,0 +1,19 @@
+EE_MAGIC           :maf:
+EE_READER_KEY      :00000:
+EE_CALC_MSG        :OARnet:2009 :
+EE_L1GREET         :   OARnet   :
+EE_L2GREET         :PIN:        :
+EE_L1MAIN          :   OARnet   :
+EE_L2MAIN          :  Verified  :
+EE_CHALLENGE       :Challenge:  :
+EE_L1LOCKED        :10 Failures :
+EE_L2LOCKED        :Card Locked :
+EE_L1ACCESS_DENY   :   Access   :
+EE_L2ACCESS_DENY   :   Denied   :
+EE_NOHOSTS         :  No Hosts  :
+EE_L1NEWPIN        :Set New PIN :
+EE_L2NEWPIN        :NewPIN:     :
+EE_L3NEWPIN        :Again:      :
+EE_PINCHANGED      :PIN Changed :
+EE_NOCARD          :No Card     :
+EE_TRYHARDER       :Try Harder  :

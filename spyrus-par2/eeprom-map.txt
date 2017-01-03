@@ -1,0 +1,42 @@
+Offset   Length    Default       Description
+-----------------------------------------------------------------------------
+0        3         "maf"          Signature.  Reset to default if no match.
+3        5         "00000"        Reader Key
+8        12        "OARnet:2009 " Calculator message
+20       12        "   OARnet   " Line 1 initial
+32       12        "PIN:        " Line 2 initial
+44       12        "   OARnet   " Line 1 after PIN success
+56       12        "  Verified  " Line 2 after PIN success
+68       12        "Challenge:  " Message to indicate count entry
+80       12        "10 Failures " Line 1 card locked due to excessive PIN fail
+92       12        "Card Locked " Line 2 card locked due to excessive PIN fail
+104      12        "   Access   " Line 1 incorrect PIN
+116      12        "   Denied   " Line 2 incorrect PIN
+128      12        "  No Hosts  " Line 1, SC with no host entries
+140      12        "Set New PIN " Line 1 reset PIN
+152      12        "NewPIN:     " Line 2 reset PIN
+164      12        "Again:      " Line 3 reset PIN
+176      12        "PIN Changed " PIN Change notification
+188      12        "No Card     " No SC at powerup
+200      12        "Try Harder  " all PIN digits equal
+
+
+EE_MAGIC           :maf:
+EE_READER_KEY      :00000:
+EE_CALC_MSG        :OARnet:2009 :
+EE_L1GREET         :   OARnet   :
+EE_L2GREET         :PIN:        :
+EE_L1MAIN          :   OARnet   :
+EE_L2MAIN          :  Verified  :
+EE_CHALLENGE       :Challenge:  :
+EE_L1LOCKED        :10 Failures :
+EE_L2LOCKED        :Card Locked :
+EE_L1ACCESS_DENY   :   Access   :
+EE_L2ACCESS_DENY   :   Denied   :
+EE_NOHOSTS         :  No Hosts  :
+EE_L1NEWPIN        :Set New PIN :
+EE_L2NEWPIN        :NewPIN:     :
+EE_L3NEWPIN        :Again:      :
+EE_PINCHANGED      :PIN Changed :
+EE_NOCARD          :No Card     :
+EE_TRYHARDER       :Try Harder  :

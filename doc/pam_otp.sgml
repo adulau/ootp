@@ -1,0 +1,127 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: pam_otp.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<application>pam_otp</application>
+</refentrytitle>
+<manvolnum>8</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<application>pam_otp</application>
+</refname>
+<refpurpose>
+PAM OTP module
+</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<arg><replaceable>service-name</replaceable></arg>
+<arg choice='req'>auth</arg>
+<arg choice='req'><replaceable>control-flag</replaceable></arg>
+<arg choice='req'>pam_otp</arg>
+<arg><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The OTP authentication service module for PAM, pam_otp, provides
+functionality for only PAM authentication.  Users are optionally
+sent a challenge and then authenticated via the OTP database.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><replaceable>expose_account</replaceable></term>
+<listitem>
+<para>
+Enable logging output with username and challenge response.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><replaceable>allow_inactive</replaceable></term>
+<listitem>
+<para>
+Users set to a status of inactive will return PAM_SUCCESS when
+the allow_inactive option is set.  The default behavior for inactive users
+is to return PAM_AUTH_ERR.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><replaceable>display_count</replaceable></term>
+<listitem>
+<para>
+The HOTP challenge will include the current count for the user when
+the display_count option is set.  The default behavior will not display
+the count unless the user record flags field has OTP_USER_FLAGS_DSPCNT set.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><replaceable>require_db_entry</replaceable></term>
+<listitem>
+<para>
+A user not in the OTP database will be denied access with the
+require_db_entry option is set.  By default users not in the OTP
+database are permitted.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><replaceable>otpdb=</replaceable><filename>alternate_otpdb</filename></term>
+<listitem>
+<para>
+<filename>alternate_otpdb</filename> is used as the OTP database.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-sca</application>(1)
+<application>otp-sct</application>(1)
+<application>otp-control</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>otp-openvpn-plugin</application>(1)
+<application>urd</application>(1)
+<application>bcload</application>(1)
+<application>pam</application>(8)
+<hardware>spyrus-par2</hardware>(7)
+</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,9 @@
+autoconf/automake
+
+RADIUS optionally encode HOTP count in challenge message
+RADIUS dspcnt flag urd, force display count
+
+RADIUS proxy support
+
+default no GetHost() in BasicCard
+

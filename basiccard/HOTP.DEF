@@ -1,0 +1,253 @@
+' 
+'  Copyright (c) 2005 Mark Fullmer
+'  Copyright (c) 2009 Mark Fullmer and the Ohio State University
+'  All rights reserved.
+' 
+'  Redistribution and use in source and binary forms, with or without
+'  modification, are permitted provided that the following conditions
+'  are met:
+'  1. Redistributions of source code must retain the above copyright
+'     notice, this list of conditions and the following disclaimer.
+'  2. Redistributions in binary form must reproduce the above copyright
+'     notice, this list of conditions and the following disclaimer in the
+'     documentation and/or other materials provided with the distribution.
+' 
+'  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+'  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+'  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+'  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+'  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+'  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+'  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+'  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+'  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+'  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+'  SUCH DAMAGE.
+' 
+'       $Id: HOTP.DEF 13 2009-11-26 16:37:03Z maf $
+' 
+
+
+' ZC commands CLA=80
+'  b =  Byte             Idx,Mode,Version
+'  i =  Integer          Count
+'  l =  Long             Count32,Capabilities
+'  sn = String length n  Hostname(12),ZCKey(20),*PIN(5),HOTP(5),
+'                        AdminKey(20),eeBlock(16), readerKey(5)
+'  INS  Name                       Format                    CapabilityID
+'------------------------------------------------------------------------
+'  00   PRDisplay  (CLA=C8)    -                             00000001
+'                 RecordNumber(byte), DataFormat(byte), DigitCount(byte)
+'                 DecimalPoint(byte), Delay(byte), MoreData(byte),
+'                 Data(String)
+'  40   SetHost                Idx,Count,Hostname,HOTPKey    00000002
+'  42   GetHost                Idx,Count,Hostname,HOTPKey    00000004
+'  44   GetHostName            Idx,myPIN,Hostname            00000008
+'  46   GetHOTP                Idx,myPIN,HOTP                00000010
+'  48   SetAdminMode           Mode,AdminKey                 00000020
+'  4A   SetBalanceCardIndex    Idx                           00000040
+'  4C   SetPIN                 myPIN,newPIN                  00000080
+'  4E   TestPIN                myPIN                         00000100
+'  50   GetVersion             Version                       00000200
+'  52   SetAdminKey            AdminKey                      00000400
+'  54   SetHost32              Idx,Count32,Hostname,HOTPKey  00000800
+'  56   GetHost32              Idx,Count32,Hostname,HOTPKey  00001000
+'  58   GetHOTPCount32         Idx,myPIN,Count32,HOTP        00002000
+'  5A   GetHOTPHost            Idx,myPIN,HOTP,Hostname       00004000
+'  5C   GetHOTPHostCount32     Idx,myPIN,Count,HOTP,Hostname 00008000
+'  5E   ClearAll                                             00010000
+'  60   SetReaderKey           readerKey                     00020000
+
+'  90   GetCapabilities        Capabilities                  XXXXXXXX
+'  A0   GetEEBlock             P1=Idx,eeBlock                XXXXXXXX
+'  A1   SetEEBlock             P1=Idx,eeBlock                XXXXXXXX
+
+'
+' enable functions
+'
+
+'Const ENABLECSETHOST = 1
+'Const ENABLECGETHOST = 1
+Const ENABLECGETHOSTNAME = 1
+'Const ENABLECGETHOTP = 1
+Const ENABLECSETADMINMODE = 1
+'Const ENABLECSETBALANCECARDINDEX = 1
+Const ENABLECSETPIN = 1
+Const ENABLECTESTPIN = 1
+Const ENABLECGETVERSION = 1
+Const ENABLECSETADMINKEY = 1
+Const ENABLECSETHOST32 = 1
+Const ENABLECGETHOST32 = 1
+Const ENABLECGETHOTPCOUNT32 = 1
+'Const ENABLECGETHOTPHOST = 1
+Const ENABLECGETHOTPHOSTCOUNT32 = 1
+'Const ENABLECPRDISPLAY = 1
+Const ENABLECCLEARALL = 1
+Const ENABLESETREADERKEY = 1
+
+'
+' Capabilities bits
+'
+
+#ifdef ENABLECPRDISPLAY
+Const CAPPRDISPLAY = &H00000001
+#else
+Const CAPPRDISPLAY = &H00000000
+#endif
+
+#ifdef ENABLECSETHOST
+Const CAPSETHOST = &H00000002
+#else
+Const CAPSETHOST = &H00000000
+#endif
+
+#ifdef ENABLECGETHOST
+Const CAPGETHOST = &H00000004
+#else
+Const CAPGETHOST = &H00000000
+#endif
+
+#ifdef ENABLECGETHOSTNAME
+Const CAPGETHOSTNAME = &H00000008
+#else
+Const CAPGETHOSTNAME = &H00000000
+#endif
+
+#ifdef ENABLECGETHOTP
+Const CAPGETHOTP = &H00000010
+#else
+Const CAPGETHOTP = &H00000000
+#endif
+
+#ifdef ENABLECSETADMINMODE
+Const CAPSETADMINMODE = &H00000020
+#else
+Const CAPSETADMINMODE = &H00000000
+#endif
+
+#ifdef ENABLECSETBALANCECARDINDEX
+Const CAPSETBALANCECARDINDEX = &H00000040
+#else
+Const CAPSETBALANCECARDINDEX = &H00000000
+#endif
+
+#ifdef ENABLECSETPIN
+Const CAPSETPIN = &H00000080
+#else
+Const CAPSETPIN = &H00000000
+#endif
+
+#ifdef ENABLECTESTPIN
+Const CAPTESTPIN = &H00000100
+#else
+Const CAPTESTPIN = &H00000000
+#endif
+
+#ifdef ENABLECGETVERSION
+Const CAPGETVERSION = &H00000200
+#else
+Const CAPGETVERSION = &H00000000
+#endif
+
+#ifdef ENABLECSETADMINKEY
+Const CAPSETADMINKEY = &H00000400
+#else
+Const CAPSETADMINKEY = &H00000000
+#endif
+
+#ifdef ENABLECSETHOST32
+Const CAPSETHOST32 = &H00000800
+#else
+Const CAPSETHOST32 = &H00000000
+#endif
+
+#ifdef ENABLECGETHOST32
+Const CAPGETHOST32 = &H00001000
+#else
+Const CAPGETHOST32 = &H00000000
+#endif
+
+#ifdef ENABLECGETHOTPCOUNT32
+Const CAPGETHOTPCOUNT32 = &H00002000
+#else
+Const CAPGETHOTPCOUNT32 = &H00000000
+#endif
+
+#ifdef ENABLECGETHOTPHOST
+Const CAPGETHOTPHOST = &H00004000
+#else
+Const CAPGETHOTPHOST = &H00000000
+#endif
+
+#ifdef ENABLECGETHOTPHOSTCOUNT32
+Const CAPGETHOTPHOSTCOUNT32 = &H00008000
+#else
+Const CAPGETHOTPHOSTCOUNT32 = &H00000000
+#endif
+
+#ifdef ENABLECCLEARALL
+Const CAPCLEARALL = &H00010000
+#else
+Const CAPCLEARALL = &H00000000
+#endif
+
+#ifdef ENABLESETREADERKEY
+Const CAPSETREADERKEY = &H00020000
+#else
+Const CAPSETREADERKEY = &H00000000
+#endif
+
+declare command &HC8 &H00 PRDisplay(RecordNumber as Byte, DataFormat as Byte, _
+                          DigitCount as Byte,DecimalPoint as Byte, _
+                          Delay as Byte, MoreData as Byte, _
+                          Data as String)
+
+declare command &H80 &H40 SetHost(Idx as Byte, Count as Integer, _
+  Hostname as String*12, HOTPKey as String*20)
+
+declare command &H80 &H42 GetHost(Idx as Byte, Count as Integer, _
+  Hostname as String*12, HOTPKey as String*20)
+
+declare command &H80 &H44 GetHostName(Idx as Byte, myPIN as string*5, _
+  Hostname as String*12)
+
+declare command &H80 &H46 GetHOTP(Idx as Byte, myPIN as String*5, _
+  HOTP as string*5)
+
+declare command &H80 &H48 SetAdminMode(Mode as Byte, K as String*20)
+
+declare command &H80 &H4A SetBalanceCardIndex(Idx as Byte)
+
+declare command &H80 &H4C SetPIN(myPIN as String*5, newPIN as string*5)
+
+declare command &H80 &H4E TestPIN(myPIN as String*5)
+
+declare command &H80 &H50 GetVersion(V as Byte)
+
+declare command &H80 &H52 SetAdminKey(K as String*20)
+
+declare command &H80 &H54 SetHost32(Idx as Byte, Count32 as Long, _
+  Hostname as String*12, HOTPKey as String*20)
+
+declare command &h80 &H56 GetHost32(Idx as Byte, Count32 as Long, _
+  Hostname as String*12, HOTPKey as String*20)
+
+declare command &H80 &H58 GetHOTPCount32(Idx as Byte, myPIN as String*5, _
+  Count32 as Long, HOTP as string*5)
+
+declare command &H80 &H5A GetHOTPHost(Idx as Byte, myPIN as String*5, _
+  HOTP as string*5, Hostname as String*12)
+
+declare command &H80 &H5C GetHOTPHostCount32(Idx as Byte, myPIN as String*5, _
+  Count32 as Long, HOTP as string*5, Hostname as String*12)
+
+declare command &H80 &H5E ClearAll()
+
+declare command &H80 &H60 SetReaderKey(readerKey as String*5)
+
+declare command &H80 &H90 GetCapabilities(Capabilities as Long)
+
+'
+' error codes used
+'
+

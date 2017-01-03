@@ -1,0 +1,43 @@
+#!/bin/sh -e
+
+# $Id: otpdb2sc 40 2009-12-01 16:28:53Z maf $
+
+OTPCONTROL="otp-control"
+DDIR="/priv/HOTP"
+CARDF="$DDIR/$1.card"
+OTPDB="$DDIR/$2.db"
+USER="$1"
+SYSTEM="$2"
+
+if [ "X$1" = "X" -o "X$2" = "X" ] ; then
+  echo "Usage $0: username system [flags]" 1>&2
+  exit 1
+fi
+
+if [ "X$3" = "X" ]; then
+  FLAGS=""
+else
+  FLAGS="-F$3"
+fi
+
+if [ ! -e $OTPDB ]; then
+  echo "$OTPDB" does not exist 1>&2
+fi
+
+touch $CARDF
+
+idx=`wc -l $CARDF | awk '{print $1}`
+idx2=$idx
+if [ $idx -lt 10 ]; then
+  idx2="0$idx"
+fi
+
+sc=`$OTPCONTROL -o $OTPDB -u $USER -m list-sc -H "$SYSTEM" -I$idx $FLAGS | tail -1`
+
+if [ "X$sc" = "X" ]; then
+  echo "User $1 does not exist in $OTPDB" 1>&2
+  exit 1
+fi
+
+echo "Adding $USER for $SYSTEM to $CARDF, index=$idx2, flags=$3"
+echo "$sc" >> $CARDF

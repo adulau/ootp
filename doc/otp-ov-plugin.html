@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>otp-ov-plugin</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+><SPAN
+CLASS="APPLICATION"
+>otp-ov-plugin</SPAN
+></H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN6"
+></A
+><H2
+>Name</H2
+><SPAN
+CLASS="APPLICATION"
+>otp-ov-plugin</SPAN
+>&nbsp;--&nbsp;OpenVPN plug-in authentication module for OTP database.</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN10"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>otp-ov-plugin</B
+>  [-?hv] [-o<TT
+CLASS="REPLACEABLE"
+><I
+> otpdb_fname</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN16"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The <B
+CLASS="COMMAND"
+>otp-ov-plugin</B
+> command is plug-in authentication
+module for OpenVPN authenticating to the OTP database.  The username
+and password (challenge response) are passed via environment variables
+<SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>user</I
+></SPAN
+> and <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>pass</I
+></SPAN
+>.
+A successful authentication will set a return code of
+<SPAN
+CLASS="RETURNVALUE"
+>0</SPAN
+>, authentication failure
+<SPAN
+CLASS="RETURNVALUE"
+>1</SPAN
+>, and program failure
+<SPAN
+CLASS="RETURNVALUE"
+>-1</SPAN
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN25"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>-h</DT
+><DD
+><P
+>Help</P
+></DD
+><DT
+>-o<TT
+CLASS="REPLACEABLE"
+><I
+> otpdb_pathname</I
+></TT
+></DT
+><DD
+><P
+>Pathname of OTP database.</P
+></DD
+><DT
+>-v</DT
+><DD
+><P
+>Verbose</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN41"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="INFORMALEXAMPLE"
+><P
+></P
+><A
+NAME="AEN43"
+></A
+><P
+>Test the module with user bob.</P
+><P
+>  <B
+CLASS="COMMAND"
+>export user="bob"</B
+></P
+><P
+>  <B
+CLASS="COMMAND"
+>export pass="882B0E8410"</B
+></P
+><P
+>  <B
+CLASS="COMMAND"
+>otp-ov-plugin; echo $?</B
+></P
+><PRE
+CLASS="SCREEN"
+>1</PRE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN52"
+></A
+><H2
+>AUTHOR</H2
+><P
+>Mark Fullmer
+<CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:maf@splintered.net"
+>maf@splintered.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN59"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="APPLICATION"
+>otp-sca</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-sct</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>otp-control</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>pam_otp</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>htsoft-downloader</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>urd</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>bcload</SPAN
+>(1)
+<SPAN
+CLASS="APPLICATION"
+>OpenVPN</SPAN
+>(8)
+<SPAN
+CLASS="HARDWARE"
+>spyrus-par2</SPAN
+>(7)</P
+></DIV
+></BODY
+></HTML
+>

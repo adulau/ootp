@@ -1,0 +1,270 @@
+...\" $Header: /usr/src/docbook-to-man/cmd/RCS/docbook-to-man.sh,v 1.3 1996/06/17 03:36:49 fld Exp $
+...\"
+...\"	transcript compatibility for postscript use.
+...\"
+...\"	synopsis:  .P! <file.ps>
+...\"
+.de P!
+\\&.
+.fl			\" force out current output buffer
+\\!%PB
+\\!/showpage{}def
+...\" the following is from Ken Flowers -- it prevents dictionary overflows
+\\!/tempdict 200 dict def tempdict begin
+.fl			\" prolog
+.sy cat \\$1\" bring in postscript file
+...\" the following line matches the tempdict above
+\\!end % tempdict %
+\\!PE
+\\!.
+.sp \\$2u	\" move below the image
+..
+.de pF
+.ie     \\*(f1 .ds f1 \\n(.f
+.el .ie \\*(f2 .ds f2 \\n(.f
+.el .ie \\*(f3 .ds f3 \\n(.f
+.el .ie \\*(f4 .ds f4 \\n(.f
+.el .tm ? font overflow
+.ft \\$1
+..
+.de fP
+.ie     !\\*(f4 \{\
+.	ft \\*(f4
+.	ds f4\"
+'	br \}
+.el .ie !\\*(f3 \{\
+.	ft \\*(f3
+.	ds f3\"
+'	br \}
+.el .ie !\\*(f2 \{\
+.	ft \\*(f2
+.	ds f2\"
+'	br \}
+.el .ie !\\*(f1 \{\
+.	ft \\*(f1
+.	ds f1\"
+'	br \}
+.el .tm ? font underflow
+..
+.ds f1\"
+.ds f2\"
+.ds f3\"
+.ds f4\"
+.ta 8n 16n 24n 32n 40n 48n 56n 64n 72n 
+.TH "\fBotp-control\fP" "1"
+.SH "NAME"
+\fBotp-control\fP \(em Local user database configuration for One Time Password package\&.
+.SH "SYNOPSIS"
+.PP
+\fBotp-control\fP [-?hnv]  [-c\fI count\fP]  [-C\fI count_ceil\fP]  [-F\fI sc_flags\fP]  [-H\fI sc_hostname\fP]  [-I\fI sc_index\fP]  [-k\fI key\fP]  [-m\fI command_mode\fP]  [-o\fI otpdb_pathname\fP]  [-u\fI username\fP]  [-w\fI window\fP] 
+.SH "DESCRIPTION"
+.PP
+The \fBotp-control\fP command is a front end to the
+local One Time Password database\&.  Users can be added, modified
+and removed by \fBotp-control\&.\fP
+.SH "OPTIONS"
+.IP "-c\fI count\fP" 10
+User count\&.  The count increases with each OTP transaction\&.
+.IP "-C\fI count_ceil\fP" 10
+User count ceiling\&.  Highest count allowed for this user\&.  Configuring
+the count_ceiling allows a user key to be shared among multiple
+systems each with a unique count window, where count <= count_ceiling\&.
+.IP "" 10
+A count value must only be allowed for authentication once\&.
+.IP "" 10
+Example:
+.IP "" 10
+host=h1, user=bob, count_current=0, count_ceil=10000\&.
+.IP "" 10
+host=h2, user=bob, count_current=10001, count_ceil=20000\&.
+.IP "" 10
+The number of keys a user must possess is decreased at the expense
+of security dependencies among multiple systems\&.  If system A is
+compromised, OTP\&'s can be generated for the user(s) on system B from
+the shared keys on system A\&.  To generate an OTP out of sequence the count
+must be presented to the OTP generator\&.  The additional step of entering
+the count to the OTP generator is not necessary when keys are not
+shared, as the currrent count will increase on the OTP generator and
+system database during authentication\&.
+.IP "-h" 10
+Help\&.
+.IP "-F\fI sc_flags\fP" 10
+Set the SC flags with the list-sc command mode\&.  0=CHALLENGE, 1=READERKEY\&.
+.IP "-H\fI sc_hostname\fP" 10
+Set the SC hostname with the list-sc command mode\&.
+.IP "-I\fI sc_index\fP" 10
+Set the SC index with the list-sc command mode\&.
+.IP "-k\fI key\fP" 10
+160 bit shared secret key in ASCII HEX\&.  The secret key is shared between
+the OTP generation hardware/software for a user and the local OTP database\&.
+Each user typically will have a unique key unless a shared key with
+unique count space is provisioned\&.  Use - for stdin\&.  Example key:
+C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
+.IP "-m\fI command_mode\fP" 10
+.PP
+.nf
+            Mode             Description
+            -------------------------------------------------
+            add                - Add user
+            activate           - Activate user
+            create             - Create database
+            deactivate         - Deactivate user
+            disable            - Disable user
+            dump               - ASCII dump user record(s)
+            flags-dspcnt       - Set user display count flag\&.
+            flags-no-dspcnt    - Clear user display count flag\&.
+            generate           - Generate HOTP for user
+            list               - List user record (printable)
+            list-sc            - List user record (SC friendly)
+            load               - ASCII load user record(s)
+            remove             - Remove user
+            set-count          - Reset count for user
+            set-count-ceil     - Reset count ceiling for user
+            test               - Test user
+.fi
+.IP "-n" 10
+Create new database if one does not exist\&.
+.IP "-o\fI otp_pathname\fP" 10
+Pathname of OTP database\&.
+.IP "-u\fI username\fP" 10
+Username to perform database operation on\&.
+.IP "-v" 10
+Enable verbose output (debugging)\&.
+.IP "-w\fI window\fP" 10
+Set the maximum window (count above the system count) where an OTP
+will successfully authenticate\&.  For user bob with with OTP generator
+count_current=30, and system OTP database for bob count_current 15, the
+default window (10) will not allow the user to authenticate, even though
+the OTP is computed with a valid shared key\&.  This can be caused by the
+user repeatedly generating an OTP which is not used for authentication\&.
+.IP "" 10
+When generating an OTP (mode generate) the window will configure the number
+of tokens generated\&.
+.SH "OTP-CONTROL COMMANDS"
+.PP
+\fBadd\fP : add user to OTP database\&.  count_cur and count_ceiling may optionally
+be specified with -c and -C respectively\&.  A random key will be generated
+if no key is specified with -k\&.
+.PP
+\fBactivate\fP : activate user\&.  An active user must provide a OTP for successful
+authentication\&.  An inactive user _may_ be successfully authenticated
+without a OTP depending on the application configuration\&.  The pam_otp
+module can be configured to use this flag with the "allow_inactive" option\&.
+.PP
+\fBcreate\fP : create OTP database\&.  The OTP database is a base directory with each
+user stored in a separate ASCII : delimited file in base_dir/d\&.
+.PP
+\fBdeactivate\fP : deactivate user\&.  See activate\&.
+.PP
+\fBdisable\fP : disable user\&.  A disabled user can not successfully authenticate\&.
+.PP
+\fBdump\fP : dump user database in ASCII\&.  User records are separated by a newline\&.
+Fields are : separated\&.  All fields except the username are HEX encoded\&.
+.PP
+#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000
+.PP
+\fBflags-dspcnt\fP : set the display count flag\&.  An application such as pam_otp will use
+this flag to control the display of the OTP count when challenging a
+user\&.
+.PP
+\fBflags-no-dspcnt\fP : clear the display count flag\&.
+.PP
+\fBgenerate\fP : generate OTP for user\&.  The -w flag may be used to generate multiple
+OTP tokens\&.
+.PP
+\fBlist\fP : list user record in user friendly format\&.
+.PP
+\fBlist-sc\fP : list user record in otp-sc import friendly format\&.  The SC hostname
+must be specified with -H\&.  The SC index and SC flags may optionally be
+specified with -I and -F\&.
+.PP
+\fBload\fP : load user record(s)s in ASCII format\&.  See dump\&.
+.PP
+\fBremove\fP : remove user from OTP database\&.
+.PP
+\fBset-count\fP : set count_current for user\&.
+.PP
+\fBset-count-ceil\fP : set count_ceiling for user\&.  A OTP will not authenticate when
+count_cur >= count_cieiling\&.
+.PP
+\fBtest\fP : test OTP authentication for user\&.
+.SH "EXAMPLES"
+.PP
+Create a new OTP database /etc/otpdb\&.  Add user bob with random key\&.
+.PP
+  \fBotp-control -n -f /etc/otpdb -u bob -m add\fP
+.PP
+.nf
+Generating random 160 bit key\&.
+Adding user bob\&.
+.fi
+.PP
+Display user bob OTP database entry\&.
+.PP
+  \fBotp-control -u bob -m list\fP
+.PP
+.nf
+Username\&.\&.\&.\&.\&.\&.\&.bob
+Key\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.C381739834A63A67B0B9F7F7D36C8C567F6BFB3D
+Count\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.0 (0x0)
+Count Ceiling\&.\&.18446744073709551615 (0xFFFFFFFFFFFFFFFF)
+Version\&.\&.\&.\&.\&.\&.\&.\&.1
+Status\&.\&.\&.\&.\&.\&.\&.\&.\&.active (1)
+Format\&.\&.\&.\&.\&.\&.\&.\&.\&.hex40 (1)
+Type\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.HOTP (1)
+Flags\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.00
+.fi
+.PP
+Generate OTP for user bob\&.
+.PP
+  \fBotp-control -u bob -m generate\fP
+.PP
+.nf
+count=0 crsp=882B0E8410
+.fi
+.PP
+Test OTP for user bob\&.
+.PP
+  \fBotp-control -u bob -m test\fP
+.PP
+.nf
+Testing authentication for user bob\&.
+OTP challenge for user bob (0): 882B0E8410
+Success\&.
+.fi
+.PP
+Dump OTP database to stdout\&.  Fields other than username are hex encoded\&.
+Use the load command to import records in this format\&.
+.PP
+  \fBotp-control -m dump\fP
+.PP
+.nf
+#version:user:key:status:format:type:flags:count_cur:count_ceil:last
+01:bob:C381739834A63A67B0B9F7F7D36C8C567F6BFB3D:01:01:01:00:0000000000000001:FFFFFFFFFFFFFFFF:000000004AA02F9E
+.fi
+.PP
+Dump OTP user to stdout in format friendly to \fBotp-sca\fP\&.  Note the
+hostname must be set with -H\&.  The index will default to 0 if not specified
+with -I\&.  SC flags may be set with -F\&.
+.PP
+  \fBotp-control -u test -m list-sc -H dev1\fP
+.PP
+.nf
+\f(CW#index:count:hostname:key
+00:000003E8:646576310000000000000000:1111111111111111111111111111111111111111\fP
+.fi
+.SH "AUTHOR"
+.PP
+Mark Fullmer maf@splintered\&.net
+.SH "SEE ALSO"
+.PP
+\fBotp-sca\fP(1)
+\fBotp-sct\fP(1)
+\fBpam_otp\fP(1)
+\fBhtsoft-downloader\fP(1)
+\fBotp-ov-plugin\fP(1)
+\fBurd\fP(1)
+\fBbcload\fP(1)
+spyrus-par2(7)
+...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:16

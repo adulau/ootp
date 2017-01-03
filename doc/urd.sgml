@@ -1,0 +1,279 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: urd.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<application>urd</application>
+</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<application>urd</application>
+</refname>
+<refpurpose>
+Micro footprint RADIUS daemon with One Time Password support.
+</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>urd</command>
+<arg>-?AhdDOux</arg>
+<arg>-a<replaceable> allowed_users_file</replaceable></arg>
+<arg>-b<replaceable> local_ip</replaceable></arg>
+<arg>-B<replaceable> local_port</replaceable></arg>
+<arg>-o<replaceable> otp_db</replaceable></arg>
+<arg>-p<replaceable> passwd_file</replaceable></arg>
+<arg>-P<replaceable> pid_file</replaceable></arg>
+<arg>-s<replaceable> secret_file</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The <command>urd</command> daemon implements a minimal subset
+of the RADIUS protocol for user authentication with optional
+One Time Passwords.  Accounting is not supported.  Configuration
+files include a <filename>passwd</filename> file in Unix passwd(5)
+format, an optional <filename>allowed_users</filename> file for
+authenticating with a subset of the <filename>passwd</filename> file, a
+<filename>secret</filename> file for the shared RADIUS secret, and
+<filename>otp_db</filename> for One Time Password support.
+</para>
+<para>
+The <filename>passwd_file</filename> and
+<filename>authorized_users_file</filename>
+are cached in memory for performance.  To safely update these files
+with the server running while avoiding race conditions first remove
+both files, update <filename>authorized_users</filename>, then use
+rename(2) to atomically move the new <filename>passwd</filename> into
+place.  <command>urd</command> will then automatically reload the newer
+<filename>passwd</filename> and <filename>authorized_users</filename>
+files.  If these files are not available during a user authentication the
+cached in memory database is used.  They must be available when
+<command>urd</command> starts.
+</para>
+<para>
+The OTP database can safely be manipulated with <command>otp-control</command>
+while the server is running.  OTP user records are locked using flock(2)
+before any Read Modify Write operations are performed.
+</para>
+<para>
+An alternate OTP database can be specified as <filename>otb_db</filename>.
+</para>
+<para>
+The <filename>secret</filename> file contains the key shared
+by the RADIUS NAS and RADIUS server.  It must be less than 32 bytes.
+</para>
+<para>
+Two Special user names, urd_debug and urd_stats, which if configured
+to authenticate successfully will toggle debugging and dump the internal
+state and request cache respectively.  If these users are not configured
+with a password this feature will be disabled.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>-a<replaceable> allowed_users_file</replaceable></term>
+<listitem>
+<para>
+Specify an alternate location for the <filename>allowed_users_file</filename>.
+</para>
+<para>
+The <filename>allowed_users_file</filename> contains one username per line.
+When configured this option requires a user to be listed
+in <filename>allowed_users_file</filename> for authentication to proceed
+with the password and One Time Password functions.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-A</term>
+<listitem>
+<para>
+Disable <filename>authorized_users</filename> feature.  This option must
+be set if the <filename>authorized_users_file</filename> is not used.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-b<replaceable> local_ip</replaceable></term>
+<listitem>
+<para>
+Specify an IP address to bind(2) to.  The default behavior will bind to
+INADDR_ANY.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-B<replaceable> local_port</replaceable></term>
+<listitem>
+<para>
+Specify the local UDP port to bind(2) to.  The default behavior will bind
+to UDP port 1812.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-d</term>
+<listitem>
+<para>
+Enable verbose debugging.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-D</term>
+<listitem>
+<para>
+Disable daemon mode.  When specified <command>urd</command> will not 
+run in the background and stdout is available for debugging information.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-o<replaceable> otp_db</replaceable></term>
+<listitem>
+<para>
+Specify an alternate location for the One Time Password database
+<filename>otp_db</filename>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-O</term>
+<listitem>
+<para>
+Disable the use of One Time Passwords.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-p<replaceable> passwd_file</replaceable></term>
+<listitem>
+<para>
+Specify an alternate location for the <filename>passwd</filename>
+file.  The <filename>passwd</filename> file is in Unix passwd(5) format.
+Fields beyond the username and password hash are ignored.  The users
+password is hashed with crypt(3) and compared to the hash stored in this file
+for authentication.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-P<replaceable> pid_file</replaceable></term>
+<listitem>
+<para>
+Specify an alternate location for a file containing the process ID
+of the RADIUS server.  If a listen IP address or non standard UDP listen
+port is configured the PID filename will contain the IP address and
+port to differentiate it from other instances of <command>urd</command>
+running on the same server.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-s<replaceable> secret_file</replaceable></term>
+<listitem>
+<para>
+Specify an alternate location for the <filename>secret_file</filename>.
+The <filename>secret_file</filename> contains the shared secret between
+the NAS and RADIUS server and must be less than 32 bytes.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-u</term>
+<listitem>
+<para>
+Allow users which do not exist in the OTP database to successfully
+authenticate without using a One Time Password, only a valid password
+will be required.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-x</term>
+<listitem>
+<para>
+Drop every other RADIUS request from a NAS.  This is a debugging feature
+intended to stress test the reply cache code.  The reply cache 
+implements state retention required for the use of One Time Passwords.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>EXAMPLES</title>
+<informalexample>
+<para>
+The following command will start the urd server, bind it to IP address 
+10.1.0.1, authenticate users with passwords in
+<filename>/var/urd/passwd</filename>, use
+<filename>/var/urd/secret</filename> as the shared secret with the NAS,
+authenticate users using one time passwords in
+<filename>/var/urd/HOTP.db</filename>, enable debugging, and run in the
+foreground.
+</para>
+<para>
+<command>urd -b 10.1.0.1 -p /var/urd/passwd -s /var/urd/secret -o /var/urd/HOTP.db -d -D</command>
+</para>
+<screen>
+</screen>
+</informalexample>
+
+
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-control</application>(1)
+<application>otp-sca</application>(1)
+<application>otp-sct</application>(1)
+<application>pam_otp</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>bcload</application>(1)
+<application>otp-ov-plugin</application>(1)
+<hardware>spyrus-par2</hardware>(7)
+</para>
+</refsect1>
+
+</refentry>

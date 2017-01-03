@@ -1,0 +1,127 @@
+<!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+
+<!-- $Id: otp-ov-plugin.sgml 13 2009-11-26 16:37:03Z maf $ -->
+
+<refentry>
+
+<refmeta>
+<refentrytitle>
+<application>otp-ov-plugin</application>
+</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>
+<application>otp-ov-plugin</application>
+</refname>
+<refpurpose>
+OpenVPN plug-in authentication module for OTP database.
+</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>otp-ov-plugin</command>
+<arg>-?hv</arg>
+<arg>-o<replaceable> otpdb_fname</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+<title>DESCRIPTION</title>
+<para>
+The <command>otp-ov-plugin</command> command is plug-in authentication
+module for OpenVPN authenticating to the OTP database.  The username
+and password (challenge response) are passed via environment variables
+<emphasis>user</emphasis> and <emphasis>pass</emphasis>.
+A successful authentication will set a return code of
+<returnvalue>0</returnvalue>, authentication failure
+<returnvalue>1</returnvalue>, and program failure
+<returnvalue>-1</returnvalue>.
+</para>
+</refsect1>
+
+<refsect1>
+<title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term>-h</term>
+<listitem>
+<para>
+Help
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-o<replaceable> otpdb_pathname</replaceable></term>
+<listitem>
+<para>
+Pathname of OTP database.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-v</term>
+<listitem>
+<para>
+Verbose
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+<title>EXAMPLES</title>
+
+<informalexample>
+<para>
+Test the module with user bob.
+</para>
+<para>
+  <command>export user="bob"</command>
+</para><para>
+  <command>export pass="882B0E8410"</command>
+</para><para>
+  <command>otp-ov-plugin; echo $?</command>
+</para>
+<screen>
+1
+</screen>
+</informalexample>
+
+</refsect1>
+
+<refsect1>
+<title>AUTHOR</title>
+<para>
+<author>
+<firstname>Mark</firstname>
+<surname>Fullmer</surname>
+</author>
+<email>maf@splintered.net</email>
+</para>
+</refsect1>
+
+<refsect1>
+<title>SEE ALSO</title>
+<para>
+<application>otp-sca</application>(1)
+<application>otp-sct</application>(1)
+<application>otp-control</application>(1)
+<application>pam_otp</application>(1)
+<application>htsoft-downloader</application>(1)
+<application>urd</application>(1)
+<application>bcload</application>(1)
+<application>OpenVPN</application>(8)
+<hardware>spyrus-par2</hardware>(7)
+</para>
+</refsect1>
+
+</refentry>
