@@ -150,7 +150,20 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set the smart card reader.  Use -l to list available readers.</P
+>Set Smart Card reader.  Use -l to list available readers.  A reader
+is defined as class:reader:[<SPAN
+CLASS="OPTIONAL"
+>option</SPAN
+>].  PCSC and embedded
+are the two available classes.  The embedded class contains the acr30s driver
+which is specified as embedded:acr30s:[<SPAN
+CLASS="OPTIONAL"
+>serial_port</SPAN
+>].
+If pcscd is running the first PC/SC reader will be the default followed by
+the embedded acr30s driver.  Use PCSC: for the first available PC/SC
+reader.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
+with serial port /dev/cuaU0.</P
 ></DD
 ><DT
 >-t</DT
@@ -171,7 +184,7 @@ specified in the image file.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN65"
+NAME="AEN67"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -180,10 +193,10 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN67"
+NAME="AEN69"
 ></A
 ><P
->Download the HOTPC.IMG file to the default smart card reader.  Display
+>Download the HOTPC.IMG file to the default Smart Card reader.  Display
 verbose results.</P
 ><PRE
 CLASS="SCREEN"
@@ -223,7 +236,7 @@ BCSetState: test</SAMP
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN72"
+NAME="AEN74"
 ></A
 ><H2
 >AUTHOR</H2
@@ -240,7 +253,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN79"
+NAME="AEN81"
 ></A
 ><H2
 >SEE ALSO</H2

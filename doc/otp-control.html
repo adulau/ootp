@@ -53,10 +53,15 @@ CLASS="REPLACEABLE"
 ><I
 > count_ceil</I
 ></TT
+>] [-f<TT
+CLASS="REPLACEABLE"
+><I
+> format</I
+></TT
 >] [-F<TT
 CLASS="REPLACEABLE"
 ><I
-> sc_flags</I
+> flags</I
 ></TT
 >] [-H<TT
 CLASS="REPLACEABLE"
@@ -83,6 +88,21 @@ CLASS="REPLACEABLE"
 ><I
 > otpdb_pathname</I
 ></TT
+>] [-s<TT
+CLASS="REPLACEABLE"
+><I
+> status</I
+></TT
+>] [-S<TT
+CLASS="REPLACEABLE"
+><I
+> sc_flags</I
+></TT
+>] [-t<TT
+CLASS="REPLACEABLE"
+><I
+> type</I
+></TT
 >] [-u<TT
 CLASS="REPLACEABLE"
 ><I
@@ -98,7 +118,7 @@ CLASS="REPLACEABLE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN34"
+NAME="AEN42"
 ></A
 ><H2
 >DESCRIPTION</H2
@@ -116,7 +136,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN39"
+NAME="AEN47"
 ></A
 ><H2
 >OPTIONS</H2
@@ -167,21 +187,33 @@ shared, as the currrent count will increase on the OTP generator and
 system database during authentication.</P
 ></DD
 ><DT
+>-f</DT
+><DD
+><P
+>OTP format.  One of hex40 dhex40 dec31.6 dec31.7 dec31.8 dec31.9 dec31.10.
+hex40 (40 bit hex) is the default.  dec31.6 (31 bit decimal truncated to 6
+digits) is suggested by RFC 4226 and may be required to interoperate with
+other HOTP implementations.  dhex40 uses the dynamic truncate function
+in RFC 4226, where hex40 always uses the top 40 bits.  dhex40 may be the
+default in future releases.</P
+></DD
+><DT
+>-F</DT
+><DD
+><P
+>OTP flags.  All flags are unset by default.
+<PRE
+CLASS="SCREEN"
+>   Flag              Description
+   -----------------------------------------------------------------
+   display-count  :  Display HOTP count when prompted for challenge.</PRE
+></P
+></DD
+><DT
 >-h</DT
 ><DD
 ><P
 >Help.</P
-></DD
-><DT
->-F<TT
-CLASS="REPLACEABLE"
-><I
-> sc_flags</I
-></TT
-></DT
-><DD
-><P
->Set the SC flags with the list-sc command mode.  0=CHALLENGE, 1=READERKEY.</P
 ></DD
 ><DT
 >-H<TT
@@ -235,20 +267,19 @@ CLASS="SCREEN"
 >            Mode             Description
             -------------------------------------------------
             add                - Add user
-            activate           - Activate user
             create             - Create database
-            deactivate         - Deactivate user
-            disable            - Disable user
             dump               - ASCII dump user record(s)
-            flags-dspcnt       - Set user display count flag.
-            flags-no-dspcnt    - Clear user display count flag.
             generate           - Generate HOTP for user
             list               - List user record (printable)
             list-sc            - List user record (SC friendly)
             load               - ASCII load user record(s)
             remove             - Remove user
-            set-count          - Reset count for user
-            set-count-ceil     - Reset count ceiling for user
+            set-count          - Set user count
+            set-count-ceil     - Set user count ceiling
+            set-flags          - Set user flags
+            set-format         - Set user format
+            set-status         - Set user status
+            set-type           - Set user OTP type
             test               - Test user</PRE
 ></DD
 ><DT
@@ -267,6 +298,50 @@ CLASS="REPLACEABLE"
 ><DD
 ><P
 >Pathname of OTP database.</P
+></DD
+><DT
+>-s<TT
+CLASS="REPLACEABLE"
+><I
+> otp_pathname</I
+></TT
+></DT
+><DD
+><P
+>OTP Status.  The default status is active.
+<PRE
+CLASS="SCREEN"
+>   Status     Description
+   -----------------------------------------------------------------
+   active   : OTP is required for succesful authentication.
+   inactive : OTP may not be required for successful authentication.
+              The OTP authentication module may be configured to allow
+              inactive accounts to authenticate.  This may be used to
+              temporarily remove the OTP authentication method for a user.
+   disabled : Account is disabled.  OTP authentication will fail.</PRE
+></P
+></DD
+><DT
+>-S<TT
+CLASS="REPLACEABLE"
+><I
+> sc_flags</I
+></TT
+></DT
+><DD
+><P
+>Set the SC flags with the list-sc command mode.  0=CHALLENGE, 1=READERKEY.</P
+></DD
+><DT
+>-t<TT
+CLASS="REPLACEABLE"
+><I
+> type</I
+></TT
+></DT
+><DD
+><P
+>OTP Type.  RFC 4226 HOTP is only supported type.</P
 ></DD
 ><DT
 >-u<TT
@@ -310,7 +385,7 @@ of tokens generated.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN111"
+NAME="AEN139"
 ></A
 ><H2
 >OTP-CONTROL COMMANDS</H2
@@ -321,16 +396,8 @@ CLASS="COMMAND"
 >
 : add user to OTP database.  count_cur and count_ceiling may optionally
 be specified with -c and -C respectively.  A random key will be generated
-if no key is specified with -k.</P
-><P
-><B
-CLASS="COMMAND"
->activate</B
->
-: activate user.  An active user must provide a OTP for successful
-authentication.  An inactive user _may_ be successfully authenticated
-without a OTP depending on the application configuration.  The pam_otp
-module can be configured to use this flag with the "allow_inactive" option.</P
+if no key is specified with -k.  The format, flags, status, and type
+may be altered from the defaults with -f, -F, -s, and -t respectively.</P
 ><P
 ><B
 CLASS="COMMAND"
@@ -341,18 +408,6 @@ user stored in a separate ASCII : delimited file in base_dir/d.</P
 ><P
 ><B
 CLASS="COMMAND"
->deactivate</B
->
-: deactivate user.  See activate.</P
-><P
-><B
-CLASS="COMMAND"
->disable</B
->
-: disable user.  A disabled user can not successfully authenticate.</P
-><P
-><B
-CLASS="COMMAND"
 >dump</B
 >
 : dump user database in ASCII.  User records are separated by a newline.
@@ -360,20 +415,6 @@ Fields are : separated.  All fields except the username are HEX encoded.</P
 ><P
 >#version:user:key:status:format:type:flags:count_cur:count_ceil:last
 01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000</P
-><P
-><B
-CLASS="COMMAND"
->flags-dspcnt</B
->
-: set the display count flag.  An application such as pam_otp will use
-this flag to control the display of the OTP count when challenging a
-user.</P
-><P
-><B
-CLASS="COMMAND"
->flags-no-dspcnt</B
->
-: clear the display count flag.</P
 ><P
 ><B
 CLASS="COMMAND"
@@ -423,6 +464,30 @@ count_cur &#62;= count_cieiling.</P
 ><P
 ><B
 CLASS="COMMAND"
+>set-flags</B
+>
+: set flags for user.  See option -F.</P
+><P
+><B
+CLASS="COMMAND"
+>set-format</B
+>
+: set format for user.  See option -f.</P
+><P
+><B
+CLASS="COMMAND"
+>set-status</B
+>
+: set status for user.  See option -s.</P
+><P
+><B
+CLASS="COMMAND"
+>set-type</B
+>
+: set status for user.  See option -t.</P
+><P
+><B
+CLASS="COMMAND"
 >test</B
 >
 : test OTP authentication for user.</P
@@ -430,7 +495,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN146"
+NAME="AEN172"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -439,7 +504,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN148"
+NAME="AEN174"
 ></A
 ><P
 >Create a new OTP database /etc/otpdb.  Add user bob with random key.</P
@@ -460,7 +525,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN153"
+NAME="AEN179"
 ></A
 ><P
 >Display user bob OTP database entry.</P
@@ -479,7 +544,7 @@ Version........1
 Status.........active (1)
 Format.........hex40 (1)
 Type...........HOTP (1)
-Flags..........00</PRE
+Flags..........[] (0x00)</PRE
 ><P
 ></P
 ></DIV
@@ -488,7 +553,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN158"
+NAME="AEN184"
 ></A
 ><P
 >Generate OTP for user bob.</P
@@ -508,7 +573,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN163"
+NAME="AEN189"
 ></A
 ><P
 >Test OTP for user bob.</P
@@ -530,7 +595,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN168"
+NAME="AEN194"
 ></A
 ><P
 >Dump OTP database to stdout.  Fields other than username are hex encoded.
@@ -552,7 +617,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN173"
+NAME="AEN199"
 ></A
 ><P
 >Dump OTP user to stdout in format friendly to <B
@@ -580,7 +645,7 @@ CLASS="COMPUTEROUTPUT"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN180"
+NAME="AEN206"
 ></A
 ><H2
 >AUTHOR</H2
@@ -597,7 +662,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN187"
+NAME="AEN213"
 ></A
 ><H2
 >SEE ALSO</H2

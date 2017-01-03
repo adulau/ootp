@@ -107,13 +107,13 @@ NAME="AEN34"
 CLASS="COMMAND"
 >otp-sca</B
 > command implements a terminal for an MCU based
-smart card loaded with the OTP firmware (HOTPC.IMG).  Host entries consisting
-of {hostname,count,shared_key} are downloaded to the smart card using 
+Smart Card loaded with the OTP firmware (HOTPC.IMG).  Host entries consisting
+of {hostname,count,shared_key} are downloaded to the Smart Card using 
 <B
 CLASS="COMMAND"
 >otp-sca</B
 >.  Additionally commands implemented on the
-smart card such as HOTP generation and PIN maintenance can be executed
+Smart Card such as HOTP generation and PIN maintenance can be executed
 with the appropriate administratative key.</P
 ></DIV
 ><DIV
@@ -138,7 +138,7 @@ CLASS="REPLACEABLE"
 ><DD
 ><P
 >Smart Card administratative key.  The admin-enable command and
-administratative key are used to toggle the smart card into admin mode.
+administratative key are used to toggle the Smart Card into admin mode.
 Once in admin mode commands admin-disable, adminkey-set, balancecard-set,
 host-get, host-set, pin-set, and sc-clear can be executed.  The default admin
 key, "3030303030303030303030303030303030303030" (HEX), should be changed to
@@ -181,10 +181,10 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set the 8 bit index.  The smart card contains numerically indexed records
+>Set the 8 bit index.  The Smart Card contains numerically indexed records
 for each host of the form {hostname,count,shared_key}.  The firmware
 will support indexes in the range 0..254.  255 is reserved.  Memory
-capacity on the smart card may further restrict the index range.  The
+capacity on the Smart Card may further restrict the index range.  The
 ZC3.9 BasicCard with firmware revision 3 supports up to 85 records.</P
 ></DD
 ><DT
@@ -248,7 +248,7 @@ CLASS="REPLACEABLE"
 >Configure command_mode modifiers.  Modifier d applied to the host-get
 command will generate output in otpdb format.  Count (c) and Host (h)
 used with hotp-gen allow passing the Count and Host parameters 
-respectively.  The smart card may not be configured to support
+respectively.  The Smart Card may not be configured to support
 all variations of a command.
 variations </P
 ></DD
@@ -261,7 +261,20 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set the smart card reader.  Use -l to list available readers.</P
+>Set Smart Card reader.  Use -l to list available readers.  A reader
+is defined as class:reader:[<SPAN
+CLASS="OPTIONAL"
+>option</SPAN
+>].  PCSC and embedded
+are the two available classes.  The embedded class contains the acr30s driver
+which is specified as embedded:acr30s:[<SPAN
+CLASS="OPTIONAL"
+>serial_port</SPAN
+>].
+If pcscd is running the first PC/SC reader will be the default followed by
+the embedded acr30s driver.  Use PCSC: for the first available PC/SC
+reader.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
+with serial port /dev/cuaU0.</P
 ></DD
 ><DT
 >-R<TT
@@ -304,10 +317,10 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set the smart card API version.  The binary API between the terminal
-and smart card changed between version 2 and 3.  See command_mode notes
+>Set the Smart Card API version.  The binary API between the terminal
+and Smart Card changed between version 2 and 3.  See command_mode notes
 above.  The default version is 3.  Configuring version 2 will allow
-maintenance of smart card with version 2 firmware.</P
+maintenance of Smart Card with version 2 firmware.</P
 ></DD
 ></DL
 ></DIV
@@ -315,7 +328,7 @@ maintenance of smart card with version 2 firmware.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN103"
+NAME="AEN105"
 ></A
 ><H2
 >SMART CARD COMMANDS</H2
@@ -360,7 +373,7 @@ the use of a PIN, and is disabled by default.</P
 CLASS="COMMAND"
 >capabilities-get</B
 >
-: each command on the smart card is represented by a capabilities bit and
+: each command on the Smart Card is represented by a capabilities bit and
 conditionally compiled into HOTPC.IMG.
 capabilities-get will return the available, compiled-in commands.  Commands
 are defined in <TT
@@ -476,7 +489,7 @@ CLASS="COMMAND"
 SC when executing the GetHOTP* commands.  If the F1 (flag 1) bit of
 the hostname is set, this key must match the key provided by the
 reader.  This functionality allows the reader to weakly authenticate
-itself to the smart card and may be used to restrict HOTP generation to
+itself to the Smart Card and may be used to restrict HOTP generation to
 a Spyrus PAR II reader.</P
 ><P
 ><B
@@ -560,7 +573,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN145"
+NAME="AEN147"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -569,7 +582,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN147"
+NAME="AEN149"
 ></A
 ><P
 >Change the administratative key from the default.  Disable admin mode
@@ -623,14 +636,14 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN158"
+NAME="AEN160"
 ></A
 ><P
 >Use <B
 CLASS="COMMAND"
 >otp-control</B
 > to create a new database for system dev1 with
-user test, store the test user database entry to the smart card with
+user test, store the test user database entry to the Smart Card with
 <B
 CLASS="COMMAND"
 >otp-sca</B
@@ -666,7 +679,7 @@ CLASS="COMMAND"
 >otp-control -o /tmp/otpdb -u test -m list-sc -H dev1 | tail -1 &#62; /tmp/test.list</B
 >
 
-# copy card entry to smart card as index 0
+# copy card entry to Smart Card as index 0
 <B
 CLASS="COMMAND"
 >echo -n "00:"| cat - /tmp/test.list | ./otp-sca -m host-set</B
@@ -684,7 +697,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN170"
+NAME="AEN172"
 ></A
 ><P
 >Dump card contents to stdout.  Note fields are encoded in HEX including
@@ -712,7 +725,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN175"
+NAME="AEN177"
 ></A
 ><P
 >Reset user PIN for card with secret.key as the admin key.</P
@@ -757,7 +770,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN184"
+NAME="AEN186"
 ></A
 ><P
 >Generate HOTP for dev1.  Use hostname-get to find the index for dev1.  Use
@@ -798,7 +811,7 @@ HOTP: 52DCD05FE5 -- dev1</SAMP
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN191"
+NAME="AEN193"
 ></A
 ><H2
 >AUTHOR</H2
@@ -815,7 +828,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN198"
+NAME="AEN200"
 ></A
 ><H2
 >SEE ALSO</H2

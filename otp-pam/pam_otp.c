@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: pam_otp.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: pam_otp.c 56 2009-12-17 02:08:05Z maf $
  */
 
 #include <stdio.h>
@@ -80,10 +80,11 @@ struct opts {
   int display_count;
   int allow_inactive;
   int require_db_entry;
+  int otp_window;
   char *otpdb_fname;
 };
 
-int load_opts(struct opts *opts, int argc, const char **argv);
+void load_opts(struct opts *opts, int argc, const char **argv);
 
 PAM_EXTERN
 int pam_sm_authenticate(pam_handle_t *ph, int flags, int argc,
@@ -212,7 +213,7 @@ int pam_sm_authenticate(pam_handle_t *ph, int flags, int argc,
   pam_msg.msg = (char *)&message;
 
   /* prompt for challenge with optional count */
-  if (opts.display_count || (ou.flags & OTP_USER_FLAGS_DSPCNT))
+  if (opts.display_count || (ou.flags & OTP_FLAGS_DSPCNT))
     sprintf(message, "HOTP Challenge (%" PRIu64 "): ", ou.count);
   else
     sprintf(message, "HOTP Challenge: ");
@@ -236,10 +237,11 @@ int pam_sm_authenticate(pam_handle_t *ph, int flags, int argc,
   }
 
   if (opts.expose_account)
-    xerr_info("OTP: user=%s response=%s", user, pam_resp->resp);
+    xerr_info("OTP: user=%s response=%s window=%d", user,
+      pam_resp->resp, opts.otp_window);
 
   if ((r = otp_user_auth(otpctx, (char*)user, pam_resp->resp,
-    OTP_HOTP_WINDOW)) < 0) {
+    opts.otp_window)) < 0) {
     xerr_warnx("otp_user_auth(): failed.");
     ret = PAM_SERVICE_ERR;
     goto cleanup;
@@ -321,12 +323,14 @@ struct pam_module _pam_test_modstruct = {
 
 #endif
 
-int load_opts(struct opts *opts, int argc, const char **argv)
+void load_opts(struct opts *opts, int argc, const char **argv)
 {
-  int ret = 0;
+  u_long tmpul;
+  char *endptr;
 
   bzero(opts, sizeof *opts);
   opts->otpdb_fname = OTP_DB_FNAME;
+  opts->otp_window = OTP_WINDOW_DEFAULT;
 
   /* foreach argument */
   while (argc--) {
@@ -347,9 +351,15 @@ int load_opts(struct opts *opts, int argc, const char **argv)
       opts->require_db_entry = 1;
     } else if (!strncmp(*argv, "otpdb=", 6)) {
       opts->otpdb_fname=(char*)(*argv)+6;
+    } else if (!strncmp(*argv, "window=", 7)) {
+      tmpul = strtoul(optarg, &endptr, 0);
+      if (*endptr)
+        xerr_errx(1, "stroul(%s): failed at %c.", *argv, *endptr);
+      if (tmpul >  OTP_WINDOW_MAX)
+        xerr_errx(1, "Challenge window %lu > %lu.", tmpul, OTP_WINDOW_MAX);
+      opts->otp_window = tmpul;
     } else {
-      xerr_warnx("Unrecognized argument - %s", argv);
-      ret = -1;
+      xerr_errx(1, "Unrecognized argument - %s", argv);
     }
 
     ++argv;
@@ -361,7 +371,5 @@ int load_opts(struct opts *opts, int argc, const char **argv)
       opts->display_count, opts->allow_inactive, opts->require_db_entry,
       opts->otpdb_fname);
   }
-
-  return ret;
 
 } /* load_opts */

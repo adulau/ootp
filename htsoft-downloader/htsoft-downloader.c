@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: htsoft-downloader.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: htsoft-downloader.c 75 2009-12-26 20:59:23Z maf $
  */
 
 #include <sys/types.h>
@@ -82,7 +82,7 @@ void help(void);
 int htsoft_v1bl_idack(int fd, int verbose);
 int htsoft_v1bl_upload(int fd, uint16_t load_offset, uint8_t *buf,
   uint8_t buf_len, int verbose, int max_retries);
-int htsoft_v1bl_done(int fd, int verbose, int retries);
+int htsoft_v1bl_done(int fd, int verbose, int retries, int ignore_wok_timeout);
 
 int n22b(char *h, u_char *b);
 int n2b(char *h, u_char *b);
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   uint8_t ld_buf[256], ld_buf_len;
   uint16_t h_load_offset, tmp_load_offset, buf_load_offset;
   int i, r, pic_fd, lineno, lbuf_len, got_eof, pic_tmout, verbose;
-  int max_retries;
+  int max_retries, ignore_last_wok_timeout;
   char *pic_dev;
 
   xerr_setid(argv[0]);
@@ -110,8 +110,9 @@ int main(int argc, char **argv)
   max_retries = HTSOFT_RETRIES;
   h_load_offset = 0;
   buf_load_offset = 0;
+  ignore_last_wok_timeout = 0;
 
-  while ((i = getopt(argc, argv, "f:h?r:t:v:")) != -1) {
+  while ((i = getopt(argc, argv, "f:h?ir:t:v:")) != -1) {
 
     switch (i) {
 
@@ -124,6 +125,10 @@ int main(int argc, char **argv)
         help();
         exit(0);
         break; /* notreached */
+
+      case 'i':
+        ignore_last_wok_timeout = 1;
+        break;
 
       case 'r':
         max_retries = atoi(optarg);
@@ -380,7 +385,8 @@ int main(int argc, char **argv)
   if (!got_eof)
     xerr_warnx("Warning: Short file, no EOF.");
  
-  if (htsoft_v1bl_done(pic_fd, verbose, max_retries) < 0)
+  if (htsoft_v1bl_done(pic_fd, verbose, max_retries,
+    ignore_last_wok_timeout) < 0)
     xerr_errx(1, "htsoft_v1bl_done(): failed");
 
   close(pic_fd);
@@ -680,20 +686,23 @@ int htsoft_v1bl_upload(int fd, uint16_t load_offset, uint8_t *buf,
  *
  * function will not return until WOK is received.
  *
- * fd      - serial com port
- * verbose - verbosity level
+ * fd                 - serial com port
+ * verbose            - verbosity level
+ * retries            - number of retries
+ * ignore_wok_timeout - ignore last WOK -- some devices do not send this
  *
  * returns  0 success
  *         <0 failure
  *
  */
-int htsoft_v1bl_done(int fd, int verbose, int retries)
+int htsoft_v1bl_done(int fd, int verbose, int retries, int ignore_wok_timeout)
 {
   uint8_t t,r;
-  int n, good_write, i;
+  int n, good_write, i, timeout;
 
   t = HTSOFT_V1BL_DONE;
   good_write = 0;
+  timeout = 0;
 
   for (i = 0; i < retries; ++i) {
 
@@ -707,6 +716,13 @@ int htsoft_v1bl_done(int fd, int verbose, int retries)
 
     if ((n = read(fd, &r, 1)) < 0)
       xerr_err(1, "read()");
+
+    /* some devices may not send this */
+    if (ignore_wok_timeout && n == 0) {
+      timeout = 1;
+      good_write = 1;
+      break;
+    }
 
     /* timeout? */
     if (n == 0)
@@ -734,8 +750,12 @@ int htsoft_v1bl_done(int fd, int verbose, int retries)
     fflush(stdout);
   }
 
-  if (verbose && !good_write) 
+  if (verbose && !good_write)
     printf("PIC reset failed.\n");
+  else if (verbose && good_write && ignore_wok_timeout && timeout)
+    printf("PIC reset sent, ignored last WOK timeout.\n");
+  else
+    printf("PIC reset complete.\n");
 
   if (good_write)
     return 0; /* success */
@@ -747,7 +767,7 @@ int htsoft_v1bl_done(int fd, int verbose, int retries)
 void help(void)
 {
   fprintf(stderr,
-    "htsoft-downloader [-h?v] [-f serial_device] [-r retries]\n");
+    "htsoft-downloader [-hi?v] [-f serial_device] [-r retries]\n");
   fprintf(stderr,
     "                         [-t timeout (.1 second/timeout)] [-v verbose_level]\n");
 } /* help */

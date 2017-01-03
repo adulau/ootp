@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: str.h 15 2009-11-26 18:29:41Z maf $
+ *      $Id: str.h 85 2009-12-28 00:05:02Z maf $
  */
 
 #include <sys/types.h>
@@ -38,10 +38,25 @@ int chr_ishex(char d);
 char chr_hex_l(u_char h);
 char chr_hex_r(u_char h);
 u_char chr_hex_decode(char h);
-void str_hex_dump(char *buf, u_char *b, size_t n);
+int str_hex_dump(char *buf, u_char *b, size_t n);
 int str_hex_decode(char *in, size_t in_len, u_char *out, size_t out_len);
 void str_ftoc(char *buf, char *f, size_t n);
 int str_input(const char *prompt, char *buf, size_t buf_size, int flags);
 int str_safe(char *input, size_t len);
+int str_uint32toa(char *s, uint32_t u);
+
+char *str_lookup8(char *list[], uint8_t id, uint8_t min, uint8_t max);
+
+char *str_flag8(char *list[], uint8_t flags, uint8_t bits, char *tmpbuf,
+  size_t tmpbuf_size);
+
+int str_setflag8(char *list[], uint8_t *flags, char *s, uint8_t min,
+  uint8_t max);
+
+int str_find8(char *list[], uint8_t *id, char *s, uint8_t min, uint8_t max);
 
 #define STR_FLAGS_ECHO_OFF 0x1
+
+#define STR_UINT32_LEN     11  /* 2^32-1=4294967295 + NULL = 11 bytes */
+
+

@@ -78,12 +78,17 @@ CLASS="REPLACEABLE"
 ><I
 > secret_file</I
 ></TT
+>] [-w<TT
+CLASS="REPLACEABLE"
+><I
+> otp_window</I
+></TT
 >]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN28"
+NAME="AEN30"
 ></A
 ><H2
 >DESCRIPTION</H2
@@ -177,7 +182,7 @@ with a password this feature will be disabled.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN53"
+NAME="AEN55"
 ></A
 ><H2
 >OPTIONS</H2
@@ -359,13 +364,19 @@ will be required.</P
 intended to stress test the reply cache code.  The reply cache 
 implements state retention required for the use of One Time Passwords.</P
 ></DD
+><DT
+>-w</DT
+><DD
+><P
+>Set the OTP challenge window.</P
+></DD
 ></DL
 ></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN128"
+NAME="AEN134"
 ></A
 ><H2
 >EXAMPLES</H2
@@ -374,7 +385,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN130"
+NAME="AEN136"
 ></A
 ><P
 >The following command will start the urd server, bind it to IP address 
@@ -408,7 +419,7 @@ CLASS="SCREEN"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN138"
+NAME="AEN144"
 ></A
 ><H2
 >AUTHOR</H2
@@ -425,7 +436,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN145"
+NAME="AEN151"
 ></A
 ><H2
 >SEE ALSO</H2

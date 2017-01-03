@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-ov-plugin.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: otp-ov-plugin.c 50 2009-12-15 01:37:19Z maf $
  */
 
 #include <stdio.h>
@@ -41,17 +41,19 @@ void help(void);
 int main (int argc, char **argv)
 {
   struct otp_ctx *otpctx;
-  char *otpdb_fname, *username, *pass;
-  int db_flags, i, r, ret;
+  u_long tmpul;
+  char *otpdb_fname, *username, *pass, *endptr;
+  int db_flags, i, r, ret, otp_window;
 
   /* init xerr */
   xerr_setid(argv[0]);
 
   otpdb_fname = OTP_DB_FNAME;
   db_flags = 0;
+  otp_window = OTP_WINDOW_DEFAULT;
   ret = -1; /* fail */
 
-  while ((i = getopt(argc, argv, "h?o:v")) != -1) {
+  while ((i = getopt(argc, argv, "h?o:vw:")) != -1) {
 
     switch (i) { 
   
@@ -66,6 +68,15 @@ int main (int argc, char **argv)
 
       case 'v':
         db_flags |= OTP_DB_VERBOSE;
+        break;
+
+      case 'w':
+        tmpul = strtoul(optarg, &endptr, 0);
+        if (*endptr)
+          xerr_errx(1, "stroul(%s): failed at %c.", optarg, *endptr);
+        if (tmpul > OTP_WINDOW_MAX)
+          xerr_errx(1, "Challenge window %lu > %lu.", tmpul, OTP_WINDOW_MAX);
+        otp_window = tmpul;
         break;
 
       default:
@@ -91,7 +102,7 @@ int main (int argc, char **argv)
   if (r != 0)
     xerr_errx(1, "User %s does not exist in otp database.", username);
   
-  if ((r = otp_user_auth(otpctx, username, pass, OTP_HOTP_WINDOW)) < 0)
+  if ((r = otp_user_auth(otpctx, username, pass, otp_window)) < 0)
     xerr_errx(1, "otp_user_auth(): failed.");
 
   if (otp_db_close(otpctx) < 0)
@@ -114,7 +125,7 @@ int main (int argc, char **argv)
 
 void help()
 {
-  fprintf(stderr, "otp-ov-plugin [-?hv] [-o otpdb_pathname]\n");
+  fprintf(stderr, "otp-ov-plugin [-?hv] [-o otpdb_pathname] [-w otp_window]\n");
   fprintf(stderr, "              -h : help\n");
   fprintf(stderr, "              -v : enable verbose output\n");
 } /* help */

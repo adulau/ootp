@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: main.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: main.c 89 2009-12-28 01:35:00Z maf $
  */
 
 #include <htc.h>
@@ -65,7 +65,6 @@ GOTO  0x04; Jump to startup
 #define SC_GETHOTPHOSTCOUNT32_CLA     0x80
 #define SC_GETSPYRUSEEBLOCK_CLA       0x80
 
-
 #define SC_GETHOSTNAME_INS            0x44
 #define SC_GETHOTP_INS                0x46
 #define SC_SETPIN_INS                 0x4C
@@ -75,12 +74,11 @@ GOTO  0x04; Jump to startup
 #define SC_GETHOTPHOSTCOUNT32_INS     0x5C
 #define SC_GETSPYRUSEEBLOCK_INS       0xA2
 
-
 U8 protocol = 0x03;
 RESP_INFO  *Resp;
 bank1 U8  Buf[72];      /* Spyrus I/O buffer */
 bank2 U8  dbuf[2][16];  /* two current hostnames for menu */
-bank2 U8  obuf[2][1];   /* option buffer for menu items */
+bank2 U8  obuf[2];      /* option buffer for menu items */
 
 U8 myPIN[5];            /* PIN */
 U8 newPIN[5];           /* newPIN if set */
@@ -216,12 +214,12 @@ const U8 VERSION[] = {
 /* Serial # */
   0x0A, 'm', 'a', 'f', ' ', 'H', 'O', 'T', 'P', ' ', ' ',\
 /* AE kernel version / program access (unused) */
-  0x13, 0x22, 0x33
+  0x14, 0x22, 0x33
 };
 
 U8 getPIN(U8 *dest, U8 pos);
 void getCount(void);
-void dispHOTP(void);
+U8 dispHOTP(U8 fmt);
 
 U8 hexdigit(U8 d);
 
@@ -236,6 +234,7 @@ void cmdSCGetSpyrusEEBlock(U8 i);
 U8 doSCGetHostname(U8 idx, U8 row);
 
 void powerdown(void);
+void msg_powerdown(void);
 
 void menuUpdateCursor(void);
 void menuUpdate(void);
@@ -254,13 +253,19 @@ U8 EELen(U8 addr, U8 len);
 
 #define HOSTNAME_FLAG_MASK      0x80   /* high bit set */
 #define HOSTNAME_POS_CHALLENGE  0x00   /* require challenge input */
-#define HOSTNAME_POS_READERKEY  0x01   /* require reader key */
+#define HOSTNAME_POS_READERKEY  1      /* require reader key */
+#define HOSTNAME_POS_FMT        2      /* format, 0=hex, 1=decimal */
+#define HOSTNAME_POS_FMT3       8      /* 0000=HEX40,   0001=HEX40   */
+#define HOSTNAME_POS_FMT2       9      /* 0010=DEC31.6  0011=DEC31.7 */
+#define HOSTNAME_POS_FMT1       10     /* 0100=DEC31.8  0101=DEC31.9 */
+#define HOSTNAME_POS_FMT0       11     /* 0110=DEC31.10 0111=DHEX40  */
 
 #define OPTION_FLAG_CHALLENGE 0x01  /* option set to request challenge */
+#define OPTION_FLAG_FMT       0x02  /* option to format HOTP */
 
 int main(void)
 {
-  U8 i, c, j, addr;
+  U8 i, c, j, addr, fmt;
 
   /* init */
   Resp = (RESP_INFO*)Buf;
@@ -278,7 +283,7 @@ int main(void)
     Str2Lcd(0,0,&Resp->data[2]);
 #else
     EE2LCD(0, 0, EE_CALC_MSG_ADDR, EE_CALC_MSG_LEN);
-    powerdown();
+    msg_powerdown();
 #endif /* NO_CALC */
   } /* SQ_CALC */
 
@@ -301,7 +306,7 @@ int main(void)
     /* initial greeting */
     EE2LCD(0, 0, EE_L1GREET_ADDR, EE_L1GREET_LEN);
     EE2LCD(1, 0, EE_L2GREET_ADDR, EE_L2GREET_LEN);
- 
+
     /* Get PIN */
     i = getPIN(myPIN,4);
 
@@ -405,7 +410,7 @@ int main(void)
         /* no hosts on card then nothing to do */
         if (menu_active == 0) {
           EE2LCD(0, 0, EE_NOHOSTS_ADDR, EE_NOHOSTS_LEN);
-          powerdown();
+          msg_powerdown();
         }
 
         /* display menu */
@@ -479,7 +484,7 @@ int main(void)
       sc_idx = menu_idx - menu_active + menu_cursor;
 
       /* challenge input? */
-      if ((obuf[menu_cursor][0] & OPTION_FLAG_CHALLENGE) ||
+      if ((obuf[menu_cursor] & OPTION_FLAG_CHALLENGE) ||
         (ml_flags & FLAGS_INPUT_COUNT))
         getCount();
 
@@ -503,16 +508,23 @@ int main(void)
           dbuf[0][i] = dbuf[menu_cursor][i+3];
         dbuf[0][12] = 0;
 
-        /* display HOTP screen */
-        dispHOTP();
+        /* Binary/Hex HOTP format */
+        (obuf[menu_cursor] & OPTION_FLAG_FMT) ? fmt = 1 : fmt = 0;
+
+        /* display HOTP and maybe cycle to next system */
+        if (dispHOTP(fmt)) {
+
+          ClearLcd();
+          sc_idx ++;
+          goto enter_shortcut;
+
+        } /* dispHOTP() */
 
       } else {
 
         /* Failure */
-        Str2Lcd(0,0,"GHPC32 Fail");
-
-        /* any key to continue */
-        GetRawKey(Resp);
+        Str2Lcd(0,0,"GHPC32:fail");
+        msg_powerdown();
 
       } /* SC transaction */
 
@@ -521,7 +533,8 @@ int main(void)
 
       /* next input */
       continue;
-    }
+
+    } /* RAW_ENTER */
 
 /****** CHANGE PIN ****/
     if (key == RAW_STAR) {
@@ -544,7 +557,7 @@ int main(void)
           ClearLcd();
           EE2LCD(0, 0, EE_TRYHARDER_ADDR, EE_TRYHARDER_LEN);
           Beep(2);
-          GetRawKey(Resp);
+          keyGet();
           continue;
         }
          
@@ -579,14 +592,15 @@ int main(void)
         myPIN[4] = newPIN[4];
       } else {
         /* Failure */
-        Str2Lcd(0,0,"SetPIN Fail");
+        Str2Lcd(0,0,"SetPIN:fail");
+        msg_powerdown();
       }
 
       /* go back to initial screen */
       ml_flags |= FLAGS_SCREEN0_UPDATE;
 
       /* any key to continue */
-      GetRawKey(Resp);
+      keyGet();
 
       /* success / next input */
       continue;
@@ -596,10 +610,12 @@ int main(void)
 /***** CLEAN INPUT DIGITS */
 
     if (key == RAW_CANCEL) {
+
       short_d0 = 0;
       ml_flags &= ~FLAGS_MENU_SHORT_D0;
       continue;
-    }
+
+    } /* RAW_CANCEL */
 
 /****** MENU SHORTCUT WITH DIGIT ENTRY ***** */
 
@@ -637,48 +653,75 @@ int main(void)
 
 enter_shortcut:
 
-      /* input count first? */
-      if (ml_flags & FLAGS_INPUT_COUNT)
-        getCount();
+      /* the next sequential HOTP can be selected with the down arrow */
+      while (1) {
 
-      /* GetHOTPHostCount32 command */
-      cmdSCGetHOTPHostCount32();
+        /* input count first? */
+        if (ml_flags & FLAGS_INPUT_COUNT)
+          getCount();
 
-      /* initiate SC transaction */
-      if (SCTransact() == 0) {
+        /* GetHOTPHostCount32 command */
+        cmdSCGetHOTPHostCount32();
 
-       /*
-        * 2 byte resp (2)      : 0,1
-        * NAD,PCB,LEN (3)      : 2,3,4
-        * idx (1)              : 5
-        * PIN (5)              : 6,7,8,9,10
-        * count (4)            : 11,12,13,14
-        * HOTP (5)             : 15,16,17,18,19
-        * HostName(12)         : 20..31
-        */
+        /* initiate SC transaction */
+        if (SCTransact() == 0) {
 
-        /* skip display for empty hostname */
-        if (Buf[20] != 0) {
+         /*
+          * 2 byte resp (2)      : 0,1
+          * NAD,PCB,LEN (3)      : 2,3,4
+          * idx (1)              : 5
+          * PIN (5)              : 6,7,8,9,10
+          * count (4)            : 11,12,13,14
+          * HOTP (5)             : 15,16,17,18,19
+          * HostName(12)         : 20..31
+          */
 
-          /* display hostname on top */
-          for (i = 0; i < 12; ++i)
-            dbuf[0][i] = (Buf[20+i]&0x7F);
-          dbuf[0][12] = 0;
+          /* skip display for empty hostname */
+          if (Buf[20] != 0) {
 
-          /* display HOTP screen */
-          dispHOTP();
+            /* display hostname on top */
+            for (i = 0; i < 12; ++i)
+              dbuf[0][i] = (Buf[20+i]&0x7F);
+            dbuf[0][12] = 0;
 
-        }
+            /* Binary/Hex HOTP format */
+            (Buf[20+HOSTNAME_POS_FMT] & HOSTNAME_FLAG_MASK) ? fmt = 1 : fmt = 0;
 
-      } else {
+            /* display HOTP and maybe cycle to next system */
+            if(dispHOTP(fmt)) {
 
-        /* Failure */
-        Str2Lcd(0,0,"GHPHC32 Fail");
+              sc_idx ++;
+              ClearLcd();
+              continue;
 
-        /* any key to continue */
-        GetRawKey(Resp);
+            } else {
 
-      } /* SC transaction */
+              break; /* done */
+
+            }
+            
+
+          } else {
+
+            Str2Lcd(0,0,"GHPHC32:empt");
+
+            /* fatal */
+            msg_powerdown();
+
+          } /* hostname not empty */
+            
+
+        } else {
+
+          /* Failure */
+          Str2Lcd(0,0,"GHPHC32:fail");
+
+          /* fatal */
+          msg_powerdown();
+
+        } /* SC transaction */
+
+      } /* while 1 */
 
       /* initialize for main screen input */
       menuInit();
@@ -814,7 +857,8 @@ U8 getPIN(U8 *dest, U8 pos)
 
 void keyGet(void)
 {
-  GetRawKey(Resp);
+  if (GetRawKey(Resp))
+    powerdown();
   key = *Resp->data;
 } /* keyGet */
 
@@ -1017,6 +1061,7 @@ U8 SCTransact(void)
   if (CardPowerOn(Resp)) {
     ClearLcd();
     EE2LCD(0, 0, EE_NOCARD_ADDR, EE_NOCARD_LEN);
+    CardPowerOff();
     r = 1; /* no card */
     goto SCTransact_err2;
   }
@@ -1070,7 +1115,7 @@ SCTransact_err:
 
   /* get any key */
 SCTransact_err2:
-  GetRawKey(Resp);
+  keyGet();
 
   ClearLcd();
 
@@ -1128,9 +1173,12 @@ U8 doSCGetHostname(U8 idx, U8 row)
 
     /* high bit set on first character signals challenge required */
     if (Buf[11+HOSTNAME_POS_CHALLENGE] & HOSTNAME_FLAG_MASK)
-      obuf[row][0] = OPTION_FLAG_CHALLENGE;
+      obuf[row] = OPTION_FLAG_CHALLENGE;
     else
-      obuf[row][0] = 0;
+      obuf[row] = 0;
+
+    if (Buf[11+HOSTNAME_POS_FMT] & HOSTNAME_FLAG_MASK)
+      obuf[row] |= OPTION_FLAG_FMT;
 
     /* empty hostname is last */
     if (Buf[11] == 0)
@@ -1150,7 +1198,8 @@ U8 doSCGetHostname(U8 idx, U8 row)
 
   } else {
 
-    powerdown();
+    Str2Lcd(0,0,"GHN:fail");
+    msg_powerdown();
 
   }
 
@@ -1158,12 +1207,16 @@ U8 doSCGetHostname(U8 idx, U8 row)
 
 } /* doSCGetHostname */
 
-void powerdown(void)
+void msg_powerdown(void)
 {
-  CardPowerOff();
   GetRawKey(Resp);
   DeactivateRdr();
 } /* off */
+
+void powerdown(void)
+{
+  DeactivateRdr();
+}
 
 void menuUpdate(void)
 {   
@@ -1197,17 +1250,40 @@ void menuUpdateCursor(void)
   
 } /* menuUpdateCursor() */
 
-void dispHOTP(void)
+U8 dispHOTP(U8 fmt)
 {
   U8 i, j, c;
+  U32 u32;
+  char *s;
 
-  /* HOTP to hex */
-  for (i = 0, j = 0; i < 5; ++i) {
-    c = Buf[15+i];
-    dbuf[1][j++] = hexdigit(c>>4);
-    dbuf[1][j++] = hexdigit(c&0x0F);
+
+  if (fmt == 0) { /* HEX */
+    for (i = 0, j = 0; i < 5; ++i) {
+      c = Buf[15+i];
+      dbuf[1][j++] = hexdigit(c>>4);
+      dbuf[1][j++] = hexdigit(c&0x0F);
+    }
+    dbuf[1][j] = 0;
+  } else { /* decimal */
+
+    s = (char*)&u32;
+
+    s[3] = Buf[15];
+    s[2] = Buf[16];
+    s[1] = Buf[17];
+    s[0] = Buf[18];
+
+    s = Buf; /* starts at Buf+1 */
+
+    do {
+      *++s = u32 % 10 + '0';
+    } while ((u32 /= 10) > 0);
+
+    for (i = 0; s != Buf; --s, ++i)
+      dbuf[1][i] = *s;
+    dbuf[1][i] = 0;
+
   }
-  dbuf[1][j] = 0;
 
   /*
    * note the following code will not compile properly.  certain
@@ -1237,9 +1313,18 @@ void dispHOTP(void)
     }
   }
 
-  /* any key will return, timeout to powerdown */
-  if (j == 0)
-    powerdown();
+  if (j == 1) {
+    key = *Resp->data;
+    if (key == RAW_DOWN)
+      return 1; /* again */
+    else
+      return 0;
+  }
+
+  /* timeout */
+  powerdown();
+
+  return 0; /* unreached */
 
 } /* dispHOTP */
 
@@ -1315,3 +1400,4 @@ U8 EELen(U8 addr, U8 len)
   return i;
 
 } /* EELen */
+

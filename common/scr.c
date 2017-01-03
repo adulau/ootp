@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: scr.c 29 2009-11-30 01:11:17Z maf $
+ *      $Id: scr.c 73 2009-12-21 05:14:46Z maf $
  */
 
 #include <sys/cdefs.h>
@@ -81,12 +81,11 @@ struct scr_ctx* scr_ctx_new(int valid_readers, int verbose)
 {
   struct scr_ctx *scrctx;
   size_t ralloc;
-  int r, ret, cur_reader;
+  int i, r, ret, cur_reader;
   char *buf;
 #ifdef SCR_PCSC
   char *pcsc_rdr_buf, *p;
   DWORD pcsc_rdr_buf_len;
-  int pcsc_rdr_count;
 #endif /* SCR_PCSC */
 
   ret = -1; /* fail */
@@ -104,25 +103,20 @@ struct scr_ctx* scr_ctx_new(int valid_readers, int verbose)
   bzero(scrctx, sizeof *scrctx);
   scrctx->verbose = verbose;
 
-  if (valid_readers & SCR_READER_EMBEDDED_ACR30S) {
-
-    ++ scrctx->num_readers;
-
-    ralloc += strlen(SCR_EMBEDDED_ACR30S_NAME)+1;
-
-  }
-
 #ifdef SCR_PCSC
 
   if (valid_readers & SCR_READER_PCSC) {
 
     if ((r = SCardEstablishContext(SCARD_SCOPE_SYSTEM, (void*)0L, (void*)0L,
         &scrctx->hContext)) != SCARD_S_SUCCESS) {
+
       if (scrctx->verbose)
         xerr_warnx("SCardEstablishContext(): %s.", pcsc_stringify_error(r));
-    }
 
-    pcsc_rdr_buf = (char*)0L;
+      /* give up on PCSC readers */
+      goto pcsc_done;
+
+    }
 
     /*
      * SCARD_AUTOALLOCATE not portable.  Do this in two steps
@@ -130,9 +124,13 @@ struct scr_ctx* scr_ctx_new(int valid_readers, int verbose)
      */
     if ((r = SCardListReaders(scrctx->hContext, (void*)0L, (void*)0L,
         &pcsc_rdr_buf_len)) != SCARD_S_SUCCESS) {
+
       if (scrctx->verbose)
         xerr_warnx("SCCardListReaders(): %s.", pcsc_stringify_error(r));
-      goto scr_ctx_new_out;
+
+      /* give up on PCSC readers */
+      goto pcsc_done;
+
     } 
 
     if (!(pcsc_rdr_buf = malloc(pcsc_rdr_buf_len))) {
@@ -149,22 +147,32 @@ struct scr_ctx* scr_ctx_new(int valid_readers, int verbose)
     }
 
     /* run through PSCS reader names to get count */
-    for (p = pcsc_rdr_buf, pcsc_rdr_count = 0;*p;++pcsc_rdr_count)
+    for (p = pcsc_rdr_buf;*p;++scrctx->pcsc_num_readers)
       p += strlen(p);
 
     /* first PCSC reader in the list */
-    if (pcsc_rdr_count)
+    if (scrctx->pcsc_num_readers)
       scrctx->pcsc_reader_first = scrctx->num_readers;
 
     /* add PCSC readers to total available via scr */
-    scrctx->num_readers += pcsc_rdr_count;
+    scrctx->num_readers += scrctx->pcsc_num_readers;
 
     /* resrve space for reader name + "PCSC:" */
-    ralloc += pcsc_rdr_buf_len + (pcsc_rdr_count * 5);
+    ralloc += pcsc_rdr_buf_len + (scrctx->pcsc_num_readers * 5);
 
   } /* SCR_READER_PCSC */
 
 #endif /* SCR_PCSC */
+
+pcsc_done:
+
+  if (valid_readers & SCR_READER_EMBEDDED_ACR30S) {
+
+    ++ scrctx->num_readers;
+
+    ralloc += strlen(SCR_EMBEDDED_ACR30S_NAME)+1;
+
+  }
 
   /* foreach reader allocate char */
   ralloc += (scrctx->num_readers) * sizeof (char*);
@@ -179,18 +187,12 @@ struct scr_ctx* scr_ctx_new(int valid_readers, int verbose)
   buf = (char*)scrctx->readers + (sizeof (char*))*scrctx->num_readers;
   cur_reader = 0;
 
-  if (valid_readers & SCR_READER_EMBEDDED_ACR30S) {
-    scrctx->readers[cur_reader++] = buf;
-    strcpy(buf, SCR_EMBEDDED_ACR30S_NAME);
-    buf += strlen(SCR_EMBEDDED_ACR30S_NAME) + 1;
-  } /* SCR_READER_PCSC */
-
 #ifdef SCR_PCSC
 
   if (valid_readers & SCR_READER_PCSC) {
 
     p = pcsc_rdr_buf;
-    while (*p) {
+    while (p && *p) {
       scrctx->readers[cur_reader++] = buf;
       bcopy("PCSC:", buf, 5);
       buf += 5;
@@ -203,12 +205,25 @@ struct scr_ctx* scr_ctx_new(int valid_readers, int verbose)
 
 #endif /* SCR_PCSC */
 
+  if (valid_readers & SCR_READER_EMBEDDED_ACR30S) {
+    scrctx->readers[cur_reader++] = buf;
+    strcpy(buf, SCR_EMBEDDED_ACR30S_NAME);
+    buf += strlen(SCR_EMBEDDED_ACR30S_NAME) + 1;
+  } /* SCR_READER_PCSC */
+
+
   scrctx->valid = 1;
   scrctx->valid_readers = valid_readers;
 
   ret = 0; /* success */
 
 scr_ctx_new_out:
+
+  /* dump list of readers? */
+  if (scrctx->verbose) {
+    for (i = 0; i < scrctx->num_readers; ++i)
+      xerr_info("reader: %s", scrctx->readers[i]);
+  }
 
 #ifdef SCR_PCSC
   if (pcsc_rdr_buf)
@@ -329,6 +344,8 @@ void scr_ctx_free(struct scr_ctx *scrctx)
  * to the first reader, embedded:acr30s will default to 
  * SCR_EMBEDDED_ACR30S_DEVICE
  *
+ * An empty reader string will default to the first available reader
+ *
  * returns: 0  success, connected to reader
  *          <0 failure
  *
@@ -342,6 +359,19 @@ int scr_ctx_connect(struct scr_ctx *scrctx, char *reader)
 
   if (scr_ctx_valid(scrctx, (char*)__FUNCTION__) == -1)
     goto scr_ctx_connect_out;
+
+
+  /* empty or no reader string */
+  if ((!reader) || (reader[0] == 0)) {
+
+    if (scrctx->num_readers == 0) {
+      xerr_warnx("No readers.");
+      goto scr_ctx_connect_out;
+    }
+
+    reader = scrctx->readers[0];
+
+  }
 
   n = strlen(reader);
 
@@ -387,10 +417,19 @@ int scr_ctx_connect(struct scr_ctx *scrctx, char *reader)
       /* skip PCSC: */
       scrctx->pcsc_active_reader = scrctx->reader + 5;
 
-      /* PCSC: alone defaults to first PCSC reader */
-      if (!*scrctx->pcsc_active_reader)
-        scrctx->pcsc_active_reader =\
-          scrctx->readers[scrctx->pcsc_reader_first]+5;
+      /* PCSC: alone defaults to first PCSC reader if defined */
+      if (!*scrctx->pcsc_active_reader) {
+
+        /* if readers available, then default to first */
+        if (scrctx->pcsc_num_readers) {
+          scrctx->pcsc_active_reader =\
+            scrctx->readers[scrctx->pcsc_reader_first]+5;
+        } else {
+          xerr_warnx("No PCSC readers.");
+          goto scr_ctx_connect_out;
+        }
+
+      } /* PSCS: */
 
       if ((r = SCardConnect(scrctx->hContext, scrctx->pcsc_active_reader,
           SCARD_SHARE_EXCLUSIVE, SCARD_PROTOCOL_T1, &scrctx->hCard,

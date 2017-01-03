@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-sct.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: otp-sct.c 88 2009-12-28 00:12:01Z maf $
  */
 
 #include <sys/cdefs.h>
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   struct scr_ctx *scrctx;
   int i, j, k, r, sc_idx_set, sc_idx_tmp, j_start, j_end;
   int reset_pin, list_readers, list_version, get_hotp_version, list_hostnames;
-  uint32_t tmp_count;
+  uint32_t tmp_count, tmp32u;
   uint64_t tmp64u;
   char sc_hostname[SC_HOSTNAME_LEN+1], sc_pin[SC_PIN_LEN+1];
   char sc_newpin[SC_PIN_LEN+1], sc_newpin2[SC_PIN_LEN+1];
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
   sc_idx_set = 0;
   reset_pin = 0; /* no */
   tmp_count = 0;
-  reader = SCR_DEFAULT_READER;
+  reader = (char*)0L;
   list_readers = 0; /* no */
   list_version = 0; /* no */
   list_hostnames = 0; /* no */
@@ -217,7 +217,8 @@ int main(int argc, char **argv)
 
   } /* need PIN */
 
-  if (!(scrctx = scr_ctx_new(SCR_READER_EMBEDDED_ACR30S|SCR_READER_PCSC, debug))) {
+  if (!(scrctx = scr_ctx_new(SCR_READER_EMBEDDED_ACR30S|SCR_READER_PCSC,
+    debug))) {
     xerr_errx(1, "scr_ctx_new(): failed");
   }
 
@@ -389,6 +390,19 @@ int main(int argc, char **argv)
   /* successful SC transaction? */
   if (r == 0) {
 
+    if (sc_hostname[HOSTNAME_POS_FMT] & HOSTNAME_FLAG_MASK) {
+
+      tmp32u = (sc_hotp[0] << 24) | (sc_hotp[1] << 16) |
+               (sc_hotp[2] << 8) | sc_hotp[3];
+
+      str_uint32toa(fmt_buf, tmp32u);
+
+    } else {
+
+      str_hex_dump(fmt_buf, sc_hotp, 5);
+
+    }
+
     for (i = 0, j = 0; i < SC_HOSTNAME_LEN; ++i) {
 
       /* clear high bit for display */
@@ -396,7 +410,6 @@ int main(int argc, char **argv)
 
     }
 
-    str_hex_dump(fmt_buf, sc_hotp, 5);
 
     if (get_hotp_version == 3) {
       str_ftoc(fmt_buf2, sc_hostname, SC_HOSTNAME_LEN);

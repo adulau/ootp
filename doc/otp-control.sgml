@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: otp-control.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: otp-control.sgml 80 2009-12-26 23:25:04Z maf $ -->
 
 <refentry>
 
@@ -26,12 +26,16 @@ Local user database configuration for One Time Password package.
 <arg>-?hnv</arg>
 <arg>-c<replaceable> count</replaceable></arg>
 <arg>-C<replaceable> count_ceil</replaceable></arg>
-<arg>-F<replaceable> sc_flags</replaceable></arg>
+<arg>-f<replaceable> format</replaceable></arg>
+<arg>-F<replaceable> flags</replaceable></arg>
 <arg>-H<replaceable> sc_hostname</replaceable></arg>
 <arg>-I<replaceable> sc_index</replaceable></arg>
 <arg>-k<replaceable> key</replaceable></arg>
 <arg>-m<replaceable> command_mode</replaceable></arg>
 <arg>-o<replaceable> otpdb_pathname</replaceable></arg>
+<arg>-s<replaceable> status</replaceable></arg>
+<arg>-S<replaceable> sc_flags</replaceable></arg>
+<arg>-t<replaceable> type</replaceable></arg>
 <arg>-u<replaceable> username</replaceable></arg>
 <arg>-w<replaceable> window</replaceable></arg>
 </cmdsynopsis>
@@ -89,6 +93,35 @@ system database during authentication.
 </varlistentry>
 
 <varlistentry>
+<term>-f</term>
+<listitem>
+<para>
+OTP format.  One of hex40 dhex40 dec31.6 dec31.7 dec31.8 dec31.9 dec31.10.
+hex40 (40 bit hex) is the default.  dec31.6 (31 bit decimal truncated to 6
+digits) is suggested by RFC 4226 and may be required to interoperate with
+other HOTP implementations.  dhex40 uses the dynamic truncate function
+in RFC 4226, where hex40 always uses the top 40 bits.  dhex40 may be the
+default in future releases.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-F</term>
+<listitem>
+<para>
+OTP flags.  All flags are unset by default.
+<screen>
+   Flag              Description
+   -----------------------------------------------------------------
+   display-count  :  Display HOTP count when prompted for challenge.
+</screen>
+</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
 <term>-h</term>
 <listitem>
 <para>
@@ -97,14 +130,6 @@ Help.
 </listitem>
 </varlistentry>
 
-<varlistentry>
-<term>-F<replaceable> sc_flags</replaceable></term>
-<listitem>
-<para>
-Set the SC flags with the list-sc command mode.  0=CHALLENGE, 1=READERKEY.
-</para>
-</listitem>
-</varlistentry>
 
 <varlistentry>
 <term>-H<replaceable> sc_hostname</replaceable></term>
@@ -146,20 +171,19 @@ C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
             Mode             Description
             -------------------------------------------------
             add                - Add user
-            activate           - Activate user
             create             - Create database
-            deactivate         - Deactivate user
-            disable            - Disable user
             dump               - ASCII dump user record(s)
-            flags-dspcnt       - Set user display count flag.
-            flags-no-dspcnt    - Clear user display count flag.
             generate           - Generate HOTP for user
             list               - List user record (printable)
             list-sc            - List user record (SC friendly)
             load               - ASCII load user record(s)
             remove             - Remove user
-            set-count          - Reset count for user
-            set-count-ceil     - Reset count ceiling for user
+            set-count          - Set user count
+            set-count-ceil     - Set user count ceiling
+            set-flags          - Set user flags
+            set-format         - Set user format
+            set-status         - Set user status
+            set-type           - Set user OTP type
             test               - Test user
 </screen>
 </listitem>
@@ -179,6 +203,44 @@ Create new database if one does not exist.
 <listitem>
 <para>
 Pathname of OTP database.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-s<replaceable> otp_pathname</replaceable></term>
+<listitem>
+<para>
+OTP Status.  The default status is active.
+<screen>
+   Status     Description
+   -----------------------------------------------------------------
+   active   : OTP is required for succesful authentication.
+   inactive : OTP may not be required for successful authentication.
+              The OTP authentication module may be configured to allow
+              inactive accounts to authenticate.  This may be used to
+              temporarily remove the OTP authentication method for a user.
+   disabled : Account is disabled.  OTP authentication will fail.
+</screen>
+</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term>-S<replaceable> sc_flags</replaceable></term>
+<listitem>
+<para>
+Set the SC flags with the list-sc command mode.  0=CHALLENGE, 1=READERKEY.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-t<replaceable> type</replaceable></term>
+<listitem>
+<para>
+OTP Type.  RFC 4226 HOTP is only supported type.
 </para>
 </listitem>
 </varlistentry>
@@ -228,28 +290,16 @@ of tokens generated.
 <command>add</command>
 : add user to OTP database.  count_cur and count_ceiling may optionally
 be specified with -c and -C respectively.  A random key will be generated
-if no key is specified with -k.
+if no key is specified with -k.  The format, flags, status, and type
+may be altered from the defaults with -f, -F, -s, and -t respectively.
 </para>
-<para>
-<command>activate</command>
-: activate user.  An active user must provide a OTP for successful
-authentication.  An inactive user _may_ be successfully authenticated
-without a OTP depending on the application configuration.  The pam_otp
-module can be configured to use this flag with the "allow_inactive" option.
-</para>
+
 <para>
 <command>create</command>
 : create OTP database.  The OTP database is a base directory with each
 user stored in a separate ASCII : delimited file in base_dir/d.
 </para>
-<para>
-<command>deactivate</command>
-: deactivate user.  See activate.
-</para>
-<para>
-<command>disable</command>
-: disable user.  A disabled user can not successfully authenticate.
-</para>
+
 <para>
 <command>dump</command>
 : dump user database in ASCII.  User records are separated by a newline.
@@ -258,48 +308,66 @@ Fields are : separated.  All fields except the username are HEX encoded.
 #version:user:key:status:format:type:flags:count_cur:count_ceil:last
 01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000
 </para>
-<para>
-<command>flags-dspcnt</command>
-: set the display count flag.  An application such as pam_otp will use
-this flag to control the display of the OTP count when challenging a
-user.
-</para>
-<para>
-<command>flags-no-dspcnt</command>
-: clear the display count flag.
-</para>
+
 <para>
 <command>generate</command>
 : generate OTP for user.  The -w flag may be used to generate multiple
 OTP tokens.
 </para>
+
 <para>
 <command>list</command>
 : list user record in user friendly format.
 </para>
+
 <para>
 <command>list-sc</command>
 : list user record in otp-sc import friendly format.  The SC hostname
 must be specified with -H.  The SC index and SC flags may optionally be
 specified with -I and -F.
 </para>
+
 <para>
 <command>load</command>
 : load user record(s)s in ASCII format.  See dump.
 </para>
+
 <para>
 <command>remove</command>
 : remove user from OTP database.
 </para>
+
 <para>
 <command>set-count</command>
 : set count_current for user.
 </para>
+
 <para>
 <command>set-count-ceil</command>
 : set count_ceiling for user.  A OTP will not authenticate when
 count_cur >= count_cieiling.
 </para>
+
+<para>
+<command>set-flags</command>
+: set flags for user.  See option -F.
+</para>
+
+<para>
+<command>set-format</command>
+: set format for user.  See option -f.
+</para>
+
+<para>
+<command>set-status</command>
+: set status for user.  See option -s.
+</para>
+
+<para>
+<command>set-type</command>
+: set status for user.  See option -t.
+</para>
+
 <para>
 <command>test</command>
 : test OTP authentication for user.
@@ -339,7 +407,7 @@ Version........1
 Status.........active (1)
 Format.........hex40 (1)
 Type...........HOTP (1)
-Flags..........00
+Flags..........[] (0x00)
 </screen>
 </informalexample>
 

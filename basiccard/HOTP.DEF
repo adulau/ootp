@@ -24,7 +24,7 @@
 '  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 '  SUCH DAMAGE.
 ' 
-'       $Id: HOTP.DEF 13 2009-11-26 16:37:03Z maf $
+'       $Id: HOTP.DEF 91 2009-12-28 02:45:25Z maf $
 ' 
 
 
@@ -37,8 +37,8 @@
 '  INS  Name                       Format                    CapabilityID
 '------------------------------------------------------------------------
 '  00   PRDisplay  (CLA=C8)    -                             00000001
-'                 RecordNumber(byte), DataFormat(byte), DigitCount(byte)
-'                 DecimalPoint(byte), Delay(byte), MoreData(byte),
+'                 RecordNumber(Byte), DataFormat(Byte), DigitCount(Byte)
+'                 DecimalPoint(Byte), Delay(Byte), MoreData(Byte),
 '                 Data(String)
 '  40   SetHost                Idx,Count,Hostname,HOTPKey    00000002
 '  42   GetHost                Idx,Count,Hostname,HOTPKey    00000004
@@ -63,15 +63,26 @@
 '  A1   SetEEBlock             P1=Idx,eeBlock                XXXXXXXX
 
 '
-' enable functions
+' HOTP display formats
 '
+Const FMTHEX40   = 1
+Const FMTDEC316  = 2
+Const FMTDEC317  = 3
+Const FMTDEC318  = 4
+Const FMTDEC319  = 5
+Const FMTDEC3110 = 6
+Const FMTDHEX40  = 7
 
+
+'
+' enable minimal functions for Spyrus Reader
+'
 'Const ENABLECSETHOST = 1
 'Const ENABLECGETHOST = 1
 Const ENABLECGETHOSTNAME = 1
 'Const ENABLECGETHOTP = 1
 Const ENABLECSETADMINMODE = 1
-'Const ENABLECSETBALANCECARDINDEX = 1
+Const ENABLECSETBALANCECARDINDEX = 1
 Const ENABLECSETPIN = 1
 Const ENABLECTESTPIN = 1
 Const ENABLECGETVERSION = 1
@@ -81,7 +92,7 @@ Const ENABLECGETHOST32 = 1
 Const ENABLECGETHOTPCOUNT32 = 1
 'Const ENABLECGETHOTPHOST = 1
 Const ENABLECGETHOTPHOSTCOUNT32 = 1
-'Const ENABLECPRDISPLAY = 1
+Const ENABLECPRDISPLAY = 1
 Const ENABLECCLEARALL = 1
 Const ENABLESETREADERKEY = 1
 
@@ -197,55 +208,55 @@ Const CAPSETREADERKEY = &H00020000
 Const CAPSETREADERKEY = &H00000000
 #endif
 
-declare command &HC8 &H00 PRDisplay(RecordNumber as Byte, DataFormat as Byte, _
+Declare Command &HC8 &H00 PRDisplay(RecordNumber as Byte, DataFormat as Byte, _
                           DigitCount as Byte,DecimalPoint as Byte, _
                           Delay as Byte, MoreData as Byte, _
                           Data as String)
 
-declare command &H80 &H40 SetHost(Idx as Byte, Count as Integer, _
+Declare Command &H80 &H40 SetHost(Idx as Byte, Count as Integer, _
   Hostname as String*12, HOTPKey as String*20)
 
-declare command &H80 &H42 GetHost(Idx as Byte, Count as Integer, _
+Declare Command &H80 &H42 GetHost(Idx as Byte, Count as Integer, _
   Hostname as String*12, HOTPKey as String*20)
 
-declare command &H80 &H44 GetHostName(Idx as Byte, myPIN as string*5, _
+Declare Command &H80 &H44 GetHostName(Idx as Byte, myPIN as String*5, _
   Hostname as String*12)
 
-declare command &H80 &H46 GetHOTP(Idx as Byte, myPIN as String*5, _
-  HOTP as string*5)
+Declare Command &H80 &H46 GetHOTP(Idx as Byte, myPIN as String*5, _
+  HOTP as String*5)
 
-declare command &H80 &H48 SetAdminMode(Mode as Byte, K as String*20)
+Declare Command &H80 &H48 SetAdminMode(Mode as Byte, K as String*20)
 
-declare command &H80 &H4A SetBalanceCardIndex(Idx as Byte)
+Declare Command &H80 &H4A SetBalanceCardIndex(Idx as Byte)
 
-declare command &H80 &H4C SetPIN(myPIN as String*5, newPIN as string*5)
+Declare Command &H80 &H4C SetPIN(myPIN as String*5, newPIN as String*5)
 
-declare command &H80 &H4E TestPIN(myPIN as String*5)
+Declare Command &H80 &H4E TestPIN(myPIN as String*5)
 
-declare command &H80 &H50 GetVersion(V as Byte)
+Declare Command &H80 &H50 GetVersion(V as Byte)
 
-declare command &H80 &H52 SetAdminKey(K as String*20)
+Declare Command &H80 &H52 SetAdminKey(K as String*20)
 
-declare command &H80 &H54 SetHost32(Idx as Byte, Count32 as Long, _
+Declare Command &H80 &H54 SetHost32(Idx as Byte, Count32 as Long, _
   Hostname as String*12, HOTPKey as String*20)
 
-declare command &h80 &H56 GetHost32(Idx as Byte, Count32 as Long, _
+Declare Command &h80 &H56 GetHost32(Idx as Byte, Count32 as Long, _
   Hostname as String*12, HOTPKey as String*20)
 
-declare command &H80 &H58 GetHOTPCount32(Idx as Byte, myPIN as String*5, _
-  Count32 as Long, HOTP as string*5)
+Declare Command &H80 &H58 GetHOTPCount32(Idx as Byte, myPIN as String*5, _
+  Count32 as Long, HOTP as String*5)
 
-declare command &H80 &H5A GetHOTPHost(Idx as Byte, myPIN as String*5, _
-  HOTP as string*5, Hostname as String*12)
+Declare Command &H80 &H5A GetHOTPHost(Idx as Byte, myPIN as String*5, _
+  HOTP as String*5, Hostname as String*12)
 
-declare command &H80 &H5C GetHOTPHostCount32(Idx as Byte, myPIN as String*5, _
-  Count32 as Long, HOTP as string*5, Hostname as String*12)
+Declare Command &H80 &H5C GetHOTPHostCount32(Idx as Byte, myPIN as String*5, _
+  Count32 as Long, HOTP as String*5, Hostname as String*12)
 
-declare command &H80 &H5E ClearAll()
+Declare Command &H80 &H5E ClearAll()
 
-declare command &H80 &H60 SetReaderKey(readerKey as String*5)
+Declare Command &H80 &H60 SetReaderKey(readerKey as String*5)
 
-declare command &H80 &H90 GetCapabilities(Capabilities as Long)
+Declare Command &H80 &H90 GetCapabilities(Capabilities as Long)
 
 '
 ' error codes used

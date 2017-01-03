@@ -56,7 +56,7 @@
 \fBurd\fP \(em Micro footprint RADIUS daemon with One Time Password support\&.
 .SH "SYNOPSIS"
 .PP
-\fBurd\fP [-?AhdDOux]  [-a\fI allowed_users_file\fP]  [-b\fI local_ip\fP]  [-B\fI local_port\fP]  [-o\fI otp_db\fP]  [-p\fI passwd_file\fP]  [-P\fI pid_file\fP]  [-s\fI secret_file\fP] 
+\fBurd\fP [-?AhdDOux]  [-a\fI allowed_users_file\fP]  [-b\fI local_ip\fP]  [-B\fI local_port\fP]  [-o\fI otp_db\fP]  [-p\fI passwd_file\fP]  [-P\fI pid_file\fP]  [-s\fI secret_file\fP]  [-w\fI otp_window\fP] 
 .SH "DESCRIPTION"
 .PP
 The \fBurd\fP daemon implements a minimal subset
@@ -139,6 +139,8 @@ will be required\&.
 Drop every other RADIUS request from a NAS\&.  This is a debugging feature
 intended to stress test the reply cache code\&.  The reply cache 
 implements state retention required for the use of One Time Passwords\&.
+.IP "-w" 10
+Set the OTP challenge window\&.
 .SH "EXAMPLES"
 .PP
 The following command will start the urd server, bind it to IP address 
@@ -166,4 +168,4 @@ Mark Fullmer maf@splintered\&.net
 \fBbcload\fP(1)
 \fBotp-ov-plugin\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:16
+...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01

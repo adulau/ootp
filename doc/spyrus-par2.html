@@ -58,14 +58,18 @@ menu and two digit shortcut methods are provided for host selection.
 Additional functionality includes Smart Card PIN change, overriding default
 increment-on-generate per-host HOTP count behavior, and firmware management.</P
 ><P
->With the HOTP displayed, press Enter to repeat the host selection process
-for additional token generation.</P
+>With the HOTP displayed, press Enter to repeat the host
+selection process for additional token generation or Down Arrow
+to generate a token for the next host.</P
+><P
+>The HOTP token is displayed as 40 bit hexadecimal or 6-10 digit decimal
+based on the format bit field provided by the Smart Card.</P
 ><P
 >Use the host selection shortcut to extend battery life.</P
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN19"
+NAME="AEN20"
 ></A
 ><H3
 >Basic Functions:</H3
@@ -85,7 +89,7 @@ life.  A timeout will turn off the reader off without intervention.</P
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN25"
+NAME="AEN26"
 ></A
 ><H3
 >PIN Entry:</H3
@@ -108,7 +112,7 @@ CLASS="KEYSYM"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN33"
+NAME="AEN34"
 ></A
 ><H3
 >Host Selection:</H3
@@ -156,7 +160,7 @@ CLASS="KEYSYM"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN49"
+NAME="AEN50"
 ></A
 ><H3
 >Host Selection With Menu:</H3
@@ -178,11 +182,31 @@ CLASS="KEYSYM"
 >DOWN</SPAN
 > Cursor down one line.</P
 ></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN59"
+></A
+><H3
+>HOTP Display</H3
+><P
+></P
+><P
+><SPAN
+CLASS="KEYSYM"
+>Enter</SPAN
+> Jump back to host selection.</P
+><P
+><SPAN
+CLASS="KEYSYM"
+>DOWN</SPAN
+> Generate token for next host.</P
+></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN58"
+NAME="AEN66"
 ></A
 ><H2
 >LOADING FIRMWARE</H2
@@ -248,7 +272,7 @@ CLASS="STEP"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN79"
+NAME="AEN87"
 ></A
 ><H2
 >EEPROM CUSTOMIZATION</H2
@@ -355,7 +379,7 @@ CLASS="STEP"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN103"
+NAME="AEN111"
 ></A
 ><H2
 >AUTHOR</H2
@@ -372,7 +396,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN110"
+NAME="AEN118"
 ></A
 ><H2
 >BUGS</H2
@@ -384,7 +408,7 @@ may not.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN113"
+NAME="AEN121"
 ></A
 ><H2
 >SEE ALSO</H2

@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otp-sca.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: otp-sca.c 88 2009-12-28 00:12:01Z maf $
  */
 
 #include <sys/cdefs.h>
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
   struct scr_ctx *scrctx;
   int i, j, k, r, mode, sc_idx_set, j_start, j_end, done, sc_idx_tmp, opt_mod;
   int no_PIN, list_readers;
-  uint32_t tmp_count, tmp_cap;
+  uint32_t tmp_count, tmp_cap, tmp32u;
   uint64_t tmp64u;
   char sc_hostname[SC_HOSTNAME_LEN+1], sc_PIN[SC_PIN_LEN+1];
   char sc_newPIN[SC_PIN_LEN+1], sc_newPIN2[SC_PIN_LEN+1];
@@ -149,9 +149,9 @@ int main(int argc, char **argv)
   sc_fv = 5;
   tmp_count = 0;
   username = "USER";
-  reader = SCR_DEFAULT_READER;
   list_readers = 0; /* no */
   scrctx = (struct scr_ctx*)0L;
+  reader = (char*)0L;
 
   BZS(sc_hotp);
   BZS(sc_idx);
@@ -673,6 +673,19 @@ int main(int argc, char **argv)
     /* successful SC transaction? */
     if (r == 0) {
 
+      if (sc_hostname[HOSTNAME_POS_FMT] & HOSTNAME_FLAG_MASK) {
+
+        tmp32u = (sc_hotp[0] << 24) | (sc_hotp[1] << 16) |
+                 (sc_hotp[2] << 8) | sc_hotp[3];
+
+        k = str_uint32toa(fmt_buf, tmp32u);
+
+      } else {
+
+        k = str_hex_dump(fmt_buf, sc_hotp, 5);
+
+      }
+
       for (i = 0, j = 0; i < SC_HOSTNAME_LEN; ++i) {
 
         /* high bit flag set? */
@@ -686,7 +699,12 @@ int main(int argc, char **argv)
             xerr_warnx("readerkey flag set and key not in SC transaction.");
 
           } else if ((i != HOSTNAME_POS_CHALLENGE) &&
-                     (i != HOSTNAME_POS_READERKEY)) {
+                     (i != HOSTNAME_POS_READERKEY) &&
+                     (i != HOSTNAME_POS_FMT) &&
+                     (i != HOSTNAME_POS_FMT3) &&
+                     (i != HOSTNAME_POS_FMT2) &&
+                     (i != HOSTNAME_POS_FMT1) &&
+                     (i != HOSTNAME_POS_FMT0)) {
             xerr_warnx("sc_hostname high bit set on byte %d.", i);
           }
         }
@@ -696,20 +714,22 @@ int main(int argc, char **argv)
 
       }
 
-      str_hex_dump(fmt_buf, sc_hotp, 5);
-
       if (opt_mod & OPT_MOD_HOST) {
-        strcpy(fmt_buf+10, " -- ");
-        str_ftoc(fmt_buf+14, sc_hostname, SC_HOSTNAME_LEN);
+        strcpy(fmt_buf+k, " -- ");
+        str_ftoc(fmt_buf+k+4, sc_hostname, SC_HOSTNAME_LEN);
       }
 
       printf("HOTP: %s\n", fmt_buf);
       
     } else if (r == 1) {
+
       printf("HOTP: rejected\n");
+
     } else {
+
       xerr_errx(1, err_msg);
-    }
+
+   }
 
   } /* MODE_HOTP_GEN */
 
@@ -820,9 +840,9 @@ int main(int argc, char **argv)
       xerr_errx(1, "sccmd_SetAdminKey(): failed.");
 
     if (r == 0)
-      printf("Set AdminKey: Done\n");
+      printf("Set AdminKey: Done.\n");
     else if (r == 1)
-      printf("Set AdminKey: Fail\n");
+      printf("Set AdminKey: Fail.\n");
     else
       xerr_errx(1, "sccmd_SetAdminKey(): fatal.");
 
@@ -832,17 +852,28 @@ int main(int argc, char **argv)
 
   if (mode == MODE_BALANCECARD_SET) {
 
-    sc_idx[0] = SC_BALANCECARD_DISABLE;
+    if (!sc_idx_set)
+      sc_idx[0] = SC_BALANCECARD_DISABLE;
 
     if ((r = sccmd_SetBalanceCardIndex(scrctx, sc_fv, sc_idx)) < 0)
       xerr_errx(1, "sccmd_SetBalanceCardIndex(): failed.");
 
-    if (r == 0)
-      printf("Set BalanceCardIndex: Disabled\n");
-    else if (r == 1)
-      printf("Set BalanceCardIndex: Fail\n");
-    else
+    if (r == 0) {
+
+      if (sc_idx[0] == SC_BALANCECARD_DISABLE)
+        printf("Disable BalanceCard: Done.\n");
+      else
+        printf("Set BalanceCardIndex: Done.\n");
+
+    } else if (r == 1) {
+
+      printf("Set BalanceCardIndex: Fail.\n");
+
+    } else {
+
       xerr_errx(1, "sccmd_SetBalanceCardIndex(): fatal.");
+
+    }
 
   } /* MODE_BALANCECARD_SET */
 
@@ -1027,9 +1058,9 @@ int main(int argc, char **argv)
       }
 
       if (r == 0)
-        printf("SetHost (%d): Done\n", (int)sc_idx[0]);
+        printf("SetHost (%d): Done.\n", (int)sc_idx[0]);
       else if (r == 1)
-        printf("SetHost (%d): Fail\n", (int)sc_idx[0]);
+        printf("SetHost (%d): Fail.\n", (int)sc_idx[0]);
       else
         xerr_errx(1, err_msg);
 
@@ -1060,10 +1091,10 @@ int main(int argc, char **argv)
 
 
       if (r == 0)
-        printf("SetSpyrusEEBlock (%d): Done\n",
+        printf("SetSpyrusEEBlock (%d): Done.\n",
           (int)sc_spyrusee_idx[0] & ~HOSTNAME_FLAG_MASK);
       else if (r == 1)
-        printf("SetSpyrusEEBlock (%d): Fail\n",
+        printf("SetSpyrusEEBlock (%d): Fail.\n",
           (int)sc_spyrusee_idx[0] & ~HOSTNAME_FLAG_MASK);
       else
         xerr_errx(1, err_msg);

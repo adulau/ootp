@@ -1,5 +1,5 @@
 #
-# $Id: QUICKSTART 32 2009-11-30 01:18:29Z maf $
+# $Id: QUICKSTART 76 2009-12-26 21:04:01Z maf $
 #
 
 OpenOTP is an implementation of the HOTP protocol using a ZeitControl
@@ -10,7 +10,7 @@ Included is a C library implementation of the HOTP protocol and
 associated user database management, HOTP PAM library, OpenVPN plug-in module,
 micro RADIUS server with HOTP support, and utilties for managing the Smart
 Card, Spyrus reader, and host side HOTP user database.  The PCSC-Lite
-API provides reader support for Smart Card management under FreeBSD and Linux.
+API provides reader support for Smart Card management.
 
 The card management, firmware loaders, C API, and authentication methods
 have been developed & tested for FreeBSD and Linux.
@@ -25,7 +25,12 @@ downloading firmware to the reader with a Spyrus downloader cable.
 Source and Binary for the BasicCard firmware is supplied.  Modification
 requires the Windows BasicCard development software available as
 a free download from ZeitControl.  A Unix version of bcload implemented
-with the PCSC-Lite interface is included.
+with the PCSC-Lite interface and embedded ACR30S driver is included.
+
+The Smart Card based token generator is standards based and may be
+used with other RFC compliant HOTP implementations.  Other HOTP
+token generators may be used with the Unix side HOTP library
+and authentication modules.
 
 Distribution:
 
@@ -319,9 +324,9 @@ semanage fcontext -a -t textrel_shlib_t /lib/security/pam_otp.so
 # to temporarily disable SELinux for testing use
 # setenforce 0 
 
-# create the OTP database with one deactivated user (joe)
+# create the OTP database with one inactive user (joe)
 otp-control -n -u joe -m add
-otp-control -u joe -m deactivate
+otp-control -u joe -m set-status inactive
 otp-control -u joe -m list
 
 >Username.......joe
@@ -392,7 +397,7 @@ Password:
 Last login: Tue Sep  1 23:21:20 2009 from 10.1.0.26
 
 # activate user
-otp-control -u joe -m activate
+otp-control -u joe -m set-status -s active
 
 # login with OTP generated earlier
 bastion.eng:~% ssh 10.1.0.25 
@@ -420,22 +425,20 @@ arrow until the "DownloadApp" menu item is present.
 Start the htsoft-downloader utility using serial port at /dev/cuaU0 :
 
 # FreeBSD USB Serial Adapter
-htsoft-downloader -v1 -f /dev/cuaU0 < $OOTP/firmware/spyrus1.3.hex
+htsoft-downloader -v1 -i -f /dev/cuaU0 < $OOTP/firmware/spyrus1.3.hex
 
 # Linux USB Serial Adapter
-htsoft-downloader -v1 -f /dev/ttyS0 < $OOTP/firmware/spyrus1.3.hex
+htsoft-downloader -v1 -i -f /dev/ttyS0 < $OOTP/firmware/spyrus1.3.hex
 
 Press Enter on the spyrus reader to start the download application:
 
 Waiting for bootloader......
 
-DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDwTwwwwPIC reset failed.
-htsoft-downloader: htsoft_v1bl_done(): failed
+DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDwTwF
+PIC reset sent, ignored last WOK timeout.
 
-Note the htsoft_v1bl_done(): failed message is cosmetic.  The bootloader code
-in the spyrus reader does not appear to send a final ACK per the source code
-documentation from htsoft/Microchip.  Increase the verbosity level for more
-debugging information if necessary.
+Increase the verbosity level for more debugging information if necessary.
+The -i option is required for the bootloader provided with the Spyrus reader.
 
 A Windows PIC downloader which will work with the Spyrus reader is available
 at http://www.ehl.cz/pic/pic_e.htm.  It will also note an error when trying
@@ -747,18 +750,19 @@ the high bit of the 2nd character in the hostname.
 
 
 See also:
-  This site    http://www.splintered.net/sw/otp
-  HOTP ID      http://www.ietf.org/internet-drafts/draft-mraihi-oath-hmac-otp-02.txt
-  IETF slides  http://www3.ietf.org/proceedings/05mar/slides/saag-2/sld1.htm
-  SHA-1        http://www.itl.nist.gov/fipspubs/fip180-1.htm
-  HMAC         http://www.faqs.org/rfcs/rfc2104.html
-  BasicCard    http://www.basiccard.com/
-  Linux PAM    http://www.kernel.org/pub/linux/libs/pam/
-  PAM S-Key    http://kreator.esa.fer.hr/projects/tarballs/pam_skey-1.1.3.tar.gz
+  This site     http://www.splintered.net/sw/otp
+  HOTP ID       http://www.ietf.org/internet-drafts/draft-mraihi-oath-hmac-otp-02.txt
+  IETF slides   http://www3.ietf.org/proceedings/05mar/slides/saag-2/sld1.htm
+  SHA-1         http://www.itl.nist.gov/fipspubs/fip180-1.htm
+  HMAC          http://www.faqs.org/rfcs/rfc2104.html
+  BasicCard     http://www.basiccard.com/
+  Linux PAM     http://www.kernel.org/pub/linux/libs/pam/
+  PAM S-Key     http://kreator.esa.fer.hr/projects/tarballs/pam_skey-1.1.3.tar.gz
    (used as a reference PAM module)
-  Spyrus       http://www.spyrus.com
-  PCSC-LITE    http://pcsclite.alioth.debian.org/
-  Smart Cards  http://www.smartcardfocus.com/
+  Spyrus        http://www.spyrus.com
+  PCSC-LITE     http://pcsclite.alioth.debian.org/
+  Smart Cards   http://www.smartcardfocus.com/
+  BalanceReader http://www.basiccard.com/chip/balanceR.pdf
 
 #
 # The HOTP database is not encrypted.  For added security use an encrypted

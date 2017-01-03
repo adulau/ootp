@@ -56,7 +56,7 @@
 \fBotp-ov-plugin\fP \(em OpenVPN plug-in authentication module for OTP database\&.
 .SH "SYNOPSIS"
 .PP
-\fBotp-ov-plugin\fP [-?hv]  [-o\fI otpdb_fname\fP] 
+\fBotp-ov-plugin\fP [-?hv]  [-o\fI otpdb_fname\fP]  [-w\fI otp_window\fP] 
 .SH "DESCRIPTION"
 .PP
 The \fBotp-ov-plugin\fP command is plug-in authentication
@@ -74,6 +74,8 @@ Help
 Pathname of OTP database\&.
 .IP "-v" 10
 Verbose
+.IP "-w" 10
+Set the OTP challenge window\&.
 .SH "EXAMPLES"
 .PP
 Test the module with user bob\&.
@@ -101,4 +103,4 @@ Mark Fullmer maf@splintered\&.net
 \fBbcload\fP(1)
 \fBOpenVPN\fP(8)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:16
+...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01

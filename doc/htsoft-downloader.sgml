@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: htsoft-downloader.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: htsoft-downloader.sgml 74 2009-12-26 20:40:57Z maf $ -->
 
 <refentry>
 
@@ -54,6 +54,15 @@ on standard output and downloaded to a PIC on the
 <listitem>
 <para>
 Help
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-i</term>
+<listitem>
+<para>
+Ignore timeout for last WOK after sending reset.
 </para>
 </listitem>
 </varlistentry>
@@ -120,7 +129,7 @@ the bootloader in this device does not send the last WOK command, this
 appears to be harmless.
 </para>
 <para>
-  <command>pic-downloader -v9 -f /dev/ttyUSB0 < spyrys1.1.hex</command>
+  <command>pic-downloader -v9 -i -f /dev/ttyUSB0 < spyrys1.1.hex</command>
 </para>
 <screen>
 Waiting for bootloader..........
@@ -135,12 +144,10 @@ write: data=202530A0008430E8202017833010008430362020120A118A2DBD060401800A84
 
 ...
 
-upload block: load_offset=0x1FFA bytes_to_send=6
-Dwrite: cmd=E3 load=0FFD bytes=06 csum=AA
-write: data=00CB30C42EBD
-wDONE: reply=F8, expecting E4wwwwpic-downloader: htsoft_v1bl_done(): failed
-PIC reset failed.
-
+upload block: load_offset=0x1FF8 bytes_to_send=8
+Dwrite: cmd=E3 load=0FFC bytes=08 csum=7E
+write: data=246B120A158A3400
+wDONE: reply=F0, expecting E4wPIC reset sent.
 </screen>
 </informalexample>
 

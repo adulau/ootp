@@ -56,7 +56,7 @@
 \fBotp-control\fP \(em Local user database configuration for One Time Password package\&.
 .SH "SYNOPSIS"
 .PP
-\fBotp-control\fP [-?hnv]  [-c\fI count\fP]  [-C\fI count_ceil\fP]  [-F\fI sc_flags\fP]  [-H\fI sc_hostname\fP]  [-I\fI sc_index\fP]  [-k\fI key\fP]  [-m\fI command_mode\fP]  [-o\fI otpdb_pathname\fP]  [-u\fI username\fP]  [-w\fI window\fP] 
+\fBotp-control\fP [-?hnv]  [-c\fI count\fP]  [-C\fI count_ceil\fP]  [-f\fI format\fP]  [-F\fI flags\fP]  [-H\fI sc_hostname\fP]  [-I\fI sc_index\fP]  [-k\fI key\fP]  [-m\fI command_mode\fP]  [-o\fI otpdb_pathname\fP]  [-s\fI status\fP]  [-S\fI sc_flags\fP]  [-t\fI type\fP]  [-u\fI username\fP]  [-w\fI window\fP] 
 .SH "DESCRIPTION"
 .PP
 The \fBotp-control\fP command is a front end to the
@@ -86,10 +86,23 @@ must be presented to the OTP generator\&.  The additional step of entering
 the count to the OTP generator is not necessary when keys are not
 shared, as the currrent count will increase on the OTP generator and
 system database during authentication\&.
+.IP "-f" 10
+OTP format\&.  One of hex40 dhex40 dec31\&.6 dec31\&.7 dec31\&.8 dec31\&.9 dec31\&.10\&.
+hex40 (40 bit hex) is the default\&.  dec31\&.6 (31 bit decimal truncated to 6
+digits) is suggested by RFC 4226 and may be required to interoperate with
+other HOTP implementations\&.  dhex40 uses the dynamic truncate function
+in RFC 4226, where hex40 always uses the top 40 bits\&.  dhex40 may be the
+default in future releases\&.
+.IP "-F" 10
+OTP flags\&.  All flags are unset by default\&.
+.PP
+.nf
+   Flag              Description
+   -----------------------------------------------------------------
+   display-count  :  Display HOTP count when prompted for challenge\&.
+.fi
 .IP "-h" 10
 Help\&.
-.IP "-F\fI sc_flags\fP" 10
-Set the SC flags with the list-sc command mode\&.  0=CHALLENGE, 1=READERKEY\&.
 .IP "-H\fI sc_hostname\fP" 10
 Set the SC hostname with the list-sc command mode\&.
 .IP "-I\fI sc_index\fP" 10
@@ -106,26 +119,42 @@ C0C3D47F1CC68ECE0DF81D008F0C0D72D43EB745
             Mode             Description
             -------------------------------------------------
             add                - Add user
-            activate           - Activate user
             create             - Create database
-            deactivate         - Deactivate user
-            disable            - Disable user
             dump               - ASCII dump user record(s)
-            flags-dspcnt       - Set user display count flag\&.
-            flags-no-dspcnt    - Clear user display count flag\&.
             generate           - Generate HOTP for user
             list               - List user record (printable)
             list-sc            - List user record (SC friendly)
             load               - ASCII load user record(s)
             remove             - Remove user
-            set-count          - Reset count for user
-            set-count-ceil     - Reset count ceiling for user
+            set-count          - Set user count
+            set-count-ceil     - Set user count ceiling
+            set-flags          - Set user flags
+            set-format         - Set user format
+            set-status         - Set user status
+            set-type           - Set user OTP type
             test               - Test user
 .fi
 .IP "-n" 10
 Create new database if one does not exist\&.
 .IP "-o\fI otp_pathname\fP" 10
 Pathname of OTP database\&.
+.IP "-s\fI otp_pathname\fP" 10
+OTP Status\&.  The default status is active\&.
+.PP
+.nf
+   Status     Description
+   -----------------------------------------------------------------
+   active   : OTP is required for succesful authentication\&.
+   inactive : OTP may not be required for successful authentication\&.
+              The OTP authentication module may be configured to allow
+              inactive accounts to authenticate\&.  This may be used to
+              temporarily remove the OTP authentication method for a user\&.
+   disabled : Account is disabled\&.  OTP authentication will fail\&.
+.fi
+.IP "-S\fI sc_flags\fP" 10
+Set the SC flags with the list-sc command mode\&.  0=CHALLENGE, 1=READERKEY\&.
+.IP "-t\fI type\fP" 10
+OTP Type\&.  RFC 4226 HOTP is only supported type\&.
 .IP "-u\fI username\fP" 10
 Username to perform database operation on\&.
 .IP "-v" 10
@@ -144,31 +173,17 @@ of tokens generated\&.
 .PP
 \fBadd\fP : add user to OTP database\&.  count_cur and count_ceiling may optionally
 be specified with -c and -C respectively\&.  A random key will be generated
-if no key is specified with -k\&.
-.PP
-\fBactivate\fP : activate user\&.  An active user must provide a OTP for successful
-authentication\&.  An inactive user _may_ be successfully authenticated
-without a OTP depending on the application configuration\&.  The pam_otp
-module can be configured to use this flag with the "allow_inactive" option\&.
+if no key is specified with -k\&.  The format, flags, status, and type
+may be altered from the defaults with -f, -F, -s, and -t respectively\&.
 .PP
 \fBcreate\fP : create OTP database\&.  The OTP database is a base directory with each
 user stored in a separate ASCII : delimited file in base_dir/d\&.
-.PP
-\fBdeactivate\fP : deactivate user\&.  See activate\&.
-.PP
-\fBdisable\fP : disable user\&.  A disabled user can not successfully authenticate\&.
 .PP
 \fBdump\fP : dump user database in ASCII\&.  User records are separated by a newline\&.
 Fields are : separated\&.  All fields except the username are HEX encoded\&.
 .PP
 #version:user:key:status:format:type:flags:count_cur:count_ceil:last
 01:test:1111111111111111111111111111111111111111:01:01:01:00:00000000000003E8:00000000000007D0:0000000000000000
-.PP
-\fBflags-dspcnt\fP : set the display count flag\&.  An application such as pam_otp will use
-this flag to control the display of the OTP count when challenging a
-user\&.
-.PP
-\fBflags-no-dspcnt\fP : clear the display count flag\&.
 .PP
 \fBgenerate\fP : generate OTP for user\&.  The -w flag may be used to generate multiple
 OTP tokens\&.
@@ -187,6 +202,14 @@ specified with -I and -F\&.
 .PP
 \fBset-count-ceil\fP : set count_ceiling for user\&.  A OTP will not authenticate when
 count_cur >= count_cieiling\&.
+.PP
+\fBset-flags\fP : set flags for user\&.  See option -F\&.
+.PP
+\fBset-format\fP : set format for user\&.  See option -f\&.
+.PP
+\fBset-status\fP : set status for user\&.  See option -s\&.
+.PP
+\fBset-type\fP : set status for user\&.  See option -t\&.
 .PP
 \fBtest\fP : test OTP authentication for user\&.
 .SH "EXAMPLES"
@@ -213,7 +236,7 @@ Version\&.\&.\&.\&.\&.\&.\&.\&.1
 Status\&.\&.\&.\&.\&.\&.\&.\&.\&.active (1)
 Format\&.\&.\&.\&.\&.\&.\&.\&.\&.hex40 (1)
 Type\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.HOTP (1)
-Flags\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.00
+Flags\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.[] (0x00)
 .fi
 .PP
 Generate OTP for user bob\&.
@@ -267,4 +290,4 @@ Mark Fullmer maf@splintered\&.net
 \fBurd\fP(1)
 \fBbcload\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:16
+...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01

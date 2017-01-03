@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: spyrus-par2.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: spyrus-par2.sgml 78 2009-12-26 23:23:40Z maf $ -->
 
 <refentry>
 
@@ -37,8 +37,13 @@ Additional functionality includes Smart Card PIN change, overriding default
 increment-on-generate per-host HOTP count behavior, and firmware management.
 </para>
 <para>
-With the HOTP displayed, press Enter to repeat the host selection process
-for additional token generation.
+With the HOTP displayed, press Enter to repeat the host
+selection process for additional token generation or Down Arrow
+to generate a token for the next host.
+</para>
+<para>
+The HOTP token is displayed as 40 bit hexadecimal or 6-10 digit decimal
+based on the format bit field provided by the Smart Card.
 </para>
 <para>
 Use the host selection shortcut to extend battery life.
@@ -125,6 +130,20 @@ Host Selection With Menu:
 <keysym>DOWN</keysym> Cursor down one line.
 </para>
 </refsect2>
+
+<refsect2>
+<title>
+HOTP Display
+</title>
+<para>
+
+<para>
+<keysym>Enter</keysym> Jump back to host selection.
+</para>
+
+<para>
+<keysym>DOWN</keysym> Generate token for next host.
+</para>
 
 </refsect1>
 

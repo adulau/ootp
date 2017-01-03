@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otpsc.h 23 2009-11-28 06:26:22Z maf $
+ *      $Id: otpsc.h 86 2009-12-28 00:05:24Z maf $
  */
 
 /* highest supported index */
@@ -209,5 +209,11 @@
 
 #define HOSTNAME_FLAG_MASK      0x80   /* high bit set */
 #define HOSTNAME_POS_CHALLENGE  0x00   /* require challenge input */
-#define HOSTNAME_POS_READERKEY  0x01   /* require reader key */
+#define HOSTNAME_POS_READERKEY  1      /* require reader key */
+#define HOSTNAME_POS_FMT        2      /* format, 0=hex, 1=decimal */
+#define HOSTNAME_POS_FMT3       8      /* 0000=HEX40,   0001=HEX40   */
+#define HOSTNAME_POS_FMT2       9      /* 0010=DEC31.6  0011=DEC31.7 */
+#define HOSTNAME_POS_FMT1       10     /* 0100=DEC31.8  0101=DEC31.9 */
+#define HOSTNAME_POS_FMT0       11     /* 0110=DEC31.10 0111=DHEX40  */
+
 

@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: urd.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: urd.sgml 50 2009-12-15 01:37:19Z maf $ -->
 
 <refentry>
 
@@ -31,6 +31,7 @@ Micro footprint RADIUS daemon with One Time Password support.
 <arg>-p<replaceable> passwd_file</replaceable></arg>
 <arg>-P<replaceable> pid_file</replaceable></arg>
 <arg>-s<replaceable> secret_file</replaceable></arg>
+<arg>-w<replaceable> otp_window</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -222,6 +223,15 @@ will be required.
 Drop every other RADIUS request from a NAS.  This is a debugging feature
 intended to stress test the reply cache code.  The reply cache 
 implements state retention required for the use of One Time Passwords.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-w</term>
+<listitem>
+<para>
+Set the OTP challenge window.
 </para>
 </listitem>
 </varlistentry>

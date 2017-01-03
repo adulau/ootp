@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: otp-ov-plugin.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: otp-ov-plugin.sgml 50 2009-12-15 01:37:19Z maf $ -->
 
 <refentry>
 
@@ -25,6 +25,7 @@ OpenVPN plug-in authentication module for OTP database.
 <command>otp-ov-plugin</command>
 <arg>-?hv</arg>
 <arg>-o<replaceable> otpdb_fname</replaceable></arg>
+<arg>-w<replaceable> otp_window</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -73,6 +74,16 @@ Verbose
 </para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term>-w</term>
+<listitem>
+<para>
+Set the OTP challenge window.
+</para>
+</listitem>
+</varlistentry>
+
 
 </variablelist>
 </refsect1>

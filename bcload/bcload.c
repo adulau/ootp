@@ -26,7 +26,7 @@
  *
  * Ported from ZeitControl bcload.bas and download.bas sample source
  *
- *      $Id: bcload.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: bcload.c 90 2009-12-28 02:44:52Z maf $
  */
 
 #include <sys/cdefs.h>
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   paranoid = 1;
   debug = 0;
   verbose = 0;
-  reader = SCR_DEFAULT_READER;
+  reader = (char*)0L;
   list_readers = 0; /* no */
   scrctx = (struct scr_ctx*)0L;
   img_fname = "HOTPC.IMG";
@@ -700,8 +700,8 @@ void bcimg_read_version_section(struct bcimg *bcimg)
    * next two bytes are version number of oldest software that
    * can read the image file.  Must be > 5.22
    */
-  if ((version[2] > 5) || ((version[2] == 5) && (version[3] > 22)))
-    xerr_errx(1, "bcimg_read_version_section(): Unknown image file version.");
+  if ((version[2] > 5) || ((version[2] == 5) && (version[3] > 71)))
+    xerr_errx(1, "bcimg_read_version_section(): Untested image file version.");
 
 } /* bcimg_read_version_section */
 

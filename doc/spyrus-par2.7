@@ -65,8 +65,12 @@ menu and two digit shortcut methods are provided for host selection\&.
 Additional functionality includes Smart Card PIN change, overriding default
 increment-on-generate per-host HOTP count behavior, and firmware management\&.
 .PP
-With the HOTP displayed, press Enter to repeat the host selection process
-for additional token generation\&.
+With the HOTP displayed, press Enter to repeat the host
+selection process for additional token generation or Down Arrow
+to generate a token for the next host\&.
+.PP
+The HOTP token is displayed as 40 bit hexadecimal or 6-10 digit decimal
+based on the format bit field provided by the Smart Card\&.
 .PP
 Use the host selection shortcut to extend battery life\&.
 .SS "Basic Functions:"
@@ -107,6 +111,12 @@ with this option\&.
 \fB<UP>\fP Cursor up one line\&.
 .PP
 \fB<DOWN>\fP Cursor down one line\&.
+.SS "HOTP Display"
+.PP
+.PP
+\fB<Enter>\fP Jump back to host selection\&.
+.PP
+\fB<DOWN>\fP Generate token for next host\&.
 .SH "LOADING FIRMWARE"
 .PP
 The PAR II is factory loaded with the
@@ -191,4 +201,4 @@ may not\&.
 \fBurd\fP(1)
 \fBbcload\fP(1)
 \fBOpenVPN\fP(8)
-...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:16
+...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01

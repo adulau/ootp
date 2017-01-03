@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: otp-sca.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: otp-sca.sgml 62 2009-12-18 17:26:31Z maf $ -->
 
 <refentry>
 
@@ -42,10 +42,10 @@ Smart Card Administration for One Time Password package.
 <title>DESCRIPTION</title>
 <para>
 The <command>otp-sca</command> command implements a terminal for an MCU based
-smart card loaded with the OTP firmware (HOTPC.IMG).  Host entries consisting
-of {hostname,count,shared_key} are downloaded to the smart card using 
+Smart Card loaded with the OTP firmware (HOTPC.IMG).  Host entries consisting
+of {hostname,count,shared_key} are downloaded to the Smart Card using 
 <command>otp-sca</command>.  Additionally commands implemented on the
-smart card such as HOTP generation and PIN maintenance can be executed
+Smart Card such as HOTP generation and PIN maintenance can be executed
 with the appropriate administratative key.
 </para>
 </refsect1>
@@ -59,7 +59,7 @@ with the appropriate administratative key.
 <listitem>
 <para>
 Smart Card administratative key.  The admin-enable command and
-administratative key are used to toggle the smart card into admin mode.
+administratative key are used to toggle the Smart Card into admin mode.
 Once in admin mode commands admin-disable, adminkey-set, balancecard-set,
 host-get, host-set, pin-set, and sc-clear can be executed.  The default admin
 key, "3030303030303030303030303030303030303030" (HEX), should be changed to
@@ -99,10 +99,10 @@ Help.
 <term>-i<replaceable> index</replaceable></term>
 <listitem>
 <para>
-Set the 8 bit index.  The smart card contains numerically indexed records
+Set the 8 bit index.  The Smart Card contains numerically indexed records
 for each host of the form {hostname,count,shared_key}.  The firmware
 will support indexes in the range 0..254.  255 is reserved.  Memory
-capacity on the smart card may further restrict the index range.  The
+capacity on the Smart Card may further restrict the index range.  The
 ZC3.9 BasicCard with firmware revision 3 supports up to 85 records.
 </para>
 </listitem>
@@ -164,7 +164,7 @@ List SC Readers
 Configure command_mode modifiers.  Modifier d applied to the host-get
 command will generate output in otpdb format.  Count (c) and Host (h)
 used with hotp-gen allow passing the Count and Host parameters 
-respectively.  The smart card may not be configured to support
+respectively.  The Smart Card may not be configured to support
 all variations of a command.
 variations 
 </para>
@@ -175,7 +175,14 @@ variations
 <term>-r<replaceable> reader</replaceable></term>
 <listitem>
 <para>
-Set the smart card reader.  Use -l to list available readers.
+Set Smart Card reader.  Use -l to list available readers.  A reader
+is defined as class:reader:<optional>option</optional>.  PCSC and embedded
+are the two available classes.  The embedded class contains the acr30s driver
+which is specified as embedded:acr30s:<optional>serial_port</optional>.
+If pcscd is running the first PC/SC reader will be the default followed by
+the embedded acr30s driver.  Use PCSC: for the first available PC/SC
+reader.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
+with serial port /dev/cuaU0.
 </para>
 </listitem>
 </varlistentry>
@@ -214,10 +221,10 @@ d modifier.
 <term>-v<replaceable> card_api_version</replaceable></term>
 <listitem>
 <para>
-Set the smart card API version.  The binary API between the terminal
-and smart card changed between version 2 and 3.  See command_mode notes
+Set the Smart Card API version.  The binary API between the terminal
+and Smart Card changed between version 2 and 3.  See command_mode notes
 above.  The default version is 3.  Configuring version 2 will allow
-maintenance of smart card with version 2 firmware.
+maintenance of Smart Card with version 2 firmware.
 </para>
 </listitem>
 </varlistentry>
@@ -256,7 +263,7 @@ the use of a PIN, and is disabled by default.
 </para>
 <para>
 <command>capabilities-get</command>
-: each command on the smart card is represented by a capabilities bit and
+: each command on the Smart Card is represented by a capabilities bit and
 conditionally compiled into HOTPC.IMG.
 capabilities-get will return the available, compiled-in commands.  Commands
 are defined in <filename>HOTP.DEF</filename>:
@@ -354,7 +361,7 @@ to unlock a SC.
 SC when executing the GetHOTP* commands.  If the F1 (flag 1) bit of
 the hostname is set, this key must match the key provided by the
 reader.  This functionality allows the reader to weakly authenticate
-itself to the smart card and may be used to restrict HOTP generation to
+itself to the Smart Card and may be used to restrict HOTP generation to
 a Spyrus PAR II reader.
 </para>
 <para>
@@ -464,7 +471,7 @@ when done.
 <informalexample>
 <para>
 Use <command>otp-control</command> to create a new database for system dev1 with
-user test, store the test user database entry to the smart card with
+user test, store the test user database entry to the Smart Card with
 <command>otp-sca</command>.
 </para>
 <screen>
@@ -482,7 +489,7 @@ user test, store the test user database entry to the smart card with
 # of system is dev1
 <command>otp-control -o /tmp/otpdb -u test -m list-sc -H dev1 | tail -1 > /tmp/test.list</command>
 
-# copy card entry to smart card as index 0
+# copy card entry to Smart Card as index 0
 <command>echo -n "00:"| cat - /tmp/test.list | ./otp-sca -m host-set</command>
 
 <computeroutput>SetHost (0): Done</computeroutput>

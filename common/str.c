@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: str.c 15 2009-11-26 18:29:41Z maf $
+ *      $Id: str.c 87 2009-12-28 00:05:53Z maf $
  */
 
 #include <termios.h>
@@ -36,6 +36,7 @@
 #endif
 #include <stdio.h>
 #include "str.h"
+#include "xerr.h"
 
 /*
  * function: chr_hex_l()
@@ -149,7 +150,7 @@ int chr_ishex(char d)
  *  n   - length of b in bytes
  * 
  */
-void str_hex_dump(char *buf, u_char *b, size_t n)
+int str_hex_dump(char *buf, u_char *b, size_t n)
 {
   int i, j;
   for (i = 0, j = 0; i < n; ++i) {
@@ -157,6 +158,7 @@ void str_hex_dump(char *buf, u_char *b, size_t n)
     buf[j++] = chr_hex_r(*b++);
   }
   buf[j] = 0;
+  return j;
 }
 
 /*
@@ -389,6 +391,130 @@ int str_safe(char *input, size_t len)
   return ret;
 
 } /* str_safe */
+
+/*
+ * function: str_uint32toa()
+ * 
+ * convert unsigned 32 bit integer to ascii.  Left align.
+ *
+ * arguments:
+ *  s       - pointer to output buffer.  Must be at least 11 bytes.
+ *  u       - uint32_t to convert
+ *
+ * returns: length of string
+ *
+ */
+int str_uint32toa(char *s, uint32_t u)
+{
+  int len;
+  char *s1;
+
+  len = 0;
+  s1 = s;
+
+  /* 2^32-1 = 4294967295 = max 10 digits + NULL */
+  s[10] = 0;
+
+  do {
+    ++len;
+    *--s = '0' + (u % 10);
+    u /= 10;
+  } while (u);
+
+  bcopy(s, s1, len);
+  s1[len] = 0;
+
+  return len;
+  
+} /* str_fmt_uint32 */
+
+char *str_lookup8(char *list[], uint8_t id, uint8_t min, uint8_t max)
+{
+  if (id > max) {
+    xerr_warnx("str_lookup8(): id=%d, max=%d", (int)id, (int)max);
+    return "err";
+  }
+
+  if (id < min) {
+    xerr_warnx("str_lookup8(): id=%d, min=%d", (int)id, (int)min);
+    return "err";
+  }
+
+  return list[id];
+
+} /* str_lookup8 */
+
+char *str_flag8(char *list[], uint8_t flags, uint8_t bits, char *tmpbuf,
+  size_t tmpbuf_size)
+{
+  int i, l, u;
+  char *t;
+
+  u = 0;
+  t = tmpbuf;
+
+  for (i = 0; i < bits; ++i) {
+    if (flags & (1<<i)) {
+      l = strlen(list[i]);
+      if ((l + u + 2) < tmpbuf_size) {
+        bcopy(list[i], t, l);
+        t += l;
+        u += l;
+        *t++ = ' ';
+      } else {
+        goto str_flag8_err;
+      }
+    } /* if */
+  } /* for */
+    
+  /* any strings added then back up over trailing space */
+  if (u)
+    --t;
+
+  *t = 0;
+  return tmpbuf;
+
+str_flag8_err:
+  xerr_warnx("str_flag8(): tmpbuf too small.");
+  return "";
+  
+} /* str_flag8 */
+
+int str_find8(char *list[], uint8_t *id, char *s, uint8_t min, uint8_t max)
+{
+  int i;
+  *id = 0;
+
+  for (i = min; i <= max; ++i) {
+    if (!strcasecmp(s, list[i])) {
+      *id = i;
+      return 0;
+    }
+  }
+
+  xerr_warnx("str_find8(): %s not found.", s);
+  return -1;
+  
+} /* str_find8 */
+
+int str_setflag8(char *list[], uint8_t *flags, char *s, uint8_t min,
+  uint8_t max)
+{
+  int i;
+  *flags = 0;
+
+  for (i = min; i < max; ++i) {
+    if (!strcasecmp(s, list[i]))
+      *flags |= 1<<i;
+  }
+
+  if (*flags)
+    return 0;
+
+  xerr_warnx("str_setflag8(): %s not found.", s);
+  return -1;
+  
+} /* str_setflag8 */
 
 #ifdef STR_EXAMPLE
 

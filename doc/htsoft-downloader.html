@@ -108,6 +108,12 @@ CLASS="VARIABLELIST"
 >Help</P
 ></DD
 ><DT
+>-i</DT
+><DD
+><P
+>Ignore timeout for last WOK after sending reset.</P
+></DD
+><DT
 >-f<TT
 CLASS="REPLACEABLE"
 ><I
@@ -175,7 +181,7 @@ output.  A level of 1 will indicate the overall status of the transfer.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN60"
+NAME="AEN64"
 ></A
 ><H2
 >EXAMPLE</H2
@@ -184,7 +190,7 @@ CLASS="INFORMALEXAMPLE"
 ><P
 ></P
 ><A
-NAME="AEN62"
+NAME="AEN66"
 ></A
 ><P
 >Transfer the HEX file spyrus1.1.hex to a PIC connected to
@@ -197,7 +203,7 @@ appears to be harmless.</P
 ><P
 >  <B
 CLASS="COMMAND"
->pic-downloader -v9 -f /dev/ttyUSB0 &#60; spyrys1.1.hex</B
+>pic-downloader -v9 -i -f /dev/ttyUSB0 &#60; spyrys1.1.hex</B
 ></P
 ><PRE
 CLASS="SCREEN"
@@ -213,11 +219,10 @@ write: data=202530A0008430E8202017833010008430362020120A118A2DBD060401800A84
 
 ...
 
-upload block: load_offset=0x1FFA bytes_to_send=6
-Dwrite: cmd=E3 load=0FFD bytes=06 csum=AA
-write: data=00CB30C42EBD
-wDONE: reply=F8, expecting E4wwwwpic-downloader: htsoft_v1bl_done(): failed
-PIC reset failed.&#13;</PRE
+upload block: load_offset=0x1FF8 bytes_to_send=8
+Dwrite: cmd=E3 load=0FFC bytes=08 csum=7E
+write: data=246B120A158A3400
+wDONE: reply=F0, expecting E4wPIC reset sent.</PRE
 ><P
 ></P
 ></DIV
@@ -225,7 +230,7 @@ PIC reset failed.&#13;</PRE
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN68"
+NAME="AEN72"
 ></A
 ><H2
 >AUTHOR</H2
@@ -242,7 +247,7 @@ HREF="mailto:maf@splintered.net"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN75"
+NAME="AEN79"
 ></A
 ><H2
 >SEE ALSO</H2

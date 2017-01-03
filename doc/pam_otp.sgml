@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: pam_otp.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: pam_otp.sgml 50 2009-12-15 01:37:19Z maf $ -->
 
 <refentry>
 
@@ -91,6 +91,15 @@ database are permitted.
 <listitem>
 <para>
 <filename>alternate_otpdb</filename> is used as the OTP database.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><replaceable>window=window</replaceable></term>
+<listitem>
+<para>
+Set OTP challenge window.
 </para>
 </listitem>
 </varlistentry>

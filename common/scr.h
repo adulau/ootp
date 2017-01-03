@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: scr.h 26 2009-11-29 23:01:37Z maf $
+ *      $Id: scr.h 49 2009-12-14 22:03:08Z maf $
  */
 
 #include "acr30.h"
@@ -42,11 +42,6 @@
 
 #define SCR_EMBEDDED_ACR30S_NAME    "embedded:acr30s"
 #define SCR_EMBEDDED_ACR30S_DEVICE  "/dev/cuaU0"
-
-#ifndef SCR_DEFAULT_READER
-/* #define SCR_DEFAULT_READER "embedded:acr30s:/dev/cuaU0" */
-#define SCR_DEFAULT_READER "PCSC:"
-#endif
 
 #define SCR_TX_BUF_LEN 254
 #define SCR_RX_BUF_LEN 254
@@ -66,12 +61,12 @@ struct scr_ctx
   SCARDHANDLE hCard;
   DWORD dwActiveProtocol;
   char *pcsc_active_reader;
+  int pcsc_reader_first, pcsc_num_readers;
 #endif /* SCR_PCSC */
   int verbose, valid, valid_readers, active_reader;
   int num_readers;
   char **readers;
   char *reader;
-  int pcsc_reader_first;
 };
 
 struct scr_io {

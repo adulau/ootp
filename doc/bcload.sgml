@@ -1,6 +1,6 @@
 <!DOCTYPE refentry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
 
-<!-- $Id: bcload.sgml 13 2009-11-26 16:37:03Z maf $ -->
+<!-- $Id: bcload.sgml 62 2009-12-18 17:26:31Z maf $ -->
 
 <refentry>
 <refmeta>
@@ -95,7 +95,14 @@ to <filename>bcload.c</filename>.
 <term>-r<replaceable> reader</replaceable></term>
 <listitem>
 <para>
-Set the smart card reader.  Use -l to list available readers.
+Set Smart Card reader.  Use -l to list available readers.  A reader
+is defined as class:reader:<optional>option</optional>.  PCSC and embedded
+are the two available classes.  The embedded class contains the acr30s driver
+which is specified as embedded:acr30s:<optional>serial_port</optional>.
+If pcscd is running the first PC/SC reader will be the default followed by
+the embedded acr30s driver.  Use PCSC: for the first available PC/SC
+reader.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
+with serial port /dev/cuaU0.
 </para>
 </listitem>
 </varlistentry>
@@ -128,7 +135,7 @@ Display verbose status messages while programming the card.
 
 <informalexample>
 <para>
-Download the HOTPC.IMG file to the default smart card reader.  Display
+Download the HOTPC.IMG file to the default Smart Card reader.  Display
 verbose results.
 </para>
 <screen>

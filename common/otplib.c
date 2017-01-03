@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otplib.c 18 2009-11-26 19:40:06Z maf $
+ *      $Id: otplib.c 84 2009-12-27 17:29:51Z maf $
  */
 
 #include <openssl/ssl.h>
@@ -48,9 +48,12 @@
 #include "str.h"
 #include "otpsc.h"
 
-char *otp_l_status[] = {"error", "active", "inactive", "disabled"};
-char *otp_l_format[] = {"error", "hex40"};
-char *otp_l_type[] = {"error", "HOTP"};
+char *otp_status_l[] = {"error", "active", "inactive", "disabled"};
+char *otp_format_l[] = {"error", "hex40", "dhex40", "dec31.6", "dec31.7",
+                        "dec31.8", "dec31.9", "dec31.10"};
+char *otp_type_l[] = {"error", "HOTP"};
+
+char *otp_flags_l[] = {"display-count"};
 
 /*
  * One Time Password library with HOTP implementation.
@@ -65,6 +68,9 @@ char *otp_l_type[] = {"error", "HOTP"};
  *
  * otp_hotp_hex40_auth() HOTP 40 bit hex key authentication
  * otp_hotp_hex40_crsp() HOTP 40 bit hex key challenge response generator
+ *
+ * otp_hotp_dec31_auth() HOTP 31 bit decimal key authentication
+ * otp_hotp_dec31_crsp() HOTP 31 bit decimal key challenge response generator
  *
  ****
  *
@@ -355,9 +361,10 @@ int otp_hotp_hex40_auth(struct otp_ctx *otpctx, struct otp_user *ou,
   char *crsp, int window)
 {
   uint64_t tmp_count;
+  uint8_t offset;
   u_int rlen;
   int i;
-  u_char result[EVP_MAX_MD_SIZE], decoded[5];
+  u_char result[EVP_MAX_MD_SIZE], decoded[5], dt[5];
 
   if (otp_db_valid(otpctx, "otp_hotp_hex40_auth") < 0)
     return -1;
@@ -398,9 +405,122 @@ int otp_hotp_hex40_auth(struct otp_ctx *otpctx, struct otp_user *ou,
   SWAP64(tmp_count)
 #endif /* BYTE_ORDER */
 
-    /* compare the top 40 bits to authenticate user, match then return good */
-    if (!bcmp(decoded, &result, 5)) {
-      ou->count = tmp_count+1;
+    if (ou->format == OTP_FORMAT_HEX40) {
+
+      /* compare top 40 bits to authenticate user, match then AUTH_PASS */
+      if (!bcmp(decoded, &result, 5)) {
+        ou->count = tmp_count+1;
+        return OTP_AUTH_PASS;
+      }
+
+    } else if (ou->format == OTP_FORMAT_DHEX40) {
+
+      offset = result[19] & 0xf;
+
+      dt[0] = result[offset]; dt[1] = result[offset+1];
+      dt[2] = result[offset+2]; dt[3] = result[offset+3];
+      dt[4] = result[offset+4];
+
+      /* compare dynamic 40 bits to authenticate user, match then AUTH_PASS */
+      if (!bcmp(decoded, &dt, 5)) {
+        ou->count = tmp_count+1;
+        return OTP_AUTH_PASS;
+      }
+
+    } /* ou->format */
+
+  } /* window */
+
+  return OTP_AUTH_FAIL;
+
+} /* otp_hotp_hex40_auth */
+
+/*
+ * function: otp_hotp_dec31_auth()
+ *
+ * validate challenge HOTP 31 bit decimal format challenge response
+ * for user ou with window.
+ *
+ * arguments:
+ *  ou             - otp user struct
+ *  crsp           - user response
+ *  window         - window of challenge responses to attempt
+ *
+ * return: OTP_ERROR       - error
+ *         OTP_AUTH_PASS   - user authenticated
+ *         OTP_AUTH_FAIL   - user not authenticated
+ *
+ */
+int otp_hotp_dec31_auth(struct otp_ctx *otpctx, struct otp_user *ou,
+  char *crsp, int window)
+{
+  uint64_t tmp_count, mod64u;
+  uint32_t crsp32u, tmp32u, hotp32u;
+  uint8_t offset;
+  u_int rlen;
+  u_char result[EVP_MAX_MD_SIZE];
+  int i;
+  char *endptr;
+
+  if (otp_db_valid(otpctx, "otp_hotp_dec31_auth") < 0)
+    return -1;
+
+  crsp32u = strtoul(crsp, &endptr, 10);
+
+  if (*endptr) {
+    xerr_warnx("strtoul(%s): failed at %c.", crsp, *endptr);
+    return OTP_AUTH_FAIL;
+  }
+  
+  tmp_count = ou->count;
+
+  /* try to authenticate with count, incrementing count up to count+window */
+  for (i = 0; i < window; ++i, ++tmp_count) {
+
+  /* HOTP is big endian */
+#if BYTE_ORDER == LITTLE_ENDIAN
+  SWAP64(tmp_count)
+#endif /* BYTE_ORDER */
+
+    /* compute expected response to challenge */
+    if (!HMAC(EVP_sha1(), ou->key, 20, (void*)&tmp_count, 8,
+      result, &rlen)) {
+      if (otpctx->verbose)
+        xerr_warnx("HMAC(): failed.");
+      return OTP_ERROR;
+    }
+
+  /* restore from HOTP standard byte order */
+#if BYTE_ORDER == LITTLE_ENDIAN
+  SWAP64(tmp_count)
+#endif /* BYTE_ORDER */
+
+    offset = result[19] & 0xf;
+
+    tmp32u = (result[offset] & 0x7f) << 24 |
+             (result[offset+1]) << 16 |
+             (result[offset+2]) <<  8 |
+             (result[offset+3]);
+
+    if (ou->format == OTP_FORMAT_DEC31_6)
+      mod64u = 1000000LL;
+    else if (ou->format == OTP_FORMAT_DEC31_7)
+      mod64u = 10000000LL;
+    else if (ou->format == OTP_FORMAT_DEC31_8)
+      mod64u = 100000000LL;
+    else if (ou->format == OTP_FORMAT_DEC31_9)
+      mod64u = 1000000000LL;
+    else if (ou->format == OTP_FORMAT_DEC31_10)
+      mod64u = 10000000000LL;
+    else
+      xerr_errx(1, "assertion failure: ou->format invalid for dec31.");
+
+    /* final OTP truncation */
+    hotp32u = tmp32u % mod64u;
+
+    /* computed HOTP == user reponse? */
+    if (hotp32u == crsp32u) {
+      ou->count = tmp_count + 1;
       return OTP_AUTH_PASS;
     }
 
@@ -408,13 +528,13 @@ int otp_hotp_hex40_auth(struct otp_ctx *otpctx, struct otp_user *ou,
 
   return OTP_AUTH_FAIL;
 
-} /* otp_hotp_hex40_auth */
+} /* otp_hotp_dec31_auth */
 
 /*
  * function: otp_hotp_hex40_crsp()
  *
  * generate HOTP challenge response in hex40 format from data in ou
- * with optional * count_offset applied.  Store results in buf as
+ * with optional count_offset applied.  Store results in buf as
  * null terminated ASCII string.
  *
  * arguments:
@@ -422,6 +542,7 @@ int otp_hotp_hex40_auth(struct otp_ctx *otpctx, struct otp_user *ou,
  *  ou           - otp_user struct source
  *  count_offset - offset of count from current count in ou
  *  buf          - buffer with ASCII result.  Min 11 bytes.
+ *  buf_size     - size of buf
  *
  * returns: <0 : fail
  *           0 : success
@@ -431,7 +552,8 @@ int otp_hotp_hex40_crsp(struct otp_ctx *otpctx, struct otp_user *ou,
   int64_t count_offset, char *buf, size_t buf_size)
 {
   uint64_t tmp_count;
-  u_char result[EVP_MAX_MD_SIZE];
+  uint8_t offset;
+  u_char result[EVP_MAX_MD_SIZE], dt[5];
   u_int rlen;
 
   if (otp_db_valid(otpctx, "otp_hotp_hex40_crsp") < 0)
@@ -458,12 +580,108 @@ int otp_hotp_hex40_crsp(struct otp_ctx *otpctx, struct otp_user *ou,
     xerr_warnx("buf_size < 11");
     return OTP_ERROR;
   }
- 
-  str_hex_dump(buf, result, 5);
+
+  if (ou->format == OTP_FORMAT_HEX40) {
+
+    str_hex_dump(buf, result, 5);
+
+  } else if (ou->format == OTP_FORMAT_DHEX40) {
+
+    offset = result[19] & 0xf;
+
+    dt[0] = result[offset]; dt[1] = result[offset+1];
+    dt[2] = result[offset+2]; dt[3] = result[offset+3];
+    dt[4] = result[offset+4];
+
+    str_hex_dump(buf, dt, 5);
+
+  }
   
   return 0;
 
 } /* otp_hotp_hex40_crsp */
+
+/*
+ * function: otp_hotp_dec31_crsp()
+ *
+ * generate HOTP challenge response in dec31d* format from data in ou
+ * with optional count_offset applied.  Store results in buf as
+ * null terminated ASCII string.
+ *
+ * arguments:
+ *  otpctx       - otp context from otp_db_open()
+ *  ou           - otp_user struct source
+ *  count_offset - offset of count from current count in ou
+ *  buf          - buffer with ASCII result.  Min 11 bytes.
+ *  buf_size     - size of buf
+ *
+ * returns: <0 : fail
+ *           0 : success
+ *
+ */
+int otp_hotp_dec31_crsp(struct otp_ctx *otpctx, struct otp_user *ou,
+  int64_t count_offset, char *buf, size_t buf_size)
+{
+  uint64_t tmp_count, mod64u;
+  uint32_t tmp32u, hotp32u;
+  uint8_t offset;
+  u_char result[EVP_MAX_MD_SIZE];
+  u_int rlen;
+
+  if (otp_db_valid(otpctx, "otp_hotp_dec31_crsp") < 0)
+    return -1;
+
+  tmp_count = ou->count;
+  tmp_count += count_offset;
+
+  /* HOTP is big endian */
+#if BYTE_ORDER == LITTLE_ENDIAN
+  SWAP64(tmp_count)
+#endif /* BYTE_ORDER */
+  
+  /* compute expected response to challenge */
+  if (!HMAC(EVP_sha1(), ou->key, 20, (void*)&tmp_count, 8,
+    result, &rlen)) {
+    if (otpctx->verbose)
+      xerr_warnx("HMAC(): failed.");
+    return OTP_ERROR;
+  }
+
+  offset = result[19] & 0xf;
+  
+  tmp32u = (result[offset] & 0x7f) << 24 |
+           (result[offset+1]) << 16 |
+           (result[offset+2]) <<  8 |
+           (result[offset+3]);
+
+  if (ou->format == OTP_FORMAT_DEC31_6)
+    mod64u = 1000000LL;
+  else if (ou->format ==  OTP_FORMAT_DEC31_7)
+    mod64u = 10000000LL;
+  else if (ou->format ==  OTP_FORMAT_DEC31_8)
+    mod64u = 100000000LL;
+  else if (ou->format ==  OTP_FORMAT_DEC31_9)
+    mod64u = 1000000000LL;
+  else if (ou->format ==  OTP_FORMAT_DEC31_10)
+    mod64u = 10000000000LL;
+  else
+    xerr_errx(1, "assertion failure: ou->format invalid for dec31.");
+
+  /* final OTP truncation */
+  hotp32u = tmp32u % mod64u;
+
+  if (buf_size < STR_UINT32_LEN) {
+    if (otpctx->verbose)
+      xerr_warnx("buf_size=%d < %d.", buf_size, STR_UINT32_LEN);
+    return OTP_ERROR;
+  }
+
+  str_uint32toa(buf, hotp32u);
+  
+  return 0;
+
+} /* otp_hotp_dec31_crsp */
+
 
 /*
  * function: otp_db_open()
@@ -809,7 +1027,7 @@ otp_db_load_out:
  *  u_count_ceil - count ceiling
  *  u_status     - status OTP_STATUS_*
  *  u_type       - type OTP_TYPE_HOTP (HOTP implemented)
- *  u_format     - format OTP_FORMAT_HEX40 (HEX40 implemented)
+ *  u_format     - format OTP_FORMAT_*
  *  u_version    - version OTP_VERSION (version 1 implemented)
  *  
  *
@@ -1043,21 +1261,22 @@ int otp_user_auth(struct otp_ctx *otpctx, char *u_username,
 {
   time_t now;
   struct otp_user ou;
-  int ret, r, auth_status;
+  int ret, r, auth_status, crsp_max;
 
   if (otp_db_valid(otpctx, "otp_user_auth") < 0)
     return -1;
-
-  /* paranoia */
-  str_safe(u_username, OTP_USER_NAME_LEN);
 
   ret = -1; /* fail */
   bzero(&ou, sizeof ou);
   auth_status = OTP_AUTH_FAIL;
 
+  /* max length of challenge response */
+  crsp_max = (OTP_HOTP_HEX40_LEN<<1) < OTP_HOTP_DEC31_LEN ?\
+    (OTP_HOTP_HEX40_LEN<<1) : OTP_HOTP_DEC31_LEN;
+
   /* paranoia */
   str_safe(u_username, OTP_USER_NAME_LEN);
-  str_safe(u_crsp, OTP_HOTP_HEX40_LEN<<1);
+  str_safe(u_crsp, crsp_max<<1);
 
   /* open user record */
   if (otp_urec_open(otpctx, u_username, &ou, O_RDWR, FFDB_OP_LOCK_EX) < 0) {
@@ -1093,12 +1312,21 @@ int otp_user_auth(struct otp_ctx *otpctx, char *u_username,
   ou.last = now;
 
   /* try to authenticate user */
-  if (ou.status != OTP_STATUS_ACTIVE)
+  if (ou.status != OTP_STATUS_ACTIVE) {
     auth_status = OTP_AUTH_FAIL;
-  else if (ou.count >= ou.count_ceil)
+  } else if (ou.count >= ou.count_ceil) {
     auth_status = OTP_AUTH_FAIL;
-  else
-    auth_status = otp_hotp_hex40_auth(otpctx, &ou, u_crsp, u_window);
+  } else {
+    if ((ou.format == OTP_FORMAT_HEX40) ||
+        (ou.format == OTP_FORMAT_DHEX40))
+      auth_status = otp_hotp_hex40_auth(otpctx, &ou, u_crsp, u_window);
+    else if ((ou.format == OTP_FORMAT_DEC31_6) ||
+             (ou.format == OTP_FORMAT_DEC31_7) ||
+             (ou.format == OTP_FORMAT_DEC31_8) ||
+             (ou.format == OTP_FORMAT_DEC31_9) ||
+             (ou.format == OTP_FORMAT_DEC31_10))
+       auth_status = otp_hotp_dec31_auth(otpctx, &ou, u_crsp, u_window);
+  }
 
   /*
    * regardless of authentication status update the db to reflect last access
@@ -1368,9 +1596,15 @@ int otp_urec_sanity(struct otp_ctx *otpctx, struct otp_user *ou)
     return -1;
   }
  
-  if (ou->format != OTP_FORMAT_HEX40) {
+  if ((ou->format != OTP_FORMAT_HEX40) &&
+      (ou->format != OTP_FORMAT_DHEX40) &&
+      (ou->format != OTP_FORMAT_DEC31_6) &&
+      (ou->format != OTP_FORMAT_DEC31_7) &&
+      (ou->format != OTP_FORMAT_DEC31_8) &&
+      (ou->format != OTP_FORMAT_DEC31_9) &&
+      (ou->format != OTP_FORMAT_DEC31_10)) {
     if (otpctx->verbose)
-      xerr_warnx("format != OTP_FORMAT_HEX40.");
+      xerr_warnx("format invalid.");
     return -1;
   }
 
@@ -1394,7 +1628,6 @@ int otp_urec_sanity(struct otp_ctx *otpctx, struct otp_user *ou)
  * function: otp_urec_crsp()
  *
  * generate challenge response for ou
- * HOTP HEX40 implemented.
  *
  * arguments:
  *  otpctx       - otp db context returned by otp_db_open()
@@ -1407,13 +1640,31 @@ int otp_urec_sanity(struct otp_ctx *otpctx, struct otp_user *ou)
 int otp_urec_crsp(struct otp_ctx *otpctx, struct otp_user *ou,
   int64_t count_offset, char *buf, size_t buf_size)
 {
+  int crsp_max;
 
   if (otp_db_valid(otpctx, "otp_urec_crsp") < 0)
     return -1;
 
-  if (buf_size < 5) {
+  /* max length of challenge response */
+  if ((ou->format == OTP_FORMAT_HEX40) ||
+      (ou->format == OTP_FORMAT_DHEX40))
+    crsp_max = (OTP_HOTP_HEX40_LEN<<1);
+  else if (ou->format == OTP_FORMAT_DEC31_6)
+    crsp_max = 6;
+  else if (ou->format == OTP_FORMAT_DEC31_7)
+    crsp_max = 7;
+  else if (ou->format == OTP_FORMAT_DEC31_8)
+    crsp_max = 8;
+  else if (ou->format == OTP_FORMAT_DEC31_9)
+    crsp_max = 9;
+  else if (ou->format == OTP_FORMAT_DEC31_10)
+    crsp_max = 10;
+  else
+    xerr_errx(1, "assertion failure: ou->format invalid.");
+
+  if (buf_size < (crsp_max+1)) {
     if (otpctx->verbose)
-      xerr_warnx("buf_size < 5.");
+      xerr_warnx("buf_size < %d.", (crsp_max+1));
     goto otp_urec_crsp_out;
   }
 
@@ -1423,7 +1674,17 @@ int otp_urec_crsp(struct otp_ctx *otpctx, struct otp_user *ou,
     goto otp_urec_crsp_out;
   }
 
-  return (otp_hotp_hex40_crsp(otpctx, ou, count_offset, buf, buf_size));
+  if ((ou->format == OTP_FORMAT_HEX40) ||
+      (ou->format == OTP_FORMAT_DHEX40))
+    return (otp_hotp_hex40_crsp(otpctx, ou, count_offset, buf, buf_size));
+  else if ((ou->format == OTP_FORMAT_DEC31_6) ||
+           (ou->format == OTP_FORMAT_DEC31_7) ||
+           (ou->format == OTP_FORMAT_DEC31_8) ||
+           (ou->format == OTP_FORMAT_DEC31_9) ||
+           (ou->format == OTP_FORMAT_DEC31_10))
+    return (otp_hotp_dec31_crsp(otpctx, ou, count_offset, buf, buf_size));
+  else
+    xerr_errx(1, "assertion failure: ou->format invalid.");
 
 otp_urec_crsp_out:
 
@@ -1447,7 +1708,7 @@ otp_urec_crsp_out:
  */
 void otp_urec_disp(struct otp_ctx *otpctx, struct otp_user *ou)
 {
-  char tmp[41];
+  char tmp[41], buf[512];
 
   if (otp_db_valid(otpctx, "otp_urec_disp") < 0)
     return;
@@ -1461,18 +1722,16 @@ void otp_urec_disp(struct otp_ctx *otpctx, struct otp_user *ou)
     ou->count_ceil);
   printf("Version........%u\n", (u_int)ou->version);
   printf("Status.........%s (%u)\n",
-    otp_l_status[ou->status], (u_int)ou->status);
+    str_lookup8(otp_status_l, ou->status, 1, OTP_STATUS_MAX),
+    (u_int)ou->status);
   printf("Format.........%s (%u)\n",
-    otp_l_format[ou->format], (u_int)ou->format);
-  printf("Type...........%s (%u)\n", otp_l_type[ou->type], (u_int)ou->type);
-  printf("Flags..........%2.2x", (u_int)ou->flags);
-  if (ou->flags)
-    printf(" [");
-  if (ou->flags & OTP_USER_FLAGS_DSPCNT)
-    printf(" display-count");
-  if (ou->flags)
-    printf(" ]");
-  printf("\n");
+    str_lookup8(otp_format_l, ou->format, 1, OTP_FORMAT_MAX),
+    (u_int)ou->format);
+  printf("Type...........%s (%u)\n",
+    str_lookup8(otp_type_l, ou->type, 1, OTP_TYPE_MAX), (u_int)ou->type);
+  printf("Flags..........[%s] (0x%2.2x)\n",
+    str_flag8(otp_flags_l, ou->flags, OTP_FLAGS_BITS, buf, 512),
+      (u_int)ou->flags);
 
 } /* otp_urec_disp */
 
@@ -1591,7 +1850,7 @@ int main(int argc, char **argv)
 
 /*  crsp[0] = 'F'; */
 
-  ret = otp_user_auth(otpctx, "maf", crsp, OTP_HOTP_WINDOW);
+  ret = otp_user_auth(otpctx, "maf", crsp, OTP_WINDOW_DEFAULT);
   printf("otp_user_auth(): %d\n", ret);
 
 /*

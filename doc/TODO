@@ -5,5 +5,31 @@ RADIUS dspcnt flag urd, force display count
 
 RADIUS proxy support
 
-default no GetHost() in BasicCard
+get documentation for the ACS balance reader
+ACS balance reader support dec31.6?
+
+break out htsoft-downloader, urd, bcload?
+
+architecture document
+  formats
+  post
+
+basiccard build notes
+
+full coverage testing for otplib and ffdb
+
+otp-token (soft token)
+
+count use 64 bit current time option
+
+balance reader simulator
+
+Break out Linux/FreeBSD/MAC build notes into separate file from QUICKSTART
+
+Test with Linux PICC.  Add spyrus Makefile to build without Windows
+
+Spyrus main.c missing
+  EE2LCD()
+  U8             Temp[4];
+  RESP_INFO     *respDump = (RESP_INFO*) Temp;
 

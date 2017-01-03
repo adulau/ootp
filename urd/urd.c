@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: urd.c 13 2009-11-26 16:37:03Z maf $
+ *      $Id: urd.c 50 2009-12-15 01:37:19Z maf $
  */
 
 #include <sys/types.h>
@@ -59,7 +59,6 @@
  * urd_rep_msg in access-challenge hard coded to ABC..
  * copy proxy variables into reply packet per RFC?
  * packet stress testing
- * rc.d script
  */
 
 static void usage(void);
@@ -77,18 +76,19 @@ int main(int argc, char **argv)
   struct otp_ctx *otpctx;
   struct otp_user ou;
   char *otpdb_fname;
-  int otp_skip_unknown, otpdb_flags;
+  int otp_skip_unknown, otpdb_flags, otp_enable;
 #endif /* OOTP_ENABLE */
   fd_set rfd;
+  u_long tmpul;
   uint64_t rep_state;
-  uint32_t local_ip, tmp32u;
+  uint32_t local_ip;
   uint16_t local_port;
   uint8_t rep_code;
   uint rem_addr_len;
   char *authorized_users_fname, *pwfile_fname, *server_secret_fname, *endptr;
   char server_secret[URD_SECRET_LEN+1], buf[1024], *pid_fname;
   int rep_enc_flags, rep_cache_flags, debug, daemon_mode;
-  int drop, drop_mode, req_cache_hit, buf_l, pkt_fd, r, i;
+  int drop, drop_mode, req_cache_hit, buf_l, pkt_fd, r, i, otp_window;
 
   bzero(&loc_addr, sizeof loc_addr);
   bzero(&pkt_fd, sizeof pkt_fd);
@@ -103,19 +103,21 @@ int main(int argc, char **argv)
   local_port = URD_PORT;
   drop = 1;
   drop_mode = 0;
+  otp_window = OTP_WINDOW_DEFAULT;
 #ifdef OOTP_ENABLE
   otpctx = (struct otp_ctx*)0L;
   otpdb_fname = OTP_DB_FNAME;
   otp_skip_unknown = 0;
   otpdb_flags = 0;
+  otp_enable = 1;
 #endif /* OOTP_ENABLE */
   
   xerr_setid(argv[0]);
 
 #ifdef OOTP_ENABLE
-  while ((i = getopt(argc, argv, "AhduDOx?a:b:B:o:p:s:P:")) != -1) {
+  while ((i = getopt(argc, argv, "AhduDOx?a:b:B:o:p:s:P:w:")) != -1) {
 #else
-  while ((i = getopt(argc, argv, "AhdDx?a:b:B:p:s:P:")) != -1) {
+  while ((i = getopt(argc, argv, "AhdDx?a:b:B:p:s:P:w:")) != -1) {
 #endif /* OOTP_ENABLE */
 
     switch (i) {
@@ -134,12 +136,12 @@ int main(int argc, char **argv)
         break;
 
       case 'B':
-        tmp32u = strtoul(optarg, &endptr, 0);
+        tmpul = strtoul(optarg, &endptr, 0);
         if (*endptr)
           xerr_errx(1, "stroul(%s): failed at %c.", optarg, *endptr);
-        if (tmp32u > 0xFFFF)
+        if (tmpul > 0xFFFF)
           xerr_errx(1, "UDP port out of range 0..65535.");
-        local_port = tmp32u;
+        local_port = tmpul;
         break;
 
       case 'd':
@@ -165,7 +167,7 @@ int main(int argc, char **argv)
         break;
 
       case 'O':
-        otpdb_fname = (char*)0L;
+        otp_enable = 0;
         break;
 #endif /* OOTP_ENABLE */
 
@@ -186,6 +188,15 @@ int main(int argc, char **argv)
         otp_skip_unknown = 1;
         break;
 #endif /* OOTP_ENABLE */
+
+      case 'w':
+        tmpul = strtoul(optarg, &endptr, 0);
+        if (*endptr)
+          xerr_errx(1, "stroul(%s): failed at %c.", optarg, *endptr);
+        if (tmpul > OTP_WINDOW_MAX)
+          xerr_errx(1, "Challenge window %lu > %lu.", tmpul, OTP_WINDOW_MAX);
+        otp_window = tmpul;
+        break;
 
       case 'x':
         drop_mode = 1;
@@ -264,7 +275,7 @@ int main(int argc, char **argv)
 
 #ifdef OOTP_ENABLE
   /* creat OTP context */
-  if (otpdb_fname)
+  if (otp_enable)
     if (!(otpctx = otp_db_open(otpdb_fname, otpdb_flags)))
       xerr_errx(1, "otp_db_open(%s): failed", otpdb_fname);
 #endif /* OOTP_ENABLE */
@@ -487,7 +498,7 @@ int main(int argc, char **argv)
          *
          */
 
-        if (!otpdb_fname) {
+        if (!otp_enable) {
 
           rep_code = RADIUS_CODE_ACCESS_ACCEPT;
           rep_enc_flags = 0x0;
@@ -720,7 +731,7 @@ int main(int argc, char **argv)
         }
 
         if ((r = otp_user_auth(otpctx, urdctx->req.user_name,
-          urdctx->req.user_pass, OTP_HOTP_WINDOW)) < 0)
+          urdctx->req.user_pass, otp_window)) < 0)
             xerr_errx(1, "otp_user_auth(): failed.");
 
         if (r == OTP_AUTH_PASS) {
@@ -989,14 +1000,15 @@ void usage(void)
   fprintf(stderr,
     "urd [-AhdDOux?] [-a allowed_users_file] [-b local_ip] [-B local_port ]\n");
   fprintf(stderr,
-    "             [-o otp_db] [-p passwd_file] [-P pid_file] [-s secret_file]\n\n");
+    "             [-o otp_db] [-p passwd_file] [-P pid_file] [-s secret_file]\n");
 #else
   fprintf(stderr,
     "urd [-AhdDx?] [-a allowed_users_file] [-b local_ip] [-B local_port ]\n");
   fprintf(stderr,
-    "             [-p passwd_file] [-P pid_file] [-s secret_file]\n\n");
+    "             [-p passwd_file] [-P pid_file] [-s secret_file]\n");
 
 #endif /* OOTP_ENABLE */
+  fprintf(stderr, "             [-w otp_window]\n\n");
   fprintf(stderr, "  -A disable authorized_users file (all users in passwd_file valid)\n");
   fprintf(stderr, "  -h help\n");
   fprintf(stderr, "  -d enable debugging\n");

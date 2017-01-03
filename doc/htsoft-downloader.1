@@ -69,6 +69,8 @@ on standard output and downloaded to a PIC on the
 .SH "OPTIONS"
 .IP "-h" 10
 Help
+.IP "-i" 10
+Ignore timeout for last WOK after sending reset\&.
 .IP "-f\fI serial_device\fP" 10
 Serial device filename\&.  Examples:
 .IP "" 10
@@ -93,7 +95,7 @@ Transfer the HEX file spyrus1\&.1\&.hex to a PIC connected to
 the bootloader in this device does not send the last WOK command, this
 appears to be harmless\&.
 .PP
-  \fBpic-downloader -v9 -f /dev/ttyUSB0 < spyrys1\&.1\&.hex\fP
+  \fBpic-downloader -v9 -i -f /dev/ttyUSB0 < spyrys1\&.1\&.hex\fP
 .PP
 .nf
 Waiting for bootloader\&.\&.\&.\&.\&.\&.\&.\&.\&.\&.
@@ -108,11 +110,10 @@ write: data=202530A0008430E8202017833010008430362020120A118A2DBD060401800A84
 
 \&.\&.\&.
 
-upload block: load_offset=0x1FFA bytes_to_send=6
-Dwrite: cmd=E3 load=0FFD bytes=06 csum=AA
-write: data=00CB30C42EBD
-wDONE: reply=F8, expecting E4wwwwpic-downloader: htsoft_v1bl_done(): failed
-PIC reset failed\&.
+upload block: load_offset=0x1FF8 bytes_to_send=8
+Dwrite: cmd=E3 load=0FFC bytes=08 csum=7E
+write: data=246B120A158A3400
+wDONE: reply=F0, expecting E4wPIC reset sent\&.
 .fi
 .SH "AUTHOR"
 .PP
@@ -124,4 +125,4 @@ Intel Hexadecimal Object File Format Specification Rev A
 www\&.htsoft\&.com
 .PP
 http://www\&.ehl\&.cz/pic/pic_e\&.htm
-...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:15
+...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01

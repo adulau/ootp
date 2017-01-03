@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $Id: otplib.h 13 2009-11-26 16:37:03Z maf $
+ *      $Id: otplib.h 61 2009-12-17 03:57:22Z maf $
  */
 
 #include <sys/types.h>
@@ -68,17 +68,30 @@
 
 
 
-#define OTP_DB_FNAME "/etc/otpdb" /* location of user database */
-#define OTP_HOTP_WINDOW 10        /* Window of challenges to try */
-#define OTP_VERSION 1             /* version of library */
-#define OTP_FORMAT_HEX40 1        /* 40 bits in hex */
-#define OTP_TYPE_HOTP 1           /* protocol type */
+#define OTP_DB_FNAME        "/etc/otpdb" /* location of user database */
+#define OTP_VERSION         1            /* version of library */
+
+#define OTP_FORMAT_HEX40    1            /* 40 bits in hex */
+#define OTP_FORMAT_DHEX40   2            /* 40 bits in hex w. RFC 4226 DT */
+#define OTP_FORMAT_DEC31_6  3            /* 31 bits 6 digits in decimal RFC */
+#define OTP_FORMAT_DEC31_7  4            /* 31 bits 7 digits in decimal */
+#define OTP_FORMAT_DEC31_8  5            /* 31 bits 8 digits in decimal */
+#define OTP_FORMAT_DEC31_9  6            /* 31 bits 9 digits in decimal */
+#define OTP_FORMAT_DEC31_10 7            /* 31 bits 10 digits in decimal */
+#define OTP_FORMAT_MAX      7            /* highest valid format enum */
+
+#define OTP_TYPE_HOTP       1            /* protocol type */
+#define OTP_TYPE_MAX        1            /* highest valid type enum */
+
+#define OTP_WINDOW_DEFAULT  10           /* default challenge window */
+#define OTP_WINDOW_MAX      255          /* max challenge window */
 
 #define OTP_VERSION_MIN 1          /* min version for this code */
-#define OTP_VERSION_MAX 1         /* max version for this code */
+#define OTP_VERSION_MAX 1          /* max version for this code */
 
-#define OTP_HOTP_KEY_SIZE 20      /* HMAC SHA160 key length */
-#define OTP_HOTP_HEX40_LEN 5      /* HOTP challenge hex 40 bits */
+#define OTP_HOTP_KEY_SIZE 20       /* HMAC SHA160 key length */
+#define OTP_HOTP_HEX40_LEN 5       /* HOTP challenge hex 40 bits */
+#define OTP_HOTP_DEC31_LEN 10      /* max 10 digits */
 
 #define OTP_AUTH_PASS      0       /* authenticated */
 #define OTP_AUTH_FAIL      1       /* not authenticated */
@@ -89,11 +102,14 @@
 #define OTP_STATUS_ACTIVE   1       /* user is active */
 #define OTP_STATUS_INACTIVE 2       /* user is not active */
 #define OTP_STATUS_DISABLED 3       /* user is locked (disabled) */
+#define OTP_STATUS_MAX      3       /* highest valid status enum */
+
 
 #define OTP_USER_N_FIELDS 10       /* n fields in ASCII encoding */
 #define OTP_USER_ASCII_LEN 139     /* max ASCII encoded length (w/o null) */
 
-#define OTP_USER_FLAGS_DSPCNT    0x1 /* force display count */
+#define OTP_FLAGS_DSPCNT           0x1 /* force display count */
+#define OTP_FLAGS_BITS             1   /* bits used */
 
 #define OTP_USER_NAME_LEN 32       /* max length of username (w/o null)*/
 #define OTP_USER_KEY_LEN 64        /* key length */
@@ -103,8 +119,8 @@
 #define OTP_DB_CREATE_SOFT  0x04      /* create database, soft fail on exist */
 
 struct otp_user {
-  struct ffdb_key db_key;         /* database key */
-  struct ffdb_val db_val;         /* database value (this struct in ASCII) */
+  struct ffdb_key db_key;        /* database key */
+  struct ffdb_val db_val;        /* database value (this struct in ASCII) */
   uint64_t count;                /* count */
   uint64_t count_ceil;           /* count ceiling */
   uint64_t last;                 /* last access */
@@ -152,6 +168,10 @@ int otp_hotp_hex40_auth(struct otp_ctx *otpctx, struct otp_user *ou,
   char *crsp, int window);
 int otp_hotp_hex40_crsp(struct otp_ctx *otpctx, struct otp_user *ou,
   int64_t count_offset, char *buf, size_t buf_size);
+int otp_hotp_dec31_auth(struct otp_ctx *otpctx, struct otp_user *ou,
+  char *crsp, int window);
+int otp_hotp_dec31_crsp(struct otp_ctx *otpctx, struct otp_user *ou,
+  int64_t count_offset, char *buf, size_t buf_size);
 
 struct otp_ctx *otp_db_open(char *dbname, int flags);
 int otp_db_close(struct otp_ctx *otpctx);
@@ -183,6 +203,12 @@ void otp_urec_dispsc(struct otp_ctx *otpctx, struct otp_user *ou,
 int otp_user_to_ascii(struct otp_ctx *otpctx, struct otp_user *ou);
 int otp_user_from_ascii(struct otp_ctx *otpctx, struct otp_user *ou);
 
+char *otp_uflags_str(uint8_t flags, char *tmpbuf, size_t tmpbuf_size);
+
 extern char *otp_status_l[];
+extern char *otp_format_l[];
+extern char *otp_type_l[];
+extern char *otp_flags_l[];
+
 
 #endif /* OTP_H */

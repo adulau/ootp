@@ -79,7 +79,14 @@ Disable paranoid check for ZC3\&.9 hardware\&.  Enhanced Smart Cards will
 probably work, support for the professional cards require changes
 to \fBbcload\&.c\fP\&.
 .IP "-r\fI reader\fP" 10
-Set the smart card reader\&.  Use -l to list available readers\&.
+Set Smart Card reader\&.  Use -l to list available readers\&.  A reader
+is defined as class:reader:[option]\&.  PCSC and embedded
+are the two available classes\&.  The embedded class contains the acr30s driver
+which is specified as embedded:acr30s:[serial_port]\&.
+If pcscd is running the first PC/SC reader will be the default followed by
+the embedded acr30s driver\&.  Use PCSC: for the first available PC/SC
+reader\&.  Use embedded:acr30s:/dev/cuaU0 for the embedded acr30s driver
+with serial port /dev/cuaU0\&.
 .IP "-t" 10
 Force card mode to TEST after programming\&.  Defaults to the mode
 specified in the image file\&.
@@ -87,7 +94,7 @@ specified in the image file\&.
 Display verbose status messages while programming the card\&.
 .SH "EXAMPLES"
 .PP
-Download the HOTPC\&.IMG file to the default smart card reader\&.  Display
+Download the HOTPC\&.IMG file to the default Smart Card reader\&.  Display
 verbose results\&.
 .PP
 .nf
@@ -127,4 +134,4 @@ Mark Fullmer maf@splintered\&.net
 \fBotp-ov-plugin\fP(1)
 \fBurd\fP(1)
 spyrus-par2(7)
-...\" created by instant / docbook-to-man, Mon 30 Nov 2009, 13:15
+...\" created by instant / docbook-to-man, Sun 27 Dec 2009, 22:01
